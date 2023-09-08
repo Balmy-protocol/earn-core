@@ -48,9 +48,9 @@ In Earn, a strategy will take an asset and generate yield with it by depositing 
 yield could be in the same asset, or in other tokens. One strategy could generate yield on multiple tokens at the same
 time
 
-Each strategy will have its own logic and risks associated with it. They might use leverage or maybe have some
-custom safety features, the possibilities are endless. It will be up to each user to do their own due diligence and
-select their preferred strategy, based on their own risk/reward inclinations
+Each strategy will have its own logic and risks associated with it. They might use leverage or maybe have some custom
+safety features, the possibilities are endless. It will be up to each user to do their own due diligence and select
+their preferred strategy, based on their own risk/reward inclinations
 
 Strategy devs, please refer to [src/interfaces/IEarnStrategy.sol](src/interfaces/IEarnStrategy.sol) to understand
 important restrictions to be considered when building your own strategy
@@ -62,8 +62,8 @@ associating their funds to a "strategy id" that itself references a strategy con
 
 It could happen that the owner of the strategy wants to upgrade their strategy, so that the strategy id points to a
 different contract. When that happens, they will simply have to go to the strategy registry and propose a "strategy
-update". Then, after a certain delay has passed, the owner will be able to execute the update. As part of the
-process, the old vault will be told by the registry that it should migrate all funds over to the new strategy.
+update". Then, after a certain delay has passed, the owner will be able to execute the update. As part of the process,
+the old vault will be told by the registry that it should migrate all funds over to the new strategy.
 
 It's important to note that even though we have this delayed upgrade mechanism in place, a strategy might simply
 implement their own upgradeability process that has no delay at all. So please be careful when selecting a strategy for
@@ -80,10 +80,10 @@ A farm is simply a name for a third party that will be used to generate yield wi
 
 ### Delayed Withdrawals
 
-Sometimes farms can implement a lock up periods for withdrawals. In that case, when a user wants to
-execute a withdrawal, the strategy will call a "delayed withdrawal" adapter to handle the process. It goes without
-saying that each "delayed withdrawal" will be associated to a position so that only accounts with permissions can retrieve
-the funds later
+Sometimes farms can implement a lock up periods for withdrawals. In that case, when a user wants to execute a
+withdrawal, the strategy will call a "delayed withdrawal" adapter to handle the process. It goes without saying that
+each "delayed withdrawal" will be associated to a position so that only accounts with permissions can retrieve the funds
+later
 
 #### Delayed Withdrawal Adapter
 
