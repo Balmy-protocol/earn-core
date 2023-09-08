@@ -135,13 +135,13 @@ flowchart
       end
 
       subgraph delayed[Delayed Withdrawals]
-        manager[Delayed Withdrawal\n Manager]
-        adapter[Adapter Y]
+        manager(Delayed Withdrawal\n Manager)
+        adapter(Adapter Y)
       end
     end
 
     subgraph farms[Farms]
-      farm[Farm Z]
+      farm(Farm Z)
     end
 
     user --->|Deposits/Withdraws|vault
