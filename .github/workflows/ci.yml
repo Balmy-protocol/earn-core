@@ -1,0 +1,153 @@
+name: "CI"
+
+env:
+  API_KEY_ALCHEMY: ${{ secrets.ALCHEMY_API_KEY }}
+  API_KEY_ETHERSCAN: ${{ secrets.API_KEY_ETHERSCAN }}
+  API_KEY_INFURA: ${{ secrets.API_KEY_INFURA }}
+  FOUNDRY_PROFILE: "ci"
+  MNEMONIC: ${{ secrets.MNEMONIC }}
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  lint:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: "Install Pnpm"
+        uses: "pnpm/action-setup@v2"
+        with:
+          version: "8"
+
+      - name: "Install Node.js"
+        uses: "actions/setup-node@v3"
+        with:
+          cache: "pnpm"
+          node-version: "lts/*"
+
+      - name: "Install the Node.js dependencies"
+        run: "pnpm install"
+
+      - name: "Lint the contracts"
+        run: "pnpm lint"
+
+      - name: "Add lint summary"
+        run: |
+          echo "## Lint result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  build:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: "Build the contracts and print their size"
+        run: "forge build --sizes"
+
+      - name: "Add build summary"
+        run: |
+          echo "## Build result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  analyze:
+    needs: ["lint", "build"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Slither
+        uses: crytic/slither-action@v0.3.0
+        id: slither
+        with:
+          node-version: 16
+          fail-on: none
+          slither-args:
+            --checklist --markdown-root ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/
+
+      - name: Create/update checklist as PR comment
+        uses: actions/github-script@v6
+        env:
+          SLITHER_OUTPUT: ${{ steps.slither.outputs.stdout }}
+        if: github.event_name == 'pull_request'
+        with:
+          debug: true
+          script: |
+            const script = require('.github/scripts/comment')
+            const header = '# Slither report'
+            const body = `${process.env.SLITHER_OUTPUT}`
+            await script({ github, context, header, body })
+
+  test:
+    needs: ["lint", "build"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: "Show the Foundry config"
+        run: "forge config"
+
+      - name: "Generate a fuzz seed that changes weekly to avoid burning through RPC allowance"
+        run: >
+          echo "FOUNDRY_FUZZ_SEED=$(
+            echo $(($EPOCHSECONDS - $EPOCHSECONDS % 604800))
+          )" >> $GITHUB_ENV
+
+      - name: "Run the tests"
+        run: "forge test"
+
+      - name: "Add test summary"
+        run: |
+          echo "## Tests result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
+
+  test-hardhat:
+    needs: ["lint", "build"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out the repo"
+        uses: "actions/checkout@v3"
+        with:
+          submodules: "recursive"
+
+      - name: Install node
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.x"
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: "Install Foundry"
+        uses: "foundry-rs/foundry-toolchain@v1"
+
+      - name: Run unit tests
+        run: yarn test-hardhat
+
+      - name: "Add test summary"
+        run: |
+          echo "## Tests result" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Passed" >> $GITHUB_STEP_SUMMARY

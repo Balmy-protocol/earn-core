@@ -1,0 +1,37 @@
+{
+  "name": "@balmy/earn",
+  "description": "This repository adds existing contracts the ability to perform stateless simulations",
+  "version": "0.0.0",
+  "author": {
+    "name": "Balmy",
+    "url": "https://github.com/balmy-protocol"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.7",
+    "solhint-community": "^3.5.0"
+  },
+  "files": [
+    "contracts"
+  ],
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "forge",
+    "foundry",
+    "smart-contracts",
+    "solidity",
+    "template"
+  ],
+  "scripts": {
+    "clean": "rm -rf cache out",
+    "lint": "pnpm lint:sol && pnpm prettier:check",
+    "lint:sol": "forge fmt --check && pnpm solhint \"{script,src,test}/**/*.sol\"",
+    "prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
+    "prettier:write": "prettier --write \"**/*.{json,md,yml}\"",
+    "prepublishOnly": "cp -r ./src ./contracts",
+    "postpublish": "rm -r ./contracts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
