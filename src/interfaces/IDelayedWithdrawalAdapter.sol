@@ -10,7 +10,7 @@ import { StrategyId } from "../types/StrategyId.sol";
 /**
  * @title Delayed Withdrawal Adapter Interface
  * @notice This contract will interact with one or more farms and handle the process of withdrawing funds that have a
- *         lock up period. When a withdrawal is initiated, strategies will register themselves to the manager, to
+ *         lock up period. When a withdrawal is initiated, adapters will register themselves to the manager, to
  *         help with discoverability. Only the manager can process a finished withdrawal
  */
 interface IDelayedWithdrawalAdapter is IERC165 {

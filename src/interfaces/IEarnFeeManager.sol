@@ -6,7 +6,7 @@ import { StrategyId } from "../types/StrategyId.sol";
 
 /**
  * @title Earn Fee Manager Interface
- * @notice This manager handles performance
+ * @notice This manager handles performance fees
  */
 interface IEarnFeeManager is IAccessControl {
   /**

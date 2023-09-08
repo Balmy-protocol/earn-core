@@ -5,11 +5,11 @@ type SpecialWithdrawalCode is uint256;
 
 /**
  * @title Special withdrawals
- * @notice There are some cases where we might want to perform a special withdrawal. For example, if an
+ * @notice There are some cases where we might want to perform a special withdrawal. For example, if a
  *         token only supports a delayed withdrawal, we might want to withdraw the farm token directly and
  *         sell it on the market, instead of waiting for the normal process.
  *         Since each strategy could support different types of withdrawals, we need to define a "protocol"
- *         on how to communicate to each of them. Input and output is encoded as bytes, in here we we'll
+ *         on how to execute and interpret each of them. Input and output are encoded as bytes, in here we'll
  *         specify how to encode/decode them.
  */
 library SpecialWithdrawal {
