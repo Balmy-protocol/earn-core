@@ -13,12 +13,14 @@ interface IEarnFeeManager is IAccessControl {
    * @notice Returns the role in charge of managing fees
    * @return The role in charge of managing fees
    */
+  // slither-disable-next-line naming-convention
   function MANAGE_FEES_ROLE() external view returns (bytes32);
 
   /**
    * @notice Returns the max amount of fee possible
    * @return The max amount of fee possible
    */
+  // slither-disable-next-line naming-convention
   function MAX_FEE() external view returns (uint256);
 
   /**

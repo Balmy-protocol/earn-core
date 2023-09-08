@@ -66,14 +66,14 @@ interface IEarnStrategy is IERC165 {
    * @return tokens All tokens under the strategy's control
    * @return withdrawalTypes The types of withdrawals for each token
    */
-  function tokens() external view returns (address[] memory tokens, WithdrawalType[] memory withdrawalTypes);
+  function allTokens() external view returns (address[] memory tokens, WithdrawalType[] memory withdrawalTypes);
 
   /**
    * @notice Returns the types of withdrawals supported for each token
    * @dev In the same order returned as `tokens`
    * @return The types of withdrawals for each token
    */
-  function withdrawalTypes() external view returns (WithdrawalType[] memory);
+  function supportedWithdrawals() external view returns (WithdrawalType[] memory);
 
   /**
    * @notice Returns whether a specific token can be used to deposit funds into the strategy

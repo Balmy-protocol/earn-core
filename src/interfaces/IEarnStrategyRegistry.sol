@@ -14,6 +14,7 @@ interface IEarnStrategyRegistry {
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
    * @return The delay (in seconds) necessary to execute a proposed strategy update
    */
+  // slither-disable-next-line naming-convention
   function STRATEGY_UPDATE_DELAY() external pure returns (uint256);
 
   /**

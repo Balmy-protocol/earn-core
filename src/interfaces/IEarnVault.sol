@@ -36,12 +36,14 @@ interface IEarnVault is INFTPermissions, IAccessControl {
    * @notice Returns the role in charge of pausing/unpausing deposits
    * @return The role in charge of pausing/unpausing deposits
    */
+  // slither-disable-next-line naming-convention
   function PAUSE_ROLE() external pure returns (bytes32);
 
   /**
    * @notice Returns the role in charge of withdrawing generated fees
    * @return The role in charge of withdrawing generated fees
    */
+  // slither-disable-next-line naming-convention
   function WITHDRAW_FEES_ROLE() external pure returns (bytes32);
 
   /**
