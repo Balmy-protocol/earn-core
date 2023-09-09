@@ -44,10 +44,18 @@ interface IEarnFeeManager is IAccessControl {
   function setDefaultPerformanceFee(uint256 feeBps) external;
 
   /**
-   * @notice Sets the performance fee for a specific strategy
+   * @notice Sets a specific performance fee for the given strategy
    * @dev Can only be called by someone with the `MANAGE_FEES_ROLE` role. Also, must be lower than `MAX_FEE`
    * @param strategyId The strategy to set the fee for
    * @param feeBps The new default performance fee, in bps
    */
-  function setPerformanceFeeForStrategy(StrategyId strategyId, uint256 feeBps) external;
+  function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint256 feeBps) external;
+
+  /**
+   * @notice Clears the specific performance fee on the strategy and starts using the default again
+   * @dev Can only be called by someone with the `MANAGE_FEES_ROLE` role.
+   *      Will revert if it didn't have a specific performance fee set
+   * @param strategyId The strategy to clear the fee for
+   */
+  function setPerformanceFeeForStrategyBackToDefault(StrategyId strategyId) external;
 }

@@ -56,16 +56,9 @@ interface IEarnStrategyRegistry {
    *      The new strategy must support the expected interface.
    * @param owner The strategy's owner
    * @param strategy The strategy to register
-   * @param registrationData Data to be sent to the strategy
    * @return The id assigned to the new strategy
    */
-  function registerStrategy(
-    address owner,
-    IEarnStrategy strategy,
-    bytes calldata registrationData
-  )
-    external
-    returns (StrategyId);
+  function registerStrategy(address owner, IEarnStrategy strategy) external returns (StrategyId);
 
   /**
    * @notice Proposes an ownership transfer. Must be accepted by the new owner
