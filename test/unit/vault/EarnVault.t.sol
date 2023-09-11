@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
+// solhint-disable no-unused-import
+import { IAccessControlDefaultAdminRules } from
+  "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
+import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
-import { EarnVault, IEarnStrategyRegistry, IEarnFeeManager } from "../../../src/vault/EarnVault.sol";
+import { IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager } from "../../../src/vault/EarnVault.sol";
 import { Utils } from "../../Utils.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
@@ -54,5 +57,12 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // Immutables
     assertEq(address(vault.STRATEGY_REGISTRY()), address(strategyRegistry));
     assertEq(address(vault.FEE_MANAGER()), address(feeManager));
+  }
+
+  function test_supportsInterface() public {
+    assertTrue(vault.supportsInterface(type(IAccessControlDefaultAdminRules).interfaceId));
+    assertTrue(vault.supportsInterface(type(IERC721).interfaceId));
+    assertTrue(vault.supportsInterface(type(IEarnVault).interfaceId));
+    assertFalse(vault.supportsInterface(bytes4(0)));
   }
 }

@@ -82,7 +82,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     override(AccessControlDefaultAdminRules, ERC721, IERC165)
     returns (bool)
   {
-    return AccessControlDefaultAdminRules.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId);
+    return AccessControlDefaultAdminRules.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
+      || interfaceId == type(IEarnVault).interfaceId;
   }
 
   /// @inheritdoc IEarnVault
