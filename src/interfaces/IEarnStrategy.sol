@@ -144,6 +144,7 @@ interface IEarnStrategy is IERC165 {
 
   /**
    * @notice Notifies the strategy that funds have been deposited into it
+   * @dev Will revert if the given token is not supported
    * @param depositToken The token that was deposited
    * @param depositAmount The amount that was deposited
    * @return assetsDeposited How much was deposited, measured in asset
