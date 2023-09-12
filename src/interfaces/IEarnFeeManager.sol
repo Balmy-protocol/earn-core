@@ -21,27 +21,27 @@ interface IEarnFeeManager is IAccessControl {
    * @return The max amount of fee possible
    */
   // slither-disable-next-line naming-convention
-  function MAX_FEE() external view returns (uint256);
+  function MAX_FEE() external view returns (uint16);
 
   /**
    * @notice Returns the default performance fee
    * @return feeBps The default performance fee
    */
-  function defaultPerformanceFee() external view returns (uint256 feeBps);
+  function defaultPerformanceFee() external view returns (uint16 feeBps);
 
   /**
    * @notice Returns the performance fee to use for a specific strategy
    * @param strategyId The strategy to check
    * @return feeBps The performance fee to use for the given strategy
    */
-  function getPerformanceFeeForStrategy(StrategyId strategyId) external view returns (uint256 feeBps);
+  function getPerformanceFeeForStrategy(StrategyId strategyId) external view returns (uint16 feeBps);
 
   /**
    * @notice Sets the default performance fee
    * @dev Can only be called by someone with the `MANAGE_FEES_ROLE` role. Also, must be lower than `MAX_FEE`
    * @param feeBps The new default performance fee, in bps
    */
-  function setDefaultPerformanceFee(uint256 feeBps) external;
+  function setDefaultPerformanceFee(uint16 feeBps) external;
 
   /**
    * @notice Sets a specific performance fee for the given strategy
@@ -49,7 +49,7 @@ interface IEarnFeeManager is IAccessControl {
    * @param strategyId The strategy to set the fee for
    * @param feeBps The new default performance fee, in bps
    */
-  function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint256 feeBps) external;
+  function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint16 feeBps) external;
 
   /**
    * @notice Clears the specific performance fee on the strategy and starts using the default again
