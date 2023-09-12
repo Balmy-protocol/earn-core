@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../interfaces/IEarnFeeManager.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
+import { StrategyId } from "../types/StrategyId.sol";
 
-contract FeeManager is IEarnFeeManager {
+contract EarnFeeManager is IEarnFeeManager, AccessControl {
   error ValueGreaterThanMaximum();
   error Unauthorized();
 
   bytes32 public constant MANAGE_FEES_ROLE = keccak256("MANAGE_FEES_ROLE");
 
-  uint16 private constant MAX_FEE = 1000;
+  uint16 public constant MAX_FEE = 1000;
   uint16 private _defaultPerformanceFee;
 
   mapping(StrategyId => PerformanceFee) performanceFees;
@@ -19,17 +21,9 @@ contract FeeManager is IEarnFeeManager {
     bool isSpecific;
   }
 
-  constructor(uint16 defaultPerformanceFee) {
-    _defaultPerformanceFee = defaultPerformanceFee;
-  }
-
-  function MANAGE_FEES_ROLE() external view returns (bytes32) {
-    return MANAGE_FEES_ROLE;
-  }
-
-  /// @inheritdoc IEarnFeeManager
-  function MAX_FEE() external view returns (uint16) {
-    return MAX_FEE;
+  constructor(address[] memory initialManageFeeAdmins, uint16 initialDefaultPerformanceFee) {
+    _assignRoles(MANAGE_FEES_ROLE, initialManageFeeAdmins);
+    _defaultPerformanceFee = initialDefaultPerformanceFee;
   }
 
   /// @inheritdoc IEarnFeeManager
@@ -39,11 +33,11 @@ contract FeeManager is IEarnFeeManager {
 
   /// @inheritdoc IEarnFeeManager
   function getPerformanceFeeForStrategy(StrategyId strategyId) external view returns (uint16 feeBps) {
-    PerformanceFee performanceFee = performanceFees[strategyId];
-    feeBps = performanceFee.isSpecific ? performanceFee.value : defaultPerformanceFee();
+    PerformanceFee memory performanceFee = performanceFees[strategyId];
+    feeBps = performanceFee.isSpecific ? performanceFee.value : _defaultPerformanceFee;
   }
+  
   /// @inheritdoc IEarnFeeManager
-
   function setDefaultPerformanceFee(uint16 feeBps) external {
     if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
     _defaultPerformanceFee = feeBps;
@@ -60,5 +54,14 @@ contract FeeManager is IEarnFeeManager {
   function setPerformanceFeeForStrategyBackToDefault(StrategyId strategyId) external {
     if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
     delete performanceFees[strategyId];
+  }
+
+  function _assignRoles(bytes32 role, address[] memory accounts) internal {
+    for (uint256 i; i < accounts.length;) {
+      _grantRole(role, accounts[i]);
+      unchecked {
+        ++i;
+      }
+    }
   }
 }
