@@ -36,7 +36,7 @@ contract EarnFeeManager is IEarnFeeManager, AccessControl {
     PerformanceFee memory performanceFee = performanceFees[strategyId];
     feeBps = performanceFee.isSpecific ? performanceFee.value : _defaultPerformanceFee;
   }
-  
+
   /// @inheritdoc IEarnFeeManager
   function setDefaultPerformanceFee(uint16 feeBps) external {
     if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
