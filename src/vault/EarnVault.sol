@@ -45,7 +45,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     address[] memory initialWithdrawFeeAdmins
   )
     AccessControlDefaultAdminRules(3 days, superAdmin)
-    NFTPermissions("Balmy Earn NFT Position", "EARN", "1")
+    NFTPermissions("Balmy Earn NFT Position", "EARN", "1.0")
   {
     STRATEGY_REGISTRY = strategyRegistry;
     FEE_MANAGER = feeManager;

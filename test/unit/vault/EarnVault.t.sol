@@ -43,7 +43,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // EIP712
     bytes32 typeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 expectedDomainSeparator = keccak256(
-      abi.encode(typeHash, keccak256("Balmy Earn NFT Position"), keccak256("1"), block.chainid, address(vault))
+      abi.encode(typeHash, keccak256("Balmy Earn NFT Position"), keccak256("1.0"), block.chainid, address(vault))
     );
     assertEq(vault.DOMAIN_SEPARATOR(), expectedDomainSeparator);
 
