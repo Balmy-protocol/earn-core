@@ -146,12 +146,12 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   { }
 
   /// @inheritdoc IEarnVault
-  function pause() external payable onlyRole(PAUSE_ROLE) whenNotPaused {
+  function pause() external payable onlyRole(PAUSE_ROLE) {
     _pause();
   }
 
   /// @inheritdoc IEarnVault
-  function unpause() external payable onlyRole(PAUSE_ROLE) whenPaused {
+  function unpause() external payable onlyRole(PAUSE_ROLE) {
     _unpause();
   }
 
