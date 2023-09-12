@@ -2,12 +2,16 @@
 pragma solidity >=0.8.0;
 
 // solhint-disable no-unused-import
-import { IAccessControlDefaultAdminRules, IAccessControl } from
-  "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
+import {
+  IAccessControlDefaultAdminRules,
+  IAccessControl
+} from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
-import { IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager, Pausable } from "../../../src/vault/EarnVault.sol";
+import {
+  IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager, Pausable
+} from "../../../src/vault/EarnVault.sol";
 import { Utils } from "../../Utils.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
@@ -67,9 +71,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_pause_RevertWhen_CalledByAccountWithoutRole() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()
+      )
+    );
     vault.pause();
-  }  
+  }
 
   function test_pause() public {
     assertFalse(vault.paused());
@@ -92,9 +100,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_unpause_RevertWhen_CalledByAccountWithoutRole() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()
+      )
+    );
     vault.unpause();
-  }  
+  }
 
   function test_unpause() public {
     vm.startPrank(pauseAdmin);
