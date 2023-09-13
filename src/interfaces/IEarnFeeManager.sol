@@ -19,6 +19,19 @@ interface IEarnFeeManager is IAccessControl {
   event DefaultPerformanceFeeChanged(uint16 feeBps);
 
   /**
+   * @notice Emitted when a new specific performance fee is set to a strategy
+   * @param strategyId The strategy
+   * @param feeBps The new fee
+   */
+  event SpecificPerformanceFeeChanged(StrategyId strategyId, uint16 feeBps);
+
+  /**
+   * @notice Emitted when a performance fee is set to default for a strategy
+   * @param strategyId The strategy
+   */
+  event SpecificPerformanceFeeRemoved(StrategyId strategyId);
+
+  /**
    * @notice Returns the role in charge of managing fees
    * @return The role in charge of managing fees
    */

@@ -51,11 +51,13 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
   function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
     if (feeBps > MAX_FEE) revert FeeGreaterThanMaximum();
     _performanceFees[strategyId] = PerformanceFee(feeBps, true);
+    emit SpecificPerformanceFeeChanged(strategyId, feeBps);
   }
 
   /// @inheritdoc IEarnFeeManager
   function setPerformanceFeeForStrategyBackToDefault(StrategyId strategyId) external onlyRole(MANAGE_FEES_ROLE) {
     delete _performanceFees[strategyId];
+    emit SpecificPerformanceFeeRemoved(strategyId);
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
