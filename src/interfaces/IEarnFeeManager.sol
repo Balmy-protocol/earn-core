@@ -9,11 +9,14 @@ import { StrategyId } from "../types/StrategyId.sol";
  * @notice This manager handles performance fees
  */
 interface IEarnFeeManager is IAccessControl {
+  /// @notice Thrown when trying to set a fee greater than the maximum fee
+  error FeeGreaterThanMaximum();
   /**
    * @notice Returns the role in charge of managing fees
    * @return The role in charge of managing fees
    */
   // slither-disable-next-line naming-convention
+
   function MANAGE_FEES_ROLE() external view returns (bytes32);
 
   /**
@@ -22,9 +25,6 @@ interface IEarnFeeManager is IAccessControl {
    */
   // slither-disable-next-line naming-convention
   function MAX_FEE() external view returns (uint16);
-
-  /// @notice Thrown when trying to set a fee greater than the maximum fee
-  error FeeGreaterThanMaximum();
 
   /**
    * @notice Returns the default performance fee

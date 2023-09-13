@@ -1,16 +1,16 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { AccessControlDefaultAdminRules } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
-contract EarnFeeManager is IEarnFeeManager, AccessControl {
+contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
   /// @inheritdoc IEarnFeeManager
   bytes32 public constant MANAGE_FEES_ROLE = keccak256("MANAGE_FEES_ROLE");
 
   /// @inheritdoc IEarnFeeManager
-  uint16 public constant MAX_FEE = 1000;
+  uint16 public constant MAX_FEE = 4000;
 
   /// @inheritdoc IEarnFeeManager
   uint16 public defaultPerformanceFee;
