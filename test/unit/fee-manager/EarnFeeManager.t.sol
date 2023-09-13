@@ -3,17 +3,21 @@ pragma solidity >=0.8.0;
 
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
-import { EarnFeeManager } from "../../../src/fee-manager/EarnFeeManager.sol";
+import { EarnFeeManager, IEarnFeeManager } from "../../../src/fee-manager/EarnFeeManager.sol";
 import { Utils } from "../../Utils.sol";
 import { StrategyId } from "../../../src/types/StrategyId.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 
 contract EarnFeeManagerTest is PRBTest {
-  address private manageFeeAdmin = address(1);
+  address private superAdmin = address(1);
+  address private manageFeeAdmin = address(2);
   uint16 private defaultPerformanceFee = 300;
   EarnFeeManager private feeManager;
+  StrategyId strategyId;
 
   function setUp() public virtual {
     feeManager = new EarnFeeManager(
+      superAdmin,
       Utils.arrayOf(manageFeeAdmin),
       defaultPerformanceFee
     );
@@ -26,4 +30,5 @@ contract EarnFeeManagerTest is PRBTest {
   function test_constructor() public {
     assertTrue(feeManager.hasRole(feeManager.MANAGE_FEES_ROLE(), manageFeeAdmin));
   }
+
 }

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
-import { AccessControlDefaultAdminRules } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { AccessControlDefaultAdminRules } from
+  "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
 import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
@@ -22,7 +23,13 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
     bool isSpecific;
   }
 
-  constructor(address[] memory initialManageFeeAdmins, uint16 initialDefaultPerformanceFee) {
+  constructor(
+    address superAdmin,
+    address[] memory initialManageFeeAdmins,
+    uint16 initialDefaultPerformanceFee
+  )
+    AccessControlDefaultAdminRules(3 days, superAdmin)
+  {
     _assignRoles(MANAGE_FEES_ROLE, initialManageFeeAdmins);
     defaultPerformanceFee = initialDefaultPerformanceFee;
     emit DefaultPerformanceFeeChanged(initialDefaultPerformanceFee);
