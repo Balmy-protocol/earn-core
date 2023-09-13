@@ -11,12 +11,18 @@ import { StrategyId } from "../types/StrategyId.sol";
 interface IEarnFeeManager is IAccessControl {
   /// @notice Thrown when trying to set a fee greater than the maximum fee
   error FeeGreaterThanMaximum();
+
+  /**
+   * @notice Emitted when a new default performance fee is set
+   * @param feeBps The new fee
+   */
+  event DefaultPerformanceFeeChanged(uint16 feeBps);
+
   /**
    * @notice Returns the role in charge of managing fees
    * @return The role in charge of managing fees
    */
   // slither-disable-next-line naming-convention
-
   function MANAGE_FEES_ROLE() external view returns (bytes32);
 
   /**

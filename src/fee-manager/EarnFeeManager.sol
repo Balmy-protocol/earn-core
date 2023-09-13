@@ -25,6 +25,7 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
   constructor(address[] memory initialManageFeeAdmins, uint16 initialDefaultPerformanceFee) {
     _assignRoles(MANAGE_FEES_ROLE, initialManageFeeAdmins);
     defaultPerformanceFee = initialDefaultPerformanceFee;
+    emit DefaultPerformanceFeeChanged(initialDefaultPerformanceFee);
   }
 
   /// @inheritdoc IEarnFeeManager
@@ -36,6 +37,7 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
   /// @inheritdoc IEarnFeeManager
   function setDefaultPerformanceFee(uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
     defaultPerformanceFee = feeBps;
+    emit DefaultPerformanceFeeChanged(feeBps);
   }
 
   /// @inheritdoc IEarnFeeManager
