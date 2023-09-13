@@ -23,6 +23,9 @@ interface IEarnFeeManager is IAccessControl {
   // slither-disable-next-line naming-convention
   function MAX_FEE() external view returns (uint16);
 
+  /// @notice Thrown when trying to set a fee greater than the maximum fee
+  error FeeGreaterThanMaximum();
+
   /**
    * @notice Returns the default performance fee
    * @return feeBps The default performance fee

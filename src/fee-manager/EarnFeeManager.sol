@@ -6,15 +6,16 @@ import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
 contract EarnFeeManager is IEarnFeeManager, AccessControl {
-  error ValueGreaterThanMaximum();
-  error Unauthorized();
-
+  /// @inheritdoc IEarnFeeManager
   bytes32 public constant MANAGE_FEES_ROLE = keccak256("MANAGE_FEES_ROLE");
 
+  /// @inheritdoc IEarnFeeManager
   uint16 public constant MAX_FEE = 1000;
-  uint16 private _defaultPerformanceFee;
 
-  mapping(StrategyId => PerformanceFee) performanceFees;
+  /// @inheritdoc IEarnFeeManager
+  uint16 public defaultPerformanceFee;
+
+  mapping(StrategyId strategyId => PerformanceFee performanceFee) internal _performanceFees;
 
   struct PerformanceFee {
     uint16 value;
@@ -23,37 +24,29 @@ contract EarnFeeManager is IEarnFeeManager, AccessControl {
 
   constructor(address[] memory initialManageFeeAdmins, uint16 initialDefaultPerformanceFee) {
     _assignRoles(MANAGE_FEES_ROLE, initialManageFeeAdmins);
-    _defaultPerformanceFee = initialDefaultPerformanceFee;
-  }
-
-  /// @inheritdoc IEarnFeeManager
-  function defaultPerformanceFee() external view returns (uint16 feeBps) {
-    feeBps = _defaultPerformanceFee;
+    defaultPerformanceFee = initialDefaultPerformanceFee;
   }
 
   /// @inheritdoc IEarnFeeManager
   function getPerformanceFeeForStrategy(StrategyId strategyId) external view returns (uint16 feeBps) {
-    PerformanceFee memory performanceFee = performanceFees[strategyId];
-    feeBps = performanceFee.isSpecific ? performanceFee.value : _defaultPerformanceFee;
+    PerformanceFee memory performanceFee = _performanceFees[strategyId];
+    feeBps = performanceFee.isSpecific ? performanceFee.value : defaultPerformanceFee;
   }
 
   /// @inheritdoc IEarnFeeManager
-  function setDefaultPerformanceFee(uint16 feeBps) external {
-    if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
-    _defaultPerformanceFee = feeBps;
+  function setDefaultPerformanceFee(uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
+    defaultPerformanceFee = feeBps;
   }
 
   /// @inheritdoc IEarnFeeManager
-  function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint16 feeBps) external {
-    if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
-    if (feeBps > MAX_FEE) revert ValueGreaterThanMaximum();
-    performanceFees[strategyId] = PerformanceFee(feeBps, true);
+  function specifyPerformanceFeeForStrategy(StrategyId strategyId, uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
+    if (feeBps > MAX_FEE) revert FeeGreaterThanMaximum();
+    _performanceFees[strategyId] = PerformanceFee(feeBps, true);
   }
 
   /// @inheritdoc IEarnFeeManager
-  function setPerformanceFeeForStrategyBackToDefault(StrategyId strategyId) external {
-    if (!hasRole(MANAGE_FEES_ROLE, msg.sender)) revert Unauthorized();
-    delete performanceFees[strategyId];
+  function setPerformanceFeeForStrategyBackToDefault(StrategyId strategyId) external onlyRole(MANAGE_FEES_ROLE) {
+    delete _performanceFees[strategyId];
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
