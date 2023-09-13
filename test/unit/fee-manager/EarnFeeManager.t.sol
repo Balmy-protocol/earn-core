@@ -31,4 +31,17 @@ contract EarnFeeManagerTest is PRBTest {
     assertTrue(feeManager.hasRole(feeManager.MANAGE_FEES_ROLE(), manageFeeAdmin));
   }
 
+  function test_defaultPerformanceFee() public {
+    assertEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
+  }
+
+  function test_setDefaultPerformanceFeeWithRole() public {
+    assertEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
+    vm.startPrank(manageFeeAdmin);
+    uint16 newDefaultPerformanceFee = 5;
+    feeManager.setDefaultPerformanceFee(newDefaultPerformanceFee);
+    assertNotEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
+    assertEq(feeManager.defaultPerformanceFee(), newDefaultPerformanceFee);
+    vm.stopPrank();
+  }
 }
