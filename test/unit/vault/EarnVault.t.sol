@@ -2,12 +2,16 @@
 pragma solidity >=0.8.0;
 
 // solhint-disable no-unused-import
-import { IAccessControlDefaultAdminRules } from
-  "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
+import {
+  IAccessControlDefaultAdminRules,
+  IAccessControl
+} from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
-import { IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager } from "../../../src/vault/EarnVault.sol";
+import {
+  IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager, Pausable
+} from "../../../src/vault/EarnVault.sol";
 import { Utils } from "../../Utils.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
@@ -64,5 +68,61 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertTrue(vault.supportsInterface(type(IERC721).interfaceId));
     assertTrue(vault.supportsInterface(type(IEarnVault).interfaceId));
     assertFalse(vault.supportsInterface(bytes4(0)));
+  }
+
+  function test_pause_RevertWhen_CalledByAccountWithoutRole() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()
+      )
+    );
+    vault.pause();
+  }
+
+  function test_pause() public {
+    assertFalse(vault.paused());
+
+    vm.prank(pauseAdmin);
+    vault.pause();
+
+    assertTrue(vault.paused());
+  }
+
+  function test_pause_RevertWhen_ContractAlreadyPaused() public {
+    vm.startPrank(pauseAdmin);
+
+    vault.pause();
+
+    vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+    vault.pause();
+
+    vm.stopPrank();
+  }
+
+  function test_unpause_RevertWhen_CalledByAccountWithoutRole() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), vault.PAUSE_ROLE()
+      )
+    );
+    vault.unpause();
+  }
+
+  function test_unpause() public {
+    vm.startPrank(pauseAdmin);
+
+    vault.pause();
+    assertTrue(vault.paused());
+
+    vault.unpause();
+    assertFalse(vault.paused());
+
+    vm.stopPrank();
+  }
+
+  function test_unpause_RevertWhen_ContractAlreadyUnpaused() public {
+    vm.expectRevert(abi.encodeWithSelector(Pausable.ExpectedPause.selector));
+    vm.prank(pauseAdmin);
+    vault.unpause();
   }
 }
