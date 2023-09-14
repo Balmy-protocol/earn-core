@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import "forge-std/console.sol";
-
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { EarnFeeManager, IEarnFeeManager } from "../../../src/fee-manager/EarnFeeManager.sol";
