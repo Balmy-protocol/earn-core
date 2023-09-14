@@ -43,6 +43,7 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
 
   /// @inheritdoc IEarnFeeManager
   function setDefaultPerformanceFee(uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
+    if (feeBps > MAX_FEE) revert FeeGreaterThanMaximum();
     defaultPerformanceFee = feeBps;
     emit DefaultPerformanceFeeChanged(feeBps);
   }

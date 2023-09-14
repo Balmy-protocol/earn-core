@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
+import "forge-std/console.sol";
 
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
@@ -106,5 +107,19 @@ contract EarnFeeManagerTest is PRBTest {
     assertNotEq(
       feeManager.getPerformanceFeeForStrategy(aStrategyId), feeManager.getPerformanceFeeForStrategy(anotherStrategyId)
     );
+  }
+
+  function test_modifyPerformanceFee_RevertWhenFeeGreaterThanMaximum() public {
+    vm.startPrank(manageFeeAdmin);
+    vm.expectRevert(abi.encodeWithSelector(IEarnFeeManager.FeeGreaterThanMaximum.selector));
+    feeManager.specifyPerformanceFeeForStrategy(aStrategyId, 10000);
+    vm.stopPrank();
+  }
+
+  function test_modifyDefaultPerformanceFee_RevertWhenFeeGreaterThanMaximum() public {
+    vm.startPrank(manageFeeAdmin);
+    vm.expectRevert(abi.encodeWithSelector(IEarnFeeManager.FeeGreaterThanMaximum.selector));
+    feeManager.setDefaultPerformanceFee(10000);
+    vm.stopPrank();
   }
 }
