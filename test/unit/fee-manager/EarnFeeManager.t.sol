@@ -13,7 +13,8 @@ contract EarnFeeManagerTest is PRBTest {
   address private manageFeeAdmin = address(2);
   uint16 private defaultPerformanceFee = 300;
   EarnFeeManager private feeManager;
-  StrategyId aStrategyId;
+  StrategyId aStrategyId = StrategyId.wrap(1);
+  StrategyId anotherStrategyId = StrategyId.wrap(2);
 
   function setUp() public virtual {
     feeManager = new EarnFeeManager(
@@ -46,23 +47,23 @@ contract EarnFeeManagerTest is PRBTest {
 
     vm.startPrank(manageFeeAdmin);
     feeManager.setDefaultPerformanceFee(newDefaultPerformanceFee);
-    assertNotEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
     vm.stopPrank();
 
+    assertNotEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
     assertEq(feeManager.defaultPerformanceFee(), newDefaultPerformanceFee);
   }
 
   function test_modifyPerformanceFeeAndSetBackWithRole() public {
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
-    uint16 specificPerformanceFee = 400;
+    uint16 specificPerformanceFee = defaultPerformanceFee + 2;
 
     vm.startPrank(manageFeeAdmin);
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
-    assertNotEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
     vm.stopPrank();
 
+    assertNotEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
   }
 
@@ -91,5 +92,19 @@ contract EarnFeeManagerTest is PRBTest {
       )
     );
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
+  }
+
+  function test_modifyPerformanceFeeAndCompareWithAnother() public {
+    assertEq(
+      feeManager.getPerformanceFeeForStrategy(aStrategyId), feeManager.getPerformanceFeeForStrategy(anotherStrategyId)
+    );
+    uint16 specificPerformanceFee = defaultPerformanceFee - 2;
+
+    vm.startPrank(manageFeeAdmin);
+    feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
+    vm.stopPrank();
+    assertNotEq(
+      feeManager.getPerformanceFeeForStrategy(aStrategyId), feeManager.getPerformanceFeeForStrategy(anotherStrategyId)
+    );
   }
 }
