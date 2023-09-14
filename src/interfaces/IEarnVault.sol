@@ -5,7 +5,6 @@ import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPe
 import { IEarnStrategyRegistry } from "../interfaces/IEarnStrategyRegistry.sol";
 import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
 import { IEarnStrategy } from "./IEarnStrategy.sol";
-import { PositionId } from "../types/PositionId.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
@@ -80,7 +79,7 @@ interface IEarnVault is INFTPermissions {
    * @param positionId The position to check
    * @return strategyId The strategy chosen by the given position. Will return 0 if the position doesn't exist
    */
-  function positionsStrategy(PositionId positionId) external view returns (StrategyId strategyId);
+  function positionsStrategy(uint256 positionId) external view returns (StrategyId strategyId);
 
   /**
    * @notice Returns a summary of the position's balances
@@ -89,7 +88,7 @@ interface IEarnVault is INFTPermissions {
    * @return withdrawalTypes The type of withdrawal for each token
    * @return balances Total balance of each token
    */
-  function position(PositionId positionId)
+  function position(uint256 positionId)
     external
     view
     returns (address[] memory tokens, IEarnStrategy.WithdrawalType[] memory withdrawalTypes, uint256[] memory balances);
@@ -129,7 +128,7 @@ interface IEarnVault is INFTPermissions {
   )
     external
     payable
-    returns (PositionId positionId, uint256 assetsDeposited);
+    returns (uint256 positionId, uint256 assetsDeposited);
 
   /**
    * @notice Deposits more funds into an existing position
@@ -141,7 +140,7 @@ interface IEarnVault is INFTPermissions {
    * @return assetsDeposited How much was actually deposited in terms of the asset
    */
   function increasePosition(
-    PositionId positionId,
+    uint256 positionId,
     address depositToken,
     uint256 depositAmount
   )
@@ -162,7 +161,7 @@ interface IEarnVault is INFTPermissions {
    * @return withdrawalTypes The type of withdrawal for each token
    */
   function withdraw(
-    PositionId positionId,
+    uint256 positionId,
     address[] calldata tokensToWithdraw,
     uint256[] calldata intendedWithdraw,
     address recipient
@@ -186,7 +185,7 @@ interface IEarnVault is INFTPermissions {
    * @return result The result of the withdrawal. Can be different for each strategy
    */
   function specialWithdraw(
-    PositionId positionId,
+    uint256 positionId,
     SpecialWithdrawalCode withdrawalCode,
     bytes calldata withdrawalData,
     address recipient

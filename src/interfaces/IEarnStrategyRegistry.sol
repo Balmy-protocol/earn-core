@@ -101,7 +101,7 @@ interface IEarnStrategyRegistry {
    * @dev Can only be called by the strategy's owner
    * @param strategyId The strategy that was being updated
    */
-  function cancelStrategyUpdate(StrategyId strategyId) external; // Only owner
+  function cancelStrategyUpdate(StrategyId strategyId) external;
 
   /**
    * @notice Updates a strategy, after the delay has passed

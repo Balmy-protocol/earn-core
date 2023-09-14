@@ -12,7 +12,7 @@ import { StdUtils } from "forge-std/StdUtils.sol";
 import {
   IEarnVault, EarnVault, IEarnStrategyRegistry, IEarnFeeManager, Pausable
 } from "../../../src/vault/EarnVault.sol";
-import { Utils } from "../../Utils.sol";
+import { CommonUtils } from "../../utils/CommonUtils.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
   address private superAdmin = address(1);
@@ -27,8 +27,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry,
       feeManager,
       superAdmin,
-      Utils.arrayOf(pauseAdmin),
-      Utils.arrayOf(withdrawFeeAdmin)
+      CommonUtils.arrayOf(pauseAdmin),
+      CommonUtils.arrayOf(withdrawFeeAdmin)
     );
   }
 
