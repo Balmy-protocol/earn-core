@@ -29,8 +29,21 @@ interface IEarnVault is INFTPermissions {
     IEarnStrategy.WithdrawalType[] withdrawalTypes;
   }
 
+  /// @notice Thrown when a user tries to make an empty deposit
+  error ZeroAmountDeposit();
+
   /// @notice Thrown when the withdraw input is invalid
   error InvalidWithdrawInput();
+
+  /// @notice Emitted when a new position is created
+  event PositionCreated(
+    uint256 positionId,
+    StrategyId strategyId,
+    uint256 assetsDeposited,
+    address owner,
+    INFTPermissions.PermissionSet[] permissions,
+    bytes misc
+  );
 
   /**
    * @notice Returns the role in charge of pausing/unpausing deposits

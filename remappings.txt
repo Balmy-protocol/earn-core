@@ -3,3 +3,4 @@ forge-std/=lib/forge-std/src/
 src/=src/
 @openzeppelin/=lib/openzeppelin-contracts/
 @mean-finance/nft-permissions/=lib/nft-permissions/src/
+@mean-finance/nft-permissions-test/=lib/nft-permissions/test/
