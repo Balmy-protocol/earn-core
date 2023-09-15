@@ -10,11 +10,11 @@ library YieldMath {
   using Math for uint256;
   using SignedMath for int256;
 
-  /*
-  We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the precision
-  back to normal when reading it, so the rest of the code doesn't need to know what we are doing. To understand why we 
-  chose this particular amount, please refer refer to the [README](../README.md).
-  */
+  /**
+   * @dev We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the
+   *      precision back to normal when reading it, so the rest of the code doesn't need to know what we are doing. To
+   *      understand why we chose this particular amount, please refer refer to the [README](../README.md).
+   */
   uint256 internal constant ACCUM_PRECISION = 1e33;
 
   /**
@@ -94,6 +94,14 @@ library YieldMath {
     return signedMulDiv(positionShares, currentAccum - baseAccum, ACCUM_PRECISION) + preAccountedBalance;
   }
 
+  /**
+   * @notice Performs a signed mul div, by supporting up to uint256 bits of precision. It will always round to negative
+   *         negative infinity
+   * @param x A part of the numerator
+   * @param y The other part of the numerator, can be signed
+   * @param denominator The denominator
+   * @return result The result of the multipliation and division
+   */
   function signedMulDiv(uint256 x, int256 y, uint256 denominator) internal pure returns (int256 result) {
     // We always round towards negative infinity so that any funds lost in precision are assigned to the vault
     // instead of the positions. By doing so, we can guarantee the vault will always be able to cover all withdrawals.

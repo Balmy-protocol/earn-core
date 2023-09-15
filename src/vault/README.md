@@ -59,11 +59,11 @@ Pretty good increase from the original deposit! 🤑
 ### Other owned tokens
 
 Let's remember that when a user deposits assets into Earn, they'll start earning yield in one or more tokens. One of
-these tokens could be the asset, but it could also be in others.
+these tokens could be the asset, but they could be other tokens also.
 
 Calculating who owns what in these others tokens is a little harder than the asset. Let's go over it with an example.
-Let's say that when John last deposited into the strategy, there were 50 _$OP_ rewards collected already. Then, after a
-few days, where were 100 _$OP_ rewards collected in total. That's 50 _$OP_ rewards generated since John's deposit. So,
+Let's say that when John last deposited into the strategy, there were 50 _$OP_ rewards already collected. Then, after a
+few days, there were 100 _$OP_ rewards collected in total. That's 50 _$OP_ rewards generated since John's deposit. So,
 how much of that belongs to John?
 
 $$
@@ -87,8 +87,9 @@ owned(John, OP) & = yielded_{t1 - t0}(OP) * shares(John) / totalShares_{t1} \not
 \end{align}
 $$
 
-Now that we have this formula, we can simply store this sum each time assets are modified, so we can calculate how much
-John owns.
+Now that we have this formula, we can simply store keep track of this sum by using an accumulator. When a position is
+modified, we'll store the current accumulator value and associate it when a position. Then, in the future, we can do
+`accum(current) - accum(stored for position)` to end up with the sum we needed.
 
 _Note: there are some nuances in the actual implementation since we would only need to consider from $t_d$ (when John
 makes a deposit). At the same time, we would also need to consider that John's shares could also change over time. But
@@ -114,7 +115,7 @@ because:
 ### Precision
 
 When working with tricky math like we explained before, it's very important that we don't lose precision. At the same
-time, we'd like to use the least amount of storage possible, so that all interactions are as cheap as possible.
+time, we'd like to use the least amount of storage possible, so that all interactions continue to be cheap to execute.
 
 You can refer to [this file](./types/Storage.sol) to understand the different variable sized we chose.
 
@@ -135,8 +136,8 @@ accounting for all combined positions.
 #### Yield Accumulator
 
 Like we explained before, we can calculate a position's balance for non-asset tokens by calculating the sum of yielded
-tokens divided by the amount of total shares. Now, we can use an accumulator to keep track of this sum, instead of
-calculating it every time. But we need to be careful with the precision.
+tokens divided by the amount of total shares. Like we said before, we'll use an accumulator to keep track of this sum,
+instead of calculating it every time. But we need to be careful with the precision.
 
 The accumulator is the sum of:
 
@@ -237,4 +238,4 @@ $0.00025 (Sep 15, 2023) usd per second, which would
 be $21.6 usd per day. Not bad for a 10 *$USDC\* deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
-but **it will be up to each to make sure that the tokens they support work correctly with these limitations**.
+but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.

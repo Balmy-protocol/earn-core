@@ -82,7 +82,7 @@ contract YieldMathTest is PRBTest, StdUtils {
     assertEq(newAccum, 0);
   }
 
-  function test_calculateAccum_RoundsTowardsMinusInfinity() public {
+  function test_calculateAccum_RoundsTowardsNegativeInfinity() public {
     uint256 totalShares = YieldMath.ACCUM_PRECISION * 2;
 
     // Basically we are doing 5 / 2
@@ -98,7 +98,7 @@ contract YieldMathTest is PRBTest, StdUtils {
     assertEq(newAccum, previousAccum + YieldMath.signedMulDiv(YieldMath.ACCUM_PRECISION, yielded, totalShares));
   }
 
-  function test_calculateBalance_RoundsTowardsMinusInfinity() public {
+  function test_calculateBalance_RoundsTowardsNegativeInfinity() public {
     int256 currentAccum = int256(YieldMath.ACCUM_PRECISION) - 1;
 
     // Basically we are doing (ACCUM_PRECISION - 1) / ACCUM_PRECISION
