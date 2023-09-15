@@ -9,12 +9,16 @@ import { StrategyId } from "../../../src/types/StrategyId.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 
 contract EarnFeeManagerTest is PRBTest {
+  event DefaultPerformanceFeeChanged(uint16 feeBps);
+  event SpecificPerformanceFeeChanged(StrategyId strategyId, uint16 feeBps);
+  event SpecificPerformanceFeeRemoved(StrategyId strategyId);
+
   address private superAdmin = address(1);
   address private manageFeeAdmin = address(2);
   uint16 private defaultPerformanceFee = 300;
   EarnFeeManager private feeManager;
-  StrategyId aStrategyId = StrategyId.wrap(1);
-  StrategyId anotherStrategyId = StrategyId.wrap(2);
+  StrategyId private aStrategyId = StrategyId.wrap(1);
+  StrategyId private anotherStrategyId = StrategyId.wrap(2);
 
   function setUp() public virtual {
     feeManager = new EarnFeeManager(
@@ -35,25 +39,19 @@ contract EarnFeeManagerTest is PRBTest {
     assertEq(feeManager.defaultAdminDelay(), 3 days);
     assertEq(feeManager.owner(), superAdmin);
     assertEq(feeManager.defaultAdmin(), superAdmin);
-  }
 
-  function test_defaultPerformanceFee() public {
     assertEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
   }
 
-  function test_setDefaultPerformanceFeeWithRole() public {
-    assertEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
+  function test_setDefaultPerformanceFee() public {
     uint16 newDefaultPerformanceFee = 5;
 
-    vm.startPrank(manageFeeAdmin);
+    vm.prank(manageFeeAdmin);
     feeManager.setDefaultPerformanceFee(newDefaultPerformanceFee);
-    vm.stopPrank();
-
-    assertNotEq(feeManager.defaultPerformanceFee(), defaultPerformanceFee);
     assertEq(feeManager.defaultPerformanceFee(), newDefaultPerformanceFee);
   }
 
-  function test_modifyPerformanceFeeAndSetBackWithRole() public {
+  function test_setPerformanceFeeForStrategyBackToDefault_modifyAndSetBack() public {
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
     uint16 specificPerformanceFee = defaultPerformanceFee + 2;
 
@@ -61,9 +59,7 @@ contract EarnFeeManagerTest is PRBTest {
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
-    vm.stopPrank();
 
-    assertNotEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
   }
 
@@ -76,7 +72,7 @@ contract EarnFeeManagerTest is PRBTest {
     feeManager.setDefaultPerformanceFee(200);
   }
 
-  function test_modifyPerformanceFee_RevertWhenCalledWithoutRole() public {
+  function test_specifyPerformanceFeeForStrategy_RevertWhenCalledWithoutRole() public {
     vm.expectRevert(
       abi.encodeWithSelector(
         IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), feeManager.MANAGE_FEES_ROLE()
@@ -94,31 +90,28 @@ contract EarnFeeManagerTest is PRBTest {
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
   }
 
-  function test_modifyPerformanceFeeAndCompareWithAnother() public {
+  function test_setPerformanceFee_DoesNotModifyOtherStrategies() public {
     assertEq(
       feeManager.getPerformanceFeeForStrategy(aStrategyId), feeManager.getPerformanceFeeForStrategy(anotherStrategyId)
     );
     uint16 specificPerformanceFee = defaultPerformanceFee - 2;
 
-    vm.startPrank(manageFeeAdmin);
+    vm.prank(manageFeeAdmin);
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
-    vm.stopPrank();
     assertNotEq(
       feeManager.getPerformanceFeeForStrategy(aStrategyId), feeManager.getPerformanceFeeForStrategy(anotherStrategyId)
     );
   }
 
-  function test_modifyPerformanceFee_RevertWhenFeeGreaterThanMaximum() public {
-    vm.startPrank(manageFeeAdmin);
+  function test_specifyPerformanceFeeForStrategy_RevertWhenFeeGreaterThanMaximum() public {
+    vm.prank(manageFeeAdmin);
     vm.expectRevert(abi.encodeWithSelector(IEarnFeeManager.FeeGreaterThanMaximum.selector));
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, 10_000);
-    vm.stopPrank();
   }
 
-  function test_modifyDefaultPerformanceFee_RevertWhenFeeGreaterThanMaximum() public {
-    vm.startPrank(manageFeeAdmin);
+  function test_setDefaultPerformanceFee_RevertWhenFeeGreaterThanMaximum() public {
+    vm.prank(manageFeeAdmin);
     vm.expectRevert(abi.encodeWithSelector(IEarnFeeManager.FeeGreaterThanMaximum.selector));
     feeManager.setDefaultPerformanceFee(10_000);
-    vm.stopPrank();
   }
 }

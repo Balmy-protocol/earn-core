@@ -7,21 +7,21 @@ import { IEarnFeeManager } from "../interfaces/IEarnFeeManager.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
 contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
+  struct PerformanceFee {
+    uint16 value;
+    bool isSpecific;
+  }
+
   /// @inheritdoc IEarnFeeManager
   bytes32 public constant MANAGE_FEES_ROLE = keccak256("MANAGE_FEES_ROLE");
 
   /// @inheritdoc IEarnFeeManager
-  uint16 public constant MAX_FEE = 4000;
+  uint16 public constant MAX_FEE = 4000; // 40%
 
   /// @inheritdoc IEarnFeeManager
   uint16 public defaultPerformanceFee;
 
   mapping(StrategyId strategyId => PerformanceFee performanceFee) internal _performanceFees;
-
-  struct PerformanceFee {
-    uint16 value;
-    bool isSpecific;
-  }
 
   constructor(
     address superAdmin,
