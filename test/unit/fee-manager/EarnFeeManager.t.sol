@@ -21,6 +21,9 @@ contract EarnFeeManagerTest is PRBTest {
   StrategyId private anotherStrategyId = StrategyId.wrap(2);
 
   function setUp() public virtual {
+    vm.expectEmit(true, false, false, true);
+    emit DefaultPerformanceFeeChanged(defaultPerformanceFee);
+
     feeManager = new EarnFeeManager(
       superAdmin,
       Utils.arrayOf(manageFeeAdmin),
@@ -47,17 +50,31 @@ contract EarnFeeManagerTest is PRBTest {
     uint16 newDefaultPerformanceFee = 5;
 
     vm.prank(manageFeeAdmin);
+    vm.expectEmit(true, false, false, true);
+    emit DefaultPerformanceFeeChanged(newDefaultPerformanceFee);
     feeManager.setDefaultPerformanceFee(newDefaultPerformanceFee);
+
     assertEq(feeManager.defaultPerformanceFee(), newDefaultPerformanceFee);
   }
 
+  function test_specifyPerformanceFeeForStrategy() public {
+    uint16 specificPerformanceFee = defaultPerformanceFee + 2;
+
+    vm.prank(manageFeeAdmin);
+    vm.expectEmit(true, false, false, true);
+    emit SpecificPerformanceFeeChanged(aStrategyId, specificPerformanceFee);
+    feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
+    assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
+  }
+
   function test_setPerformanceFeeForStrategyBackToDefault_modifyAndSetBack() public {
-    assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
     uint16 specificPerformanceFee = defaultPerformanceFee + 2;
 
     vm.startPrank(manageFeeAdmin);
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
-    assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
+
+    vm.expectEmit(true, false, false, true);
+    emit SpecificPerformanceFeeRemoved(aStrategyId);
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
 
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
