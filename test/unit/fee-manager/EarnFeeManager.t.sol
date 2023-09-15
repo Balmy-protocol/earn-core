@@ -21,7 +21,7 @@ contract EarnFeeManagerTest is PRBTest {
   StrategyId private anotherStrategyId = StrategyId.wrap(2);
 
   function setUp() public virtual {
-    vm.expectEmit(true, false, false, true);
+    vm.expectEmit();
     emit DefaultPerformanceFeeChanged(defaultPerformanceFee);
 
     feeManager = new EarnFeeManager(
@@ -50,7 +50,7 @@ contract EarnFeeManagerTest is PRBTest {
     uint16 newDefaultPerformanceFee = 5;
 
     vm.prank(manageFeeAdmin);
-    vm.expectEmit(true, false, false, true);
+    vm.expectEmit();
     emit DefaultPerformanceFeeChanged(newDefaultPerformanceFee);
     feeManager.setDefaultPerformanceFee(newDefaultPerformanceFee);
 
@@ -61,7 +61,7 @@ contract EarnFeeManagerTest is PRBTest {
     uint16 specificPerformanceFee = defaultPerformanceFee + 2;
 
     vm.prank(manageFeeAdmin);
-    vm.expectEmit(true, false, false, true);
+    vm.expectEmit();
     emit SpecificPerformanceFeeChanged(aStrategyId, specificPerformanceFee);
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), specificPerformanceFee);
@@ -73,14 +73,14 @@ contract EarnFeeManagerTest is PRBTest {
     vm.startPrank(manageFeeAdmin);
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, specificPerformanceFee);
 
-    vm.expectEmit(true, false, false, true);
+    vm.expectEmit();
     emit SpecificPerformanceFeeRemoved(aStrategyId);
     feeManager.setPerformanceFeeForStrategyBackToDefault(aStrategyId);
 
     assertEq(feeManager.getPerformanceFeeForStrategy(aStrategyId), defaultPerformanceFee);
   }
 
-  function test_modifyDefaultPerformanceFee_RevertWhenCalledWithoutRole() public {
+  function test_setDefaultPerformanceFee_RevertWhen_CalledWithoutRole() public {
     vm.expectRevert(
       abi.encodeWithSelector(
         IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), feeManager.MANAGE_FEES_ROLE()
@@ -89,7 +89,7 @@ contract EarnFeeManagerTest is PRBTest {
     feeManager.setDefaultPerformanceFee(200);
   }
 
-  function test_specifyPerformanceFeeForStrategy_RevertWhenCalledWithoutRole() public {
+  function test_specifyPerformanceFeeForStrategy_RevertWhen_CalledWithoutRole() public {
     vm.expectRevert(
       abi.encodeWithSelector(
         IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), feeManager.MANAGE_FEES_ROLE()
@@ -98,7 +98,7 @@ contract EarnFeeManagerTest is PRBTest {
     feeManager.specifyPerformanceFeeForStrategy(aStrategyId, 200);
   }
 
-  function test_setPerformanceFeeBackToDefault_RevertWhenCalledWithoutRole() public {
+  function test_setPerformanceFeeBackToDefault_RevertWhen_CalledWithoutRole() public {
     vm.expectRevert(
       abi.encodeWithSelector(
         IAccessControl.AccessControlUnauthorizedAccount.selector, address(this), feeManager.MANAGE_FEES_ROLE()
