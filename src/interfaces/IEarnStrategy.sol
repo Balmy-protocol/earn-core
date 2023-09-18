@@ -37,6 +37,14 @@ interface IEarnStrategy is IERC165 {
     DELAYED
   }
 
+  /// @notice The type of fee charged for a specific token
+  enum FeeType {
+    OTHER,
+    PERFORMANCE,
+    DEPOSIT,
+    WITHDRAW
+  }
+
   /**
    * @notice Returns the address to Earn's vault
    * @return Earn's vault address
@@ -142,6 +150,14 @@ interface IEarnStrategy is IERC165 {
    * @notice Returns whether deposits are paused or not
    */
   function paused() external view returns (bool);
+
+  /**
+   * @notice Returns how much is charged in terms of fees, for each token
+   * @return tokens All tokens under the strategy's control
+   * @return types The type of fee charged for each token
+   * @return bps How much fee is being charged, in basis points
+   */
+  function fees() external view returns (address[] memory tokens, FeeType[] memory types, uint16[] memory bps);
 
   /**
    * @notice Notifies the strategy that funds have been deposited into it

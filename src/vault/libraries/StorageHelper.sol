@@ -50,20 +50,15 @@ library StorageHelper {
     address token,
     uint256 newTotalBalance,
     int256 newAccumulator,
-    uint256 newEarnedFees,
     TotalYieldDataForToken memory previousValues
   )
     internal
   {
     // TODO: make some gas test to understand if there is a more optimized way to do this
-    if (
-      newTotalBalance != previousValues.lastRecordedBalance || newAccumulator != previousValues.yieldAccumulator
-        || newEarnedFees != previousValues.earnedFees
-    ) {
+    if (newTotalBalance != previousValues.lastRecordedBalance || newAccumulator != previousValues.yieldAccumulator) {
       totalYieldData[KeyEncoding.from(strategyId, token)] = TotalYieldDataForToken({
-        lastRecordedBalance: newTotalBalance,
-        yieldAccumulator: newAccumulator.toInt152(),
-        earnedFees: newEarnedFees.toUint104()
+        lastRecordedBalance: newTotalBalance.toUint104(),
+        yieldAccumulator: newAccumulator.toInt152()
       });
     }
   }

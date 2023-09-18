@@ -116,7 +116,6 @@ interface IDelayedWithdrawalManager {
   /**
    * @notice Completes a delayed withdrawal for a given position and token
    * @dev The caller must have withdraw permissions over the position
-   *      If the zero position is passed, then the caller must have WITHDRAW_FEES_ROLE on the vault
    *      If there are no withdrawable funds associated to the position, will just return 0
    * @param positionId The position that executed the withdrawal
    * @param strategyId The strategy that initiated the delayed withdrawal

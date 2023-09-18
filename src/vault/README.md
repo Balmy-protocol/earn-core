@@ -40,14 +40,14 @@ Now that we know how shares are assigned during deposits, we can easily calculat
 amount of _$DAI_ increases/decreases.
 
 $$
-owned(John, DAI) = [totalAmount(DAI) - protocolFees(DAI)] * shares(John) / totalShares
+owned(John, DAI) = totalAmount(DAI) * shares(John) / totalShares
 $$
 
-So for example, if the total amount of _$DAI_ increases to 15000, and no fees were charged, then:
+So for example, if the total amount of _$DAI_ increases to 15000, then:
 
 $$
 \begin{align}
-owned(John, DAI) & = [totalAmount(DAI) - protocolFees(DAI)] * shares(John) / totalShares \notag \\
+owned(John, DAI) & = totalAmount(DAI) * shares(John) / totalShares \notag \\
 & = [15000 - 0] * 250 / 2750 \notag \\
 & = 15000 * 250 / 2750 \notag \\
 & \approx 1363.63 \notag \\
@@ -119,13 +119,13 @@ time, we'd like to use the least amount of storage possible, so that all interac
 
 You can refer to [this file](./types/Storage.sol) to understand the different variable sized we chose.
 
-#### Position Balance / Earned Fees
+#### Position Balance
 
-We believe that with 104 bits, we can store a single positions's balance (or, in the case of earned fees, the platform's
-balance). Assuming 18 decimals, we can store up to _1e13_ units of tokens in it, which is enough to cover the entire
-circulating supply of the top 1000 tokens in CoinMarketCap right now (Sep 15, 2023), except for _$APENFT_, _$BTT_,
-_$SHIB_ and _$PEPE_. With all of them, we can cover up to 2% of the circulating supply, which is good enough for a
-single position.
+We believe that with 104 bits, we can store a strategy's balance. Assuming 18 decimals, we can store up to _1e13_ units
+of tokens in it, which is enough to cover the entire circulating supply of the top 1000 tokens in CoinMarketCap right
+now (Sep 15, 2023), except for _$APENFT_, _$BTT_, _$SHIB_ and _$PEPE_. With all of them, we can cover up to 2% of the
+circulating supply, which is good enough for a single strategy. Let's remember that if a strategy is filled, then an
+exact copy can be deployed to manage more funds.
 
 It's important to note that tokens that use a higher amount of decimals or have much bigger supplies might not fit
 correctly. **It will be up to each strategy to make sure that reported tokens can work with these limitations**.
