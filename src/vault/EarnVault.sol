@@ -273,7 +273,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     if (isAsset) {
       // If we are calculating for the asset, then simply divide available balance based on shares
       if (positionShares > 0) {
-        // TODO: handle cases of hack where all balance is drained. The substraction might underflow!
         calculatedData.positionBalance = SharesMath.convertToAssets({
           shares: positionShares,
           totalAssets: totalBalance,
