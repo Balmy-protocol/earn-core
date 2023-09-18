@@ -21,7 +21,9 @@ contract EarnFeeManager is IEarnFeeManager, AccessControlDefaultAdminRules {
   /// @inheritdoc IEarnFeeManager
   uint16 public defaultPerformanceFee;
 
+  // slither-disable-start naming-convention
   mapping(StrategyId strategyId => PerformanceFee performanceFee) internal _performanceFees;
+  // slither-disable-end naming-convention
 
   constructor(
     address superAdmin,
