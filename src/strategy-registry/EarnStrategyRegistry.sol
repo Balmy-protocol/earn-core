@@ -10,7 +10,7 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 // solhint-disable no-empty-blocks
 
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
-  uint256 public constant STRATEGY_UPDATE_DELAY = 259_200; // TBD
+  uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
 
   /// @inheritdoc IEarnStrategyRegistry
   function getStrategy(StrategyId strategyId) external view returns (IEarnStrategy) { }
