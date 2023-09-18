@@ -5,7 +5,7 @@ import { IEarnStrategyRegistry, IEarnStrategy } from "../interfaces/IEarnStrateg
 import { StrategyId } from "../types/StrategyId.sol";
 
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
-  uint256 public constant STRATEGY_UPDATE_DELAY = 259_200; // TBD
+  uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
 
   /// @inheritdoc IEarnStrategyRegistry
   function getStrategy(StrategyId strategyId) external view returns (IEarnStrategy) { }
