@@ -104,6 +104,10 @@ contract EarnStrategyMock is IEarnStrategy {
     revert NotImplemented();
   }
 
+  function fees() external pure returns (address[] memory, FeeType[] memory, uint16[] memory) {
+    revert NotImplemented();
+  }
+
   function withdraw(
     uint256,
     address[] memory,
