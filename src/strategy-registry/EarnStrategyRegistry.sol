@@ -20,7 +20,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   mapping(IEarnStrategy strategy => StrategyId strategyId) public assignedId;
 
-/// @inheritdoc IEarnStrategyRegistry
+  /// @inheritdoc IEarnStrategyRegistry
   mapping(StrategyId strategyId => address owner) public owner;
 
   struct StrategyRegistered {
