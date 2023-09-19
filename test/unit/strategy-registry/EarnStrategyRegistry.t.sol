@@ -10,11 +10,11 @@ import { StrategyId } from "../../../src/types/StrategyId.sol";
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
-  IEarnStrategyRegistry strategyRegistry;
-  StrategyId invalidStrategyId = StrategyId.wrap(1000);
-  StrategyId anotherInvalidStrategyId = StrategyId.wrap(1001);
-  address owner = address(1);
-  IEarnStrategy aStrategy;
+  IEarnStrategyRegistry private strategyRegistry;
+  StrategyId private invalidStrategyId = StrategyId.wrap(1000);
+  StrategyId private anotherInvalidStrategyId = StrategyId.wrap(1001);
+  address private owner = address(1);
+  IEarnStrategy private aStrategy;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistry();
