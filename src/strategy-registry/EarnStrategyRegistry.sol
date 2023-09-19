@@ -11,27 +11,23 @@ import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC16
 
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
   uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
+  // slither-disable-next-line naming-convention
+  StrategyId internal _nextStrategyId = StrategyIdConstants.INITIAL_STRATEGY_ID;
 
-  uint96 internal _lastUsedStrategyId = 0;
-  mapping(StrategyId strategyId => StrategyRegistered strategyRegistered) internal _strategyById;
-  mapping(IEarnStrategy strategy => StrategyId strategyId) internal _idByStrategy;
+  /// @inheritdoc IEarnStrategyRegistry
+  mapping(StrategyId strategyId => IEarnStrategy strategy) public getStrategy;
+
+  /// @inheritdoc IEarnStrategyRegistry
+  mapping(IEarnStrategy strategy => StrategyId strategyId) public assignedId;
+
+/// @inheritdoc IEarnStrategyRegistry
+  mapping(StrategyId strategyId => address owner) public owner;
 
   struct StrategyRegistered {
     IEarnStrategy strategy;
     address owner;
     uint256 lastUpdated;
     bool accepted;
-  }
-
-  /// @inheritdoc IEarnStrategyRegistry
-  function getStrategy(StrategyId strategyId) external view returns (IEarnStrategy) {
-    StrategyRegistered memory strategyRegistered = _strategyById[strategyId];
-    return strategyRegistered.strategy;
-  }
-
-  /// @inheritdoc IEarnStrategyRegistry
-  function assignedId(IEarnStrategy strategy) external view returns (StrategyId) {
-    return _idByStrategy[strategy];
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -45,10 +41,12 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function registerStrategy(address owner, IEarnStrategy strategy) external returns (StrategyId) {
-    StrategyId strategyId = StrategyId.wrap(++_lastUsedStrategyId);
-    _idByStrategy[strategy] = strategyId;
-    _strategyById[strategyId] = StrategyRegistered(strategy, owner, block.timestamp, false);
+  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId) {
+    StrategyId strategyId = _nextStrategyId;
+    assignedId[strategy] = strategyId;
+    getStrategy[strategyId] = strategy;
+    owner[strategyId] = firstOwner;
+    _nextStrategyId = _nextStrategyId.increment();
     return strategyId;
   }
 
