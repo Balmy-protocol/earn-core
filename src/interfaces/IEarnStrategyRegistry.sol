@@ -60,7 +60,6 @@ interface IEarnStrategyRegistry {
    */
   function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId);
 
-
   /**
    * @notice Returns the strategy's owner to the given id
    * @param strategyId The id to check

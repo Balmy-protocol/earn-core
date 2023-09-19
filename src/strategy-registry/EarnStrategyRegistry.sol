@@ -6,6 +6,7 @@ import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 // TODO: remove once functions are implemented
 // slither-disable-start unimplemented-functions
 // solhint-disable no-empty-blocks
+
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
   uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
   // slither-disable-next-line naming-convention
@@ -17,7 +18,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   mapping(IEarnStrategy strategy => StrategyId strategyId) public assignedId;
 
-/// @inheritdoc IEarnStrategyRegistry
+  /// @inheritdoc IEarnStrategyRegistry
   mapping(StrategyId strategyId => address owner) public owner;
 
   struct StrategyRegistered {
