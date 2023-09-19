@@ -54,11 +54,19 @@ interface IEarnStrategyRegistry {
    * @dev The strategy must report the asset as the first token
    *      The strategy can't be associated to another id
    *      The new strategy must support the expected interface.
-   * @param owner The strategy's owner
+   * @param firstOwner The strategy's owner
    * @param strategy The strategy to register
    * @return The id assigned to the new strategy
    */
-  function registerStrategy(address owner, IEarnStrategy strategy) external returns (StrategyId);
+  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId);
+
+
+  /**
+   * @notice Returns the strategy's owner to the given id
+   * @param strategyId The id to check
+   * @return owner of the strategy, or the zero address if none is registered
+   */
+  function owner(StrategyId strategyId) external view returns (address);
 
   /**
    * @notice Proposes an ownership transfer. Must be accepted by the new owner
