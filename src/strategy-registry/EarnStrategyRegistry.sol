@@ -23,13 +23,6 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   mapping(StrategyId strategyId => address owner) public owner;
 
-  struct StrategyRegistered {
-    IEarnStrategy strategy;
-    address owner;
-    uint256 lastUpdated;
-    bool accepted;
-  }
-
   /// @inheritdoc IEarnStrategyRegistry
   function proposedUpdate(StrategyId strategyId)
     external
@@ -41,13 +34,15 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId) {
-    StrategyId strategyId = _nextStrategyId;
+  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
+    //_revertIfNotStrategy(address(strategy));
+    _revertIfNotAssetAsFirstToken(strategy);
+    if(!(assignedId[strategy] == StrategyId.wrap(0))) revert StrategyAlreadyRegistered();
+    strategyId = _nextStrategyId;
     assignedId[strategy] = strategyId;
     getStrategy[strategyId] = strategy;
     owner[strategyId] = firstOwner;
-    _nextStrategyId = _nextStrategyId.increment();
-    return strategyId;
+    _nextStrategyId = strategyId.increment();
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -67,6 +62,17 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   /// @inheritdoc IEarnStrategyRegistry
   function updateStrategy(StrategyId strategyId) external { }
+
+  function _revertIfNotStrategy(address _strategyToCheck) internal view {
+    bool _isStrategy = ERC165Checker.supportsInterface(_strategyToCheck, type(IEarnStrategy).interfaceId);
+    if (!_isStrategy) revert AddressIsNotStrategy(_strategyToCheck);
+  }
+
+  function _revertIfNotAssetAsFirstToken(IEarnStrategy _strategyToCheck) internal view {
+   (address[] memory tokens, )  = _strategyToCheck.allTokens();
+    bool _isAssetFirstToken = _strategyToCheck.asset() == tokens[0];
+    if (!_isAssetFirstToken) revert AssetIsNotFirstToken(_strategyToCheck);
+  }
 }
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
