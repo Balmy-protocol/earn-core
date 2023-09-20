@@ -20,7 +20,6 @@ contract EarnStrategyRegistryTest is PRBTest {
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
   StrategyId private anotherInvalidStrategyId = StrategyId.wrap(1001);
   address private owner = address(1);
-
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistry();
   }
