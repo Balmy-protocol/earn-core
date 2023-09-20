@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 type StrategyId is uint96;
 
-using { increment, equals as ==} for StrategyId global;
+using { increment, equals as == } for StrategyId global;
 
 function increment(StrategyId id) pure returns (StrategyId) {
   return StrategyId.wrap(StrategyId.unwrap(id) + 1);

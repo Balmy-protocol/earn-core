@@ -6,6 +6,11 @@ import { EarnStrategyMock } from "../mocks/EarnStrategyMock.sol";
 import { EarnStrategyRegistryMock } from "../mocks/EarnStrategyRegistryMock.sol";
 
 library StrategyUtils {
+  function deployStrategy(address[] memory tokens) internal returns (EarnStrategyMock strategy) {
+    IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
+    return strategy = new EarnStrategyMock(tokens, withdrawalTypes);
+  }
+
   function deployStrategy(
     EarnStrategyRegistryMock registry,
     address[] memory tokens

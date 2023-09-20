@@ -72,8 +72,8 @@ contract EarnStrategyMock is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function allTokens() external pure returns (address[] memory, WithdrawalType[] memory) {
-    revert NotImplemented();
+  function allTokens() external view returns (address[] memory, WithdrawalType[] memory) {
+    return (tokens, withdrawalTypes);
   }
 
   function supportedDepositTokens() external pure returns (address[] memory) {

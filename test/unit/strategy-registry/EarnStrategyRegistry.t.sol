@@ -4,13 +4,15 @@ pragma solidity >=0.8.0;
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { EarnStrategyRegistry, IEarnStrategyRegistry } from "../../../src/strategy-registry/EarnStrategyRegistry.sol";
-import { Utils } from "../../Utils.sol";
+import { CommonUtils } from "../../utils/CommonUtils.sol";
+import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { StrategyId } from "../../../src/types/StrategyId.sol";
+import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
-  IEarnStrategyRegistry private strategyRegistry;
+  EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
   StrategyId private anotherInvalidStrategyId = StrategyId.wrap(1001);
   address private owner = address(1);
@@ -25,6 +27,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy() public {
+    aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     StrategyId aRegisteredStrategy = strategyRegistry.registerStrategy(owner, aStrategy);
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategy)), address(aStrategy));
     assertGt(StrategyId.unwrap(aRegisteredStrategy), 0);

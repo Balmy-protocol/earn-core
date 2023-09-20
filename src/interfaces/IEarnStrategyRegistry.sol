@@ -10,7 +10,7 @@ import { StrategyId } from "../types/StrategyId.sol";
  *         strategies can be updated
  */
 interface IEarnStrategyRegistry {
-   /// @notice Thrown when trying to register a strategy that is already registered
+  /// @notice Thrown when trying to register a strategy that is already registered
   error StrategyAlreadyRegistered();
 
   /**
@@ -19,12 +19,11 @@ interface IEarnStrategyRegistry {
    */
   error AddressIsNotStrategy(address notStrategy);
 
-   /**
+  /**
    * @notice Thrown when trying to register an strategy that does no report the asset as first token
    * @param invalidStrategy The object that was not a valid strategy
    */
   error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
-
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
