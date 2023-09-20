@@ -10,6 +10,22 @@ import { StrategyId } from "../types/StrategyId.sol";
  *         strategies can be updated
  */
 interface IEarnStrategyRegistry {
+   /// @notice Thrown when trying to register a strategy that is already registered
+  error StrategyAlreadyRegistered();
+
+  /**
+   * @notice Thrown when trying to register an address that is not an strategy
+   * @param notStrategy The address that was not a strategy
+   */
+  error AddressIsNotStrategy(address notStrategy);
+
+   /**
+   * @notice Thrown when trying to register an strategy that does no report the asset as first token
+   * @param invalidStrategy The object that was not a valid strategy
+   */
+  error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
+
+
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
    * @return The delay (in seconds) necessary to execute a proposed strategy update
@@ -63,7 +79,7 @@ interface IEarnStrategyRegistry {
   /**
    * @notice Returns the strategy's owner to the given id
    * @param strategyId The id to check
-   * @return owner of the strategy, or the zero address if none is registered
+   * @return The owner of the strategy, or the zero address if none is registered
    */
   function owner(StrategyId strategyId) external view returns (address);
 
