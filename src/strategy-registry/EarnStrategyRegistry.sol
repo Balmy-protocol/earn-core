@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import { IEarnStrategyRegistry, IEarnStrategy } from "../interfaces/IEarnStrategyRegistry.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
-import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 // TODO: remove once functions are implemented
 // slither-disable-start unimplemented-functions
