@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { EarnFeeManager, IEarnFeeManager } from "../../../src/fee-manager/EarnFeeManager.sol";
-import { Utils } from "../../Utils.sol";
+import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyId } from "../../../src/types/StrategyId.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 
@@ -26,7 +26,7 @@ contract EarnFeeManagerTest is PRBTest {
 
     feeManager = new EarnFeeManager(
       superAdmin,
-      Utils.arrayOf(manageFeeAdmin),
+      CommonUtils.arrayOf(manageFeeAdmin),
       defaultPerformanceFee
     );
   }

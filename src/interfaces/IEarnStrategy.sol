@@ -19,6 +19,8 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *      - Tokens can never be removed from the list. New ones can be added, but they cannot be removed later
  *      - Functions like `withdrawalTypes` and `balances` must return the same amount of values as `tokens`, and
  *        in the same order too
+ *      - Tokens with very high supplies or a high amount of decimals might not fit correctly into the Vault's
+ *        accounting system. For more information about this, please refer to the [README](../vault/README.md).
  *      Take into account some strategies might not support an immediate withdraw of all tokens, since the farm
  *      might implement a lock up period. If that's the case, then executing a withdraw will start what we call a
  *      "delayed withdrawal". This is a process where the funds are taken from the farm, and sent to a
@@ -100,9 +102,9 @@ interface IEarnStrategy is IERC165 {
   function balancesInStrategy() external view returns (address[] memory tokens, uint256[] memory balances);
 
   /**
-   * @notice Returns how much is currently held by the farm, for each token
+   * @notice Returns how much is currently held by the farms, for each token
    */
-  function balancesInFarm() external view returns (address[] memory tokens, uint256[] memory balances);
+  function balancesInFarms() external view returns (address[] memory tokens, uint256[] memory balances);
 
   /**
    * @notice Returns how much is currently held by the strategy or farm, for each token
