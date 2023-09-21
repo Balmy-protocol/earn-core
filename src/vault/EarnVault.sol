@@ -12,7 +12,6 @@ import { IEarnVault, IEarnStrategyRegistry, IEarnFeeManager } from "../interface
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
 
 import { StrategyId } from "../types/StrategyId.sol";
-import { PositionId } from "../types/PositionId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
 // TODO: remove once functions are implemented
@@ -58,10 +57,10 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   receive() external payable { }
 
   /// @inheritdoc IEarnVault
-  function positionsStrategy(PositionId positionId) external view returns (StrategyId) { }
+  function positionsStrategy(uint256 positionId) external view returns (StrategyId) { }
 
   /// @inheritdoc IEarnVault
-  function position(PositionId positionId)
+  function position(uint256 positionId)
     external
     view
     returns (address[] memory, IEarnStrategy.WithdrawalType[] memory, uint256[] memory)
@@ -97,12 +96,12 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     external
     payable
-    returns (PositionId positionId, uint256 assetsDeposited)
+    returns (uint256 positionId, uint256 assetsDeposited)
   { }
 
   /// @inheritdoc IEarnVault
   function increasePosition(
-    PositionId positionId,
+    uint256 positionId,
     address depositToken,
     uint256 depositAmount
   )
@@ -113,7 +112,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
 
   /// @inheritdoc IEarnVault
   function withdraw(
-    PositionId positionId,
+    uint256 positionId,
     address[] calldata tokensToWithdraw,
     uint256[] calldata intendedWithdraw,
     address recipient
@@ -125,7 +124,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
 
   /// @inheritdoc IEarnVault
   function specialWithdraw(
-    PositionId positionId,
+    uint256 positionId,
     SpecialWithdrawalCode withdrawalCode,
     bytes calldata withdrawalData,
     address recipient

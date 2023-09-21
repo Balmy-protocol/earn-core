@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import { IEarnVault } from "./IEarnVault.sol";
-import { PositionId } from "../types/PositionId.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
 /**
@@ -27,7 +26,7 @@ interface IDelayedWithdrawalManager {
    * @param token The token that is being withdrawn
    * @return The estimated amount of funds that are pending for withdrawal
    */
-  function estimatedPendingFunds(PositionId positionId, address token) external view returns (uint256);
+  function estimatedPendingFunds(uint256 positionId, address token) external view returns (uint256);
 
   /**
    * @notice Returns the estimated amount of funds that are pending for withdrawal. Note that this amount is estimated
@@ -38,7 +37,7 @@ interface IDelayedWithdrawalManager {
    * @return The estimated amount of funds that are pending for withdrawal
    */
   function estimatedPendingFunds(
-    PositionId positionId,
+    uint256 positionId,
     StrategyId strategyId,
     address token
   )
@@ -53,7 +52,7 @@ interface IDelayedWithdrawalManager {
    * @param token The token that is being withdrawn
    * @return The amount of funds that are available for withdrawal
    */
-  function withdrawableFunds(PositionId positionId, address token) external view returns (uint256);
+  function withdrawableFunds(uint256 positionId, address token) external view returns (uint256);
 
   /**
    * @notice Returns the amount of funds that are available for withdrawal
@@ -62,14 +61,7 @@ interface IDelayedWithdrawalManager {
    * @param token The token that is being withdrawn
    * @return The amount of funds that are available for withdrawal
    */
-  function withdrawableFunds(
-    PositionId positionId,
-    StrategyId strategyId,
-    address token
-  )
-    external
-    view
-    returns (uint256);
+  function withdrawableFunds(uint256 positionId, StrategyId strategyId, address token) external view returns (uint256);
 
   /**
    * @notice Returns the total amounts of funds that are pending or withdrawable, for a given position
@@ -79,7 +71,7 @@ interface IDelayedWithdrawalManager {
    * @return estimatedPending The estimated amount of funds that are pending for withdrawal
    * @return withdrawable The amount of funds that are available for withdrawal
    */
-  function allPositionFunds(PositionId positionId)
+  function allPositionFunds(uint256 positionId)
     external
     view
     returns (address[] memory tokens, uint256[] memory estimatedPending, uint256[] memory withdrawable);
@@ -93,7 +85,7 @@ interface IDelayedWithdrawalManager {
    * @return withdrawable The amount of funds that are available for withdrawal
    */
   function allPositionFunds(
-    PositionId positionId,
+    uint256 positionId,
     StrategyId strategyId
   )
     external
@@ -107,7 +99,7 @@ interface IDelayedWithdrawalManager {
    * @param strategyId The strategy that initiated the delayed withdrawal
    * @param token The token that is being withdrawn
    */
-  function registerDelayedWithdraw(PositionId positionId, StrategyId strategyId, address token) external;
+  function registerDelayedWithdraw(uint256 positionId, StrategyId strategyId, address token) external;
 
   /**
    * @notice Completes a delayed withdrawal for a given position and token
@@ -119,7 +111,7 @@ interface IDelayedWithdrawalManager {
    * @param recipient The account that will receive the funds
    * @return withdrawn How much was withdrawn
    */
-  function withdraw(PositionId positionId, address token, address recipient) external returns (uint256 withdrawn);
+  function withdraw(uint256 positionId, address token, address recipient) external returns (uint256 withdrawn);
 
   /**
    * @notice Completes a delayed withdrawal for a given position and token
@@ -133,7 +125,7 @@ interface IDelayedWithdrawalManager {
    * @return withdrawn How much was withdrawn
    */
   function withdraw(
-    PositionId positionId,
+    uint256 positionId,
     StrategyId strategyId,
     address token,
     address recipient

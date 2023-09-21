@@ -4,7 +4,6 @@ pragma solidity >=0.8.0;
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IEarnVault } from "./IEarnVault.sol";
 import { IDelayedWithdrawalManager } from "./IDelayedWithdrawalManager.sol";
-import { PositionId } from "../types/PositionId.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 
 /**
@@ -35,7 +34,7 @@ interface IDelayedWithdrawalAdapter is IERC165 {
    * @return The estimated amount of funds that are pending for withdrawal
    */
   function estimatedPendingFunds(
-    PositionId positionId,
+    uint256 positionId,
     StrategyId strategyId,
     address token
   )
@@ -50,14 +49,7 @@ interface IDelayedWithdrawalAdapter is IERC165 {
    * @param token The token that is being withdrawn
    * @return The amount of funds that are available for withdrawal
    */
-  function withdrawableFunds(
-    PositionId positionId,
-    StrategyId strategyId,
-    address token
-  )
-    external
-    view
-    returns (uint256);
+  function withdrawableFunds(uint256 positionId, StrategyId strategyId, address token) external view returns (uint256);
 
   /**
    * @notice Starts a delayed withdrawal, and associates it to the position and strategy
@@ -68,7 +60,7 @@ interface IDelayedWithdrawalAdapter is IERC165 {
    * @param amount The amount of input for the withdrawal to use. Each adapter might provide different meaning to this
    *               value
    */
-  function initiateDelayedWithdrawal(PositionId positionId, address token, uint256 amount) external;
+  function initiateDelayedWithdrawal(uint256 positionId, address token, uint256 amount) external;
 
   /**
    * @notice Completes a delayed withdrawal for a given position, strategy and token
@@ -81,7 +73,7 @@ interface IDelayedWithdrawalAdapter is IERC165 {
    * @return withdrawn How much was withdrawn
    */
   function withdraw(
-    PositionId positionId,
+    uint256 positionId,
     StrategyId strategyId,
     address token,
     address recipient

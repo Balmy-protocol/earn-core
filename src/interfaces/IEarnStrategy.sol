@@ -5,7 +5,6 @@ import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IDelayedWithdrawalAdapter } from "./IDelayedWithdrawalAdapter.sol";
 import { IEarnStrategyRegistry } from "./IEarnStrategyRegistry.sol";
 import { IEarnVault } from "./IEarnVault.sol";
-import { PositionId } from "../types/PositionId.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
@@ -162,7 +161,7 @@ interface IEarnStrategy is IERC165 {
    * @return The types of withdrawals for each token
    */
   function withdraw(
-    PositionId positionId,
+    uint256 positionId,
     address[] memory tokens,
     uint256[] memory toWithdraw,
     address recipient
@@ -182,7 +181,7 @@ interface IEarnStrategy is IERC165 {
    * @return result Some custom data related to the withdrawal
    */
   function specialWithdraw(
-    PositionId positionId,
+    uint256 positionId,
     SpecialWithdrawalCode withdrawCode,
     bytes calldata withdrawData,
     address recipient
