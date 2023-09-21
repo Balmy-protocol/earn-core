@@ -28,8 +28,9 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_registerStrategy() public {
     EarnStrategyMock aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
-    StrategyId aRegisteredStrategy = strategyRegistry.registerStrategy(owner, aStrategy);
-    assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategy)), address(aStrategy));
-    assertGt(StrategyId.unwrap(aRegisteredStrategy), 0);
+    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
+    assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
+    assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
+    assertGt(StrategyId.unwrap(aRegisteredStrategyId), 0);
   }
 }
