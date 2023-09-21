@@ -68,11 +68,13 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (!_isStrategy) revert AddressIsNotStrategy(_strategyToCheck);
   }
 
+  // slither-disable-start unused-return
   function _revertIfNotAssetAsFirstToken(IEarnStrategy _strategyToCheck) internal view {
     (address[] memory tokens,) = _strategyToCheck.allTokens();
     bool _isAssetFirstToken = _strategyToCheck.asset() == tokens[0];
     if (!_isAssetFirstToken) revert AssetIsNotFirstToken(_strategyToCheck);
   }
+  // slither-disable-end unused-return
 }
 // solhint-enable no-empty-blocks
 // slither-disable-end unimplemented-functions
