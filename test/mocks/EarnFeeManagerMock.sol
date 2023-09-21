@@ -7,13 +7,13 @@ import { IEarnFeeManager, StrategyId } from "../../src/interfaces/IEarnFeeManage
 contract EarnFeeManagerMock is IEarnFeeManager, AccessControl {
   error NotImplemented();
 
-  uint256 public defaultPerformanceFee;
+  uint16 public defaultPerformanceFee;
 
   constructor(uint16 defaultPerformanceFee_) {
     defaultPerformanceFee = defaultPerformanceFee_;
   }
 
-  function getPerformanceFeeForStrategy(StrategyId) external view returns (uint256 feeBps) {
+  function getPerformanceFeeForStrategy(StrategyId) external view returns (uint16 feeBps) {
     return defaultPerformanceFee;
   }
 
@@ -21,15 +21,15 @@ contract EarnFeeManagerMock is IEarnFeeManager, AccessControl {
     revert NotImplemented();
   }
 
-  function MAX_FEE() external pure returns (uint256) {
+  function MAX_FEE() external pure returns (uint16) {
     revert NotImplemented();
   }
 
-  function setDefaultPerformanceFee(uint256) external pure {
+  function setDefaultPerformanceFee(uint16) external pure {
     revert NotImplemented();
   }
 
-  function specifyPerformanceFeeForStrategy(StrategyId, uint256) external pure {
+  function specifyPerformanceFeeForStrategy(StrategyId, uint16) external pure {
     revert NotImplemented();
   }
 
