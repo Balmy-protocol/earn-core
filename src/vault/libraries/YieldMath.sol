@@ -95,7 +95,7 @@ library YieldMath {
   }
 
   /**
-   * @notice Performs a signed mul div, by supporting up to uint256 bits of precision. It will always round to negative
+   * @notice Performs a signed mul div, by supporting up to uint256 bits of precision. It will always round to
    *         negative infinity
    * @param x A part of the numerator
    * @param y The other part of the numerator, can be signed
