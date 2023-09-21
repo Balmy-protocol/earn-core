@@ -27,10 +27,24 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy() public {
-    EarnStrategyMock aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
     assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
+    assertTrue(strategyRegistry.assignedId(aStrategy) == aRegisteredStrategyId);
     assertGt(StrategyId.unwrap(aRegisteredStrategyId), 0);
+  }
+
+  function test_registerStrategy_MultipleStrategiesRegistered() public {
+    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
+    StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner, anotherStrategy);
+
+    assertNotEq(
+      address(strategyRegistry.getStrategy(aRegisteredStrategyId)),
+      address(strategyRegistry.getStrategy(anotherRegisteredStrategyId))
+    );
+    assertFalse(strategyRegistry.assignedId(aStrategy) == strategyRegistry.assignedId(anotherStrategy));
   }
 }
