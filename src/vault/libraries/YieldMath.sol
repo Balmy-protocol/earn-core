@@ -3,12 +3,10 @@ pragma solidity >=0.8.0;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { SignedMath } from "@openzeppelin/contracts/utils/math/SignedMath.sol";
 
 library YieldMath {
   using SafeCast for uint256;
   using Math for uint256;
-  using SignedMath for int256;
 
   /**
    * @dev We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the
@@ -16,40 +14,6 @@ library YieldMath {
    *      understand why we chose this particular amount, please refer refer to the [README](../README.md).
    */
   uint256 internal constant ACCUM_PRECISION = 1e33;
-
-  /**
-   * @notice Takes the current and last recorded balance and calculates yielded tokens, and the new value for earned
-   *         fees
-   * @param currentBalance The current amount of balance
-   * @param lastRecordedBalance The last recorded amount of balance
-   * @param lastRecordedEarnedFees The last recorded amount of earned fees
-   * @param feeBps The fees to charge, in bps
-   * @return yielded How much was yielded since the last update
-   * @return newTotalEarnedFees New total of earned fees
-   */
-  function calculateYielded(
-    uint256 currentBalance,
-    uint256 lastRecordedBalance,
-    uint256 lastRecordedEarnedFees,
-    uint256 feeBps
-  )
-    internal
-    pure
-    returns (int256 yielded, uint256 newTotalEarnedFees)
-  {
-    yielded = currentBalance.toInt256() - lastRecordedBalance.toInt256();
-    int256 feesEarnedSinceLastUpdate = signedMulDiv(feeBps, yielded, 10_000);
-    int256 signedLastRecordedEarnedFees = lastRecordedEarnedFees.toInt256();
-
-    // Note: this is the same as signedLastRecordedEarnedFees + feesEarnedSinceLastUpdate < 0
-    if (signedLastRecordedEarnedFees < -feesEarnedSinceLastUpdate) {
-      // If there was a negative yield, then we'll use some of the earned fees to pay for users. But we'll make sure to
-      // not leave earned fees in negative
-      feesEarnedSinceLastUpdate = -signedLastRecordedEarnedFees;
-    }
-    newTotalEarnedFees = uint256(signedLastRecordedEarnedFees + feesEarnedSinceLastUpdate);
-    yielded -= feesEarnedSinceLastUpdate;
-  }
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares

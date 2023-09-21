@@ -16,8 +16,6 @@ struct CalculatedDataForToken {
   // CALCULATED VALUES
   // The position's total balance
   int256 positionBalance;
-  // Total amount of fees earned in this strategy and token, taking into account the last yield
-  uint256 earnedFees;
   // The new value for the yield accumulator
   int256 newAccumulator;
 }

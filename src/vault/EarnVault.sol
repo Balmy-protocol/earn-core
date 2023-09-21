@@ -11,11 +11,10 @@ import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import { NFTPermissions, ERC721 } from "@mean-finance/nft-permissions/NFTPermissions.sol";
 
-import { IEarnVault, IEarnStrategyRegistry, IEarnFeeManager } from "../interfaces/IEarnVault.sol";
+import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol";
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
 
 import { Token } from "../libraries/Token.sol";
-import { YieldMath } from "./libraries/YieldMath.sol";
 import { SharesMath } from "./libraries/SharesMath.sol";
 import { StorageHelper } from "./libraries/StorageHelper.sol";
 import { DataCalculations } from "./libraries/DataCalculations.sol";
@@ -34,14 +33,13 @@ import { CalculatedDataForToken, UpdateAction } from "./types/Memory.sol";
 // solhint-disable no-empty-blocks
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using SafeCast for uint256;
+  using SafeCast for uint104;
   using Token for address;
   using StorageHelper for mapping(StrategyAndToken => TotalYieldDataForToken);
   using DataCalculations for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
   bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
-  /// @inheritdoc IEarnVault
-  bytes32 public constant WITHDRAW_FEES_ROLE = keccak256("WITHDRAW_FEES_ROLE");
   /// @inheritdoc IEarnVault
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
@@ -50,8 +48,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   // solhint-disable var-name-mixedcase
   /// @inheritdoc IEarnVault
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
-  /// @inheritdoc IEarnVault
-  IEarnFeeManager public immutable FEE_MANAGER;
   // solhint-enable var-name-mixedcase
 
   // Stores total amount of shares per strategy
@@ -64,19 +60,15 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
 
   constructor(
     IEarnStrategyRegistry strategyRegistry,
-    IEarnFeeManager feeManager,
     address superAdmin,
-    address[] memory initialPauseAdmins,
-    address[] memory initialWithdrawFeeAdmins
+    address[] memory initialPauseAdmins
   )
     AccessControlDefaultAdminRules(3 days, superAdmin)
     NFTPermissions("Balmy Earn NFT Position", "EARN", "1.0")
   {
     STRATEGY_REGISTRY = strategyRegistry;
-    FEE_MANAGER = feeManager;
 
     _assignRoles(PAUSE_ROLE, initialPauseAdmins);
-    _assignRoles(WITHDRAW_FEES_ROLE, initialWithdrawFeeAdmins);
   }
 
   /// @dev Needed to receive native tokens
@@ -99,9 +91,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
     return (tokens, withdrawalTypes, balances);
   }
-
-  /// @inheritdoc IEarnVault
-  function generatedFees(StrategyId[] calldata strategies) external view returns (FundsInStrategy[] memory generated) { }
 
   /// @inheritdoc IEarnVault
   function paused() public view override(IEarnVault, Pausable) returns (bool) {
@@ -196,17 +185,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (address[] memory, uint256[] memory, IEarnStrategy.WithdrawalType[] memory, bytes memory)
   { }
 
-  // TODO: Add nonReentrant
-  /// @inheritdoc IEarnVault
-  function withdrawFees(
-    StrategyId[] calldata strategies,
-    address recipient
-  )
-    external
-    payable
-    returns (WithdrawnFromStrategy[] memory withdrawn)
-  { }
-
   /// @inheritdoc IEarnVault
   function pause() external payable onlyRole(PAUSE_ROLE) {
     _pause();
@@ -250,22 +228,14 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   {
     totalShares = _totalSharesInStrategy[strategyId];
     strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
-    uint256 feeBps = FEE_MANAGER.getPerformanceFeeForStrategy(strategyId);
-    (calculatedData, tokens) = _calculateAllData({
-      strategyId: strategyId,
-      strategy: strategy,
-      totalShares: totalShares,
-      positionShares: positionShares,
-      feeBps: feeBps
-    });
+    (calculatedData, tokens) =
+      _calculateAllData({ strategy: strategy, totalShares: totalShares, positionShares: positionShares });
   }
 
   function _calculateAllData(
-    StrategyId strategyId,
     IEarnStrategy strategy,
     uint256 totalShares,
-    uint256 positionShares,
-    uint256 feeBps
+    uint256 positionShares
   )
     internal
     view
@@ -277,11 +247,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     calculatedData = new CalculatedDataForToken[](tokens.length);
     for (uint256 i = 0; i < tokens.length;) {
       calculatedData[i] = _calculateAllDataForToken({
-        strategyId: strategyId,
         totalShares: totalShares,
         positionShares: positionShares,
-        feeBps: feeBps,
-        token: tokens[i],
         totalBalance: totalBalances[i],
         isAsset: i == 0
       });
@@ -292,42 +259,31 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 
   function _calculateAllDataForToken(
-    StrategyId strategyId,
     uint256 totalShares,
     uint256 positionShares,
-    uint256 feeBps,
-    address token,
     uint256 totalBalance,
     bool isAsset
   )
     internal
-    view
+    pure
     returns (CalculatedDataForToken memory calculatedData)
   {
     calculatedData.totalBalance = totalBalance;
-    calculatedData.totalYieldData = _totalYieldData.read(strategyId, token);
-
-    int256 yielded;
-    (yielded, calculatedData.earnedFees) = YieldMath.calculateYielded({
-      currentBalance: totalBalance,
-      lastRecordedBalance: calculatedData.totalYieldData.lastRecordedBalance,
-      lastRecordedEarnedFees: calculatedData.earnedFees,
-      feeBps: feeBps
-    });
 
     if (isAsset) {
       // If we are calculating for the asset, then simply divide available balance based on shares
       if (positionShares > 0) {
-        // TODO: handle cases of hack where all balance is drained. The substraction might underflow!
         calculatedData.positionBalance = SharesMath.convertToAssets({
           shares: positionShares,
-          totalAssets: totalBalance - calculatedData.earnedFees,
+          totalAssets: totalBalance,
           totalShares: totalShares,
           rounding: Math.Rounding.Floor
         }).toInt256();
       }
     } else {
       // TODO
+      // calculatedData.totalYieldData = _totalYieldData.read(strategyId, token);
+      // int256 yielded = totalBalance.toInt256() - calculatedData.totalYieldData.lastRecordedBalance.toInt256();
     }
   }
 
@@ -437,16 +393,14 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       // TODO: support withdrawals
     }
 
-    _totalYieldData.update({
-      strategyId: strategyId,
-      token: token,
-      newTotalBalance: newTotalBalance,
-      newAccumulator: calculatedData.newAccumulator,
-      newEarnedFees: calculatedData.earnedFees,
-      previousValues: calculatedData.totalYieldData
-    });
-
     if (!isAsset) {
+      _totalYieldData.update({
+        strategyId: strategyId,
+        token: token,
+        newTotalBalance: newTotalBalance,
+        newAccumulator: calculatedData.newAccumulator,
+        previousValues: calculatedData.totalYieldData
+      });
       // TODO
     }
   }

@@ -14,7 +14,6 @@ import {
   IEarnVault,
   EarnVault,
   IEarnStrategyRegistry,
-  IEarnFeeManager,
   Pausable,
   IEarnStrategy,
   StrategyId
@@ -23,7 +22,6 @@ import { Token } from "../../../src/libraries/Token.sol";
 import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/EarnStrategyRegistryMock.sol";
 import { ERC20Mock } from "../../mocks/ERC20Mock.sol";
-import { EarnFeeManagerMock } from "../../mocks/EarnFeeManagerMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 
@@ -40,40 +38,32 @@ contract EarnVaultTest is PRBTest, StdUtils {
   using StrategyUtils for EarnStrategyRegistryMock;
   using InternalUtils for INFTPermissions.Permission[];
 
-  uint16 private constant FEE_BPS = 1000;
   address private superAdmin = address(1);
   address private pauseAdmin = address(2);
-  address private withdrawFeeAdmin = address(3);
-  address private positionOwner = address(4);
-  address private operator = address(5);
+  address private positionOwner = address(3);
+  address private operator = address(4);
   EarnStrategyRegistryMock private strategyRegistry;
-  EarnFeeManagerMock private feeManager;
   ERC20Mock private erc20;
   EarnVault private vault;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistryMock();
-    feeManager = new EarnFeeManagerMock(FEE_BPS);
     erc20 = new ERC20Mock();
     vault = new EarnVault(
       strategyRegistry,
-      feeManager,
       superAdmin,
-      CommonUtils.arrayOf(pauseAdmin),
-      CommonUtils.arrayOf(withdrawFeeAdmin)
+      CommonUtils.arrayOf(pauseAdmin)
     );
 
     erc20.approve(address(vault), type(uint256).max);
 
     vm.label(address(strategyRegistry), "Strategy Registry");
-    vm.label(address(feeManager), "Fee Manager");
     vm.label(address(erc20), "ERC20");
     vm.label(address(vault), "Vault");
   }
 
   function test_constants() public {
     assertEq(vault.PAUSE_ROLE(), keccak256("PAUSE_ROLE"));
-    assertEq(vault.WITHDRAW_FEES_ROLE(), keccak256("WITHDRAW_FEES_ROLE"));
     assertEq(INFTPermissions.Permission.unwrap(vault.INCREASE_PERMISSION()), 0);
     assertEq(INFTPermissions.Permission.unwrap(vault.WITHDRAW_PERMISSION()), 1);
   }
@@ -95,11 +85,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertEq(vault.owner(), superAdmin);
     assertEq(vault.defaultAdmin(), superAdmin);
     assertTrue(vault.hasRole(vault.PAUSE_ROLE(), pauseAdmin));
-    assertTrue(vault.hasRole(vault.WITHDRAW_FEES_ROLE(), withdrawFeeAdmin));
 
     // Immutables
     assertEq(address(vault.STRATEGY_REGISTRY()), address(strategyRegistry));
-    assertEq(address(vault.FEE_MANAGER()), address(feeManager));
   }
 
   function test_supportsInterface() public {

@@ -16,17 +16,15 @@ struct PositionData {
 
 /**
  * @notice Stores yield data for a specific token, for all positions in a given strategy
- * @dev Occupies 2 slots. To understand why we chose these variable sizes, please refer
+ * @dev Occupies 1 slot. To understand why we chose these variable sizes, please refer
  *      to the [README](../README.md).
  */
 struct TotalYieldDataForToken {
-  // The last recorded total balance reported by the strategy. This value is used to understand how
-  // much yield was generated when we ask for the total balance in the future
-  uint256 lastRecordedBalance;
   // The yield accumulator for this specific strategy and token
   int152 yieldAccumulator;
-  // Total amount of earned fees that can be withdrawn from the by admins
-  uint104 earnedFees;
+  // The last recorded total balance reported by the strategy. This value is used to understand how
+  // much yield was generated when we ask for the total balance in the future
+  uint104 lastRecordedBalance;
 }
 
 /**
