@@ -3,7 +3,8 @@ pragma solidity >=0.8.0;
 
 import { IEarnStrategyRegistry, IEarnStrategy } from "../interfaces/IEarnStrategyRegistry.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
-import '@openzeppelin/contracts/utils/introspection/ERC165Checker.sol';
+import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+
 // TODO: remove once functions are implemented
 // slither-disable-start unimplemented-functions
 // solhint-disable no-empty-blocks
@@ -36,7 +37,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
     _revertIfNotStrategy(address(strategy));
     _revertIfNotAssetAsFirstToken(strategy);
-    if(!(assignedId[strategy] == StrategyId.wrap(0))) revert StrategyAlreadyRegistered();
+    if (!(assignedId[strategy] == StrategyId.wrap(0))) revert StrategyAlreadyRegistered();
     strategyId = _nextStrategyId;
     assignedId[strategy] = strategyId;
     getStrategy[strategyId] = strategy;
@@ -68,7 +69,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   function _revertIfNotAssetAsFirstToken(IEarnStrategy _strategyToCheck) internal view {
-   (address[] memory tokens, )  = _strategyToCheck.allTokens();
+    (address[] memory tokens,) = _strategyToCheck.allTokens();
     bool _isAssetFirstToken = _strategyToCheck.asset() == tokens[0];
     if (!_isAssetFirstToken) revert AssetIsNotFirstToken(_strategyToCheck);
   }

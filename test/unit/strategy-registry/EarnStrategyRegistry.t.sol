@@ -11,12 +11,13 @@ import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
 import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
+
 contract EarnStrategyRegistryTest is PRBTest {
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
   StrategyId private anotherInvalidStrategyId = StrategyId.wrap(1001);
   address private owner = address(1);
-  
+
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistry();
   }

@@ -10,6 +10,7 @@ import {
   IDelayedWithdrawalAdapter
 } from "../../src/interfaces/IEarnStrategy.sol";
 import { Token } from "../../src/libraries/Token.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 contract EarnStrategyMock is IEarnStrategy {
   using Token for address;
@@ -154,7 +155,7 @@ contract EarnStrategyMock is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function supportsInterface(bytes4) external pure returns (bool) {
-    revert NotImplemented();
+  function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+    return interfaceId == type(IEarnStrategy).interfaceId || interfaceId == type(IERC165).interfaceId;
   }
 }
