@@ -30,20 +30,20 @@ $$
 
 Then, we can say that :
 
-- Total amount of DAI in strategy: 11000
+- Total amount of _$DAI_ in strategy: 11000
 - Total amount of shares in strategy: 2750
 - Shares assigned to John: 250
 
 ### Owned assets
 
 Now that we know how shares are assigned during deposits, we can easily calculate how much each user owns when the total
-amount of DAI increases/decreases.
+amount of _$DAI_ increases/decreases.
 
 $$
 owned(John, DAI) = [totalAmount(DAI) - protocolFees(DAI)] * shares(John) / totalShares
 $$
 
-So for example, if the total amount of DAI increases to 15000, and no fees were charged, then:
+So for example, if the total amount of _$DAI_ increases to 15000, and no fees were charged, then:
 
 $$
 \begin{align}
@@ -235,7 +235,7 @@ least 10 years before the accum overflows.
 
 To put it in _$OP_ terms (known for its use as a reward), that would be
 $0.00025 (Sep 15, 2023) usd per second, which would
-be $21.6 usd per day. Not bad for a 10 *$USDC\* deposit 😂
+be $21.6 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
 but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.
