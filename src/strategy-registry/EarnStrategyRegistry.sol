@@ -43,6 +43,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     getStrategy[strategyId] = strategy;
     owner[strategyId] = firstOwner;
     _nextStrategyId = strategyId.increment();
+    emit StrategyRegistered(firstOwner, strategyId);
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -71,7 +72,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   function _revertIfNotAssetAsFirstToken(IEarnStrategy strategyToCheck) internal view {
     // slither-disable-next-line unused-return
     (address[] memory tokens,) = strategyToCheck.allTokens();
-    bool isAssetFirstToken = strategyToCheck.asset() == tokens[0];
+    bool isAssetFirstToken = (strategyToCheck.asset() == tokens[0]);
     if (!isAssetFirstToken) revert AssetIsNotFirstToken(strategyToCheck);
   }
 }
