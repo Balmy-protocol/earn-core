@@ -13,6 +13,7 @@ import { Token } from "../../src/libraries/Token.sol";
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
+/// @notice This strategy is invalid because the asset must be the first token
 contract EarnStrategyBadMock is IEarnStrategy {
   using Token for address;
 

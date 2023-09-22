@@ -29,8 +29,9 @@ interface IEarnStrategyRegistry {
    * @notice Emitted when a new strategy is registered
    * @param owner The strategy's owner
    * @param strategyId The strategy id
+   * @param strategy The strategy
    */
-  event StrategyRegistered(address owner, StrategyId strategyId);
+  event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update

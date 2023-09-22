@@ -14,7 +14,7 @@ import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
 import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
-  event StrategyRegistered(address owner, StrategyId strategyId);
+  event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -33,7 +33,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectEmit();
-    emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID);
+    emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID, aStrategy);
 
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
