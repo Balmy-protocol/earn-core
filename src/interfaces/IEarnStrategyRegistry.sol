@@ -10,6 +10,29 @@ import { StrategyId } from "../types/StrategyId.sol";
  *         strategies can be updated
  */
 interface IEarnStrategyRegistry {
+  /// @notice Thrown when trying to register a strategy that is already registered
+  error StrategyAlreadyRegistered();
+
+  /**
+   * @notice Thrown when trying to register an address that is not an strategy
+   * @param notStrategy The address that was not a strategy
+   */
+  error AddressIsNotStrategy(IEarnStrategy notStrategy);
+
+  /**
+   * @notice Thrown when trying to register an strategy that does no report the asset as first token
+   * @param invalidStrategy The object that was not a valid strategy
+   */
+  error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
+
+  /**
+   * @notice Emitted when a new strategy is registered
+   * @param owner The strategy's owner
+   * @param strategyId The strategy id
+   * @param strategy The strategy
+   */
+  event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
+
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
    * @return The delay (in seconds) necessary to execute a proposed strategy update
@@ -54,11 +77,18 @@ interface IEarnStrategyRegistry {
    * @dev The strategy must report the asset as the first token
    *      The strategy can't be associated to another id
    *      The new strategy must support the expected interface.
-   * @param owner The strategy's owner
+   * @param firstOwner The strategy's owner
    * @param strategy The strategy to register
    * @return The id assigned to the new strategy
    */
-  function registerStrategy(address owner, IEarnStrategy strategy) external returns (StrategyId);
+  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId);
+
+  /**
+   * @notice Returns the strategy's owner to the given id
+   * @param strategyId The id to check
+   * @return The owner of the strategy, or the zero address if none is registered
+   */
+  function owner(StrategyId strategyId) external view returns (address);
 
   /**
    * @notice Proposes an ownership transfer. Must be accepted by the new owner

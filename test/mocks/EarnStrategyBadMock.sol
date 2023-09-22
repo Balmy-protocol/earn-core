@@ -13,7 +13,8 @@ import { Token } from "../../src/libraries/Token.sol";
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
-contract EarnStrategyMock is IEarnStrategy {
+/// @notice This strategy is invalid because the asset must be the first token
+contract EarnStrategyBadMock is IEarnStrategy {
   using Token for address;
 
   error NotImplemented();
@@ -21,29 +22,24 @@ contract EarnStrategyMock is IEarnStrategy {
   address[] internal tokens;
   WithdrawalType[] internal withdrawalTypes;
 
-  constructor(address[] memory tokens_, WithdrawalType[] memory withdrawalTypes_) {
-    require(tokens_.length == withdrawalTypes_.length, "Invalid");
+  constructor(address[] memory tokens_) {
     tokens = tokens_;
-    withdrawalTypes = withdrawalTypes_;
+    withdrawalTypes = new WithdrawalType[](0);
   }
 
   // solhint-disable-next-line no-empty-blocks
   receive() external payable { }
 
   function asset() external view returns (address) {
-    return tokens[0];
+    return tokens[1];
   }
 
   function supportedWithdrawals() external view returns (WithdrawalType[] memory) {
     return withdrawalTypes;
   }
 
-  function totalBalances() external view returns (address[] memory tokens_, uint256[] memory balances) {
-    tokens_ = tokens;
-    balances = new uint256[](tokens.length);
-    for (uint256 i; i < balances.length; i++) {
-      balances[i] = tokens_[i].balanceOf(address(this));
-    }
+  function totalBalances() external view returns (address[] memory, uint256[] memory) {
+    revert NotImplemented();
   }
 
   function deposited(address, uint256 depositAmount) external payable returns (uint256 assetsDeposited) {

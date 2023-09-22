@@ -49,4 +49,8 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
   function updateStrategy(StrategyId) external pure {
     revert NotImplemented();
   }
+
+  function owner(StrategyId) external pure returns (address) {
+    revert NotImplemented();
+  }
 }
