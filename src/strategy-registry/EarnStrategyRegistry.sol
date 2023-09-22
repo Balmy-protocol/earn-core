@@ -35,9 +35,9 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   /// @inheritdoc IEarnStrategyRegistry
   function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
-    _revertIfNotStrategy(address(strategy));
+    _revertIfNotStrategy(strategy);
     _revertIfNotAssetAsFirstToken(strategy);
-    if (!(assignedId[strategy] == StrategyId.wrap(0))) revert StrategyAlreadyRegistered();
+    if (assignedId[strategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
     strategyId = _nextStrategyId;
     assignedId[strategy] = strategyId;
     getStrategy[strategyId] = strategy;
@@ -63,18 +63,17 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   function updateStrategy(StrategyId strategyId) external { }
 
-  function _revertIfNotStrategy(address _strategyToCheck) internal view {
-    bool _isStrategy = ERC165Checker.supportsInterface(_strategyToCheck, type(IEarnStrategy).interfaceId);
-    if (!_isStrategy) revert AddressIsNotStrategy(_strategyToCheck);
+  function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
+    bool isStrategy = ERC165Checker.supportsInterface(address(strategyToCheck), type(IEarnStrategy).interfaceId);
+    if (!isStrategy) revert AddressIsNotStrategy(strategyToCheck);
   }
 
-  // slither-disable-start unused-return
-  function _revertIfNotAssetAsFirstToken(IEarnStrategy _strategyToCheck) internal view {
-    (address[] memory tokens,) = _strategyToCheck.allTokens();
-    bool _isAssetFirstToken = _strategyToCheck.asset() == tokens[0];
-    if (!_isAssetFirstToken) revert AssetIsNotFirstToken(_strategyToCheck);
+  function _revertIfNotAssetAsFirstToken(IEarnStrategy strategyToCheck) internal view {
+    // slither-disable-next-line unused-return
+    (address[] memory tokens,) = strategyToCheck.allTokens();
+    bool isAssetFirstToken = strategyToCheck.asset() == tokens[0];
+    if (!isAssetFirstToken) revert AssetIsNotFirstToken(strategyToCheck);
   }
-  // slither-disable-end unused-return
 }
 // solhint-enable no-empty-blocks
 // slither-disable-end unimplemented-functions

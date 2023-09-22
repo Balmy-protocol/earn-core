@@ -17,7 +17,7 @@ interface IEarnStrategyRegistry {
    * @notice Thrown when trying to register an address that is not an strategy
    * @param notStrategy The address that was not a strategy
    */
-  error AddressIsNotStrategy(address notStrategy);
+  error AddressIsNotStrategy(IEarnStrategy notStrategy);
 
   /**
    * @notice Thrown when trying to register an strategy that does no report the asset as first token

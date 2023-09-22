@@ -10,6 +10,7 @@ import {
   IDelayedWithdrawalAdapter
 } from "../../src/interfaces/IEarnStrategy.sol";
 import { Token } from "../../src/libraries/Token.sol";
+// solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 contract EarnStrategyMock is IEarnStrategy {

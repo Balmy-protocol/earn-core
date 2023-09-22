@@ -6,7 +6,7 @@ import { PRBTest } from "@prb/test/PRBTest.sol";
 import { EarnStrategyRegistry, IEarnStrategyRegistry } from "../../../src/strategy-registry/EarnStrategyRegistry.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
-import { StrategyId } from "../../../src/types/StrategyId.sol";
+import { StrategyId, StrategyIdConstants } from "../../../src/types/StrategyId.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
@@ -32,7 +32,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
     assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
     assertTrue(strategyRegistry.assignedId(aStrategy) == aRegisteredStrategyId);
-    assertGt(StrategyId.unwrap(aRegisteredStrategyId), 0);
+    assertGt(StrategyId.unwrap(aRegisteredStrategyId), StrategyId.unwrap(StrategyIdConstants.NO_STRATEGY));
   }
 
   function test_registerStrategy_MultipleStrategiesRegistered() public {
