@@ -43,7 +43,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     getStrategy[strategyId] = strategy;
     owner[strategyId] = firstOwner;
     _nextStrategyId = strategyId.increment();
-    emit StrategyRegistered(firstOwner, strategyId);
+    emit StrategyRegistered(firstOwner, strategyId, strategy);
+    // TODO: call strategy.strategyRegistered
   }
 
   /// @inheritdoc IEarnStrategyRegistry
