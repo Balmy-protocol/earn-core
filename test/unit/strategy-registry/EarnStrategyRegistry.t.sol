@@ -11,8 +11,11 @@ import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
 import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
+import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
+  event StrategyRegistered(address owner, StrategyId strategyId);
+
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
   StrategyId private anotherInvalidStrategyId = StrategyId.wrap(1001);
@@ -28,11 +31,40 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_registerStrategy() public {
     IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.expectEmit();
+    emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID);
+
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
     assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
     assertTrue(strategyRegistry.assignedId(aStrategy) == aRegisteredStrategyId);
     assertGt(StrategyId.unwrap(aRegisteredStrategyId), StrategyId.unwrap(StrategyIdConstants.NO_STRATEGY));
+  }
+
+  function test_registerStrategy_RevertWhen_StrategyIsAlreadyRegistered() public {
+    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    strategyRegistry.registerStrategy(owner, aStrategy);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
+    strategyRegistry.registerStrategy(owner, aStrategy);
+  }
+
+  function test_registerStrategy_RevertWhen_AssetIsNotFirstToken() public {
+    address[] memory tokens = new address[](2);
+    tokens[0] = Token.NATIVE_TOKEN;
+    tokens[1] = address(1);
+    IEarnStrategy badStrategy = new EarnStrategyBadMock(tokens);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetIsNotFirstToken.selector, badStrategy));
+    strategyRegistry.registerStrategy(owner, badStrategy);
+  }
+
+  function test_registerStrategy_RevertWhen_AddressIsNotStrategy() public {
+    IEarnStrategy badStrategy;
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AddressIsNotStrategy.selector, badStrategy));
+    strategyRegistry.registerStrategy(owner, badStrategy);
   }
 
   function test_registerStrategy_MultipleStrategiesRegistered() public {

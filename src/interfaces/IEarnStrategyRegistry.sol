@@ -26,6 +26,13 @@ interface IEarnStrategyRegistry {
   error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
 
   /**
+   * @notice Emitted when a new strategy is registered
+   * @param owner The strategy's owner
+   * @param strategyId The strategy id
+   */
+  event StrategyRegistered(address owner, StrategyId strategyId);
+
+  /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
    * @return The delay (in seconds) necessary to execute a proposed strategy update
    */
