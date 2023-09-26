@@ -15,6 +15,7 @@ import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
+  event StrategyUpdateProposed(address owner, StrategyId strategyId, IEarnStrategy strategy);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);

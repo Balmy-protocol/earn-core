@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import { IEarnStrategyRegistry, IEarnStrategy } from "../interfaces/IEarnStrategyRegistry.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import { Utils } from "./utils/Utils.sol";
 
 // TODO: remove once functions are implemented
 // slither-disable-start unimplemented-functions
@@ -24,11 +25,12 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   mapping(StrategyId strategyId => address owner) public owner;
 
   /// @inheritdoc IEarnStrategyRegistry
-  function proposedUpdate(StrategyId strategyId)
-    external
-    view
-    returns (IEarnStrategy newStrategy, uint256 executableAt)
-  { }
+  mapping(StrategyId strategyId => ProposedUpdate proposedUpdate) public proposedUpdate;
+
+  struct ProposedUpdate {
+    IEarnStrategy newStrategy;
+    uint256 executableAt;
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
@@ -57,7 +59,16 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   function acceptOwnershipTransfer(StrategyId strategyId) external { }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function proposeStrategyUpdate(StrategyId strategyId, IEarnStrategy newStrategy) external { }
+  function proposeStrategyUpdate(StrategyId strategyId, IEarnStrategy newStrategy) external onlyOwner(strategyId) {
+    _revertIfNotStrategy(newStrategy);
+    _revertIfNotAssetAsFirstToken(newStrategy);
+    if (assignedId[newStrategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
+    if (proposedUpdate[strategyId].executableAt != 0) revert StrategyAlreadyProposedUpdate();
+    _revertIfHasLessTokenThanCurrent(strategyId, newStrategy);
+
+    proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp);
+    emit StrategyUpdateProposed(msg.sender, strategyId, newStrategy);
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
   function cancelStrategyUpdate(StrategyId strategyId) external { }
@@ -75,6 +86,23 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     (address[] memory tokens,) = strategyToCheck.allTokens();
     bool isAssetFirstToken = (strategyToCheck.asset() == tokens[0]);
     if (!isAssetFirstToken) revert AssetIsNotFirstToken(strategyToCheck);
+  }
+
+  function _revertIfHasLessTokenThanCurrent(StrategyId strategyId, IEarnStrategy newStrategyToCheck) internal view {
+    IEarnStrategy currentStrategy = this.getStrategy(strategyId);
+    bool isSameAsset = newStrategyToCheck.asset() == currentStrategy.asset();
+    if (!isSameAsset) revert AssetMismatch();
+    // slither-disable-start unused-return
+    (address[] memory newTokens,) = newStrategyToCheck.allTokens();
+    (address[] memory currentTokens,) = currentStrategy.allTokens();
+    // slither-disable-end unused-return
+    bool sameOrMoreTokensSupported = Utils.isSubset(currentTokens, newTokens);
+    if (!sameOrMoreTokensSupported) revert TokensSupportedMismatch();
+  }
+
+  modifier onlyOwner(StrategyId strategyId) {
+    require(this.owner(strategyId) == msg.sender, "Wrong strategy owner");
+    _;
   }
 }
 // SPDX-License-Identifier: TBD
