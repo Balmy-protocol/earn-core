@@ -11,6 +11,13 @@ import { Utils } from "./utils/Utils.sol";
 // solhint-disable no-empty-blocks
 
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
+  using Utils for address[];
+
+  struct ProposedUpdate {
+    IEarnStrategy newStrategy;
+    uint256 executableAt;
+  }
+
   uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
   // slither-disable-next-line naming-convention
   StrategyId internal _nextStrategyId = StrategyIdConstants.INITIAL_STRATEGY_ID;
@@ -26,11 +33,6 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   /// @inheritdoc IEarnStrategyRegistry
   mapping(StrategyId strategyId => ProposedUpdate proposedUpdate) public proposedUpdate;
-
-  struct ProposedUpdate {
-    IEarnStrategy newStrategy;
-    uint256 executableAt;
-  }
 
   /// @inheritdoc IEarnStrategyRegistry
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
@@ -64,10 +66,10 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     _revertIfNotAssetAsFirstToken(newStrategy);
     if (assignedId[newStrategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
     if (proposedUpdate[strategyId].executableAt != 0) revert StrategyAlreadyProposedUpdate();
-    _revertIfHasLessTokenThanCurrent(strategyId, newStrategy);
+    _revertIfTokensAreNotSuperset(strategyId, newStrategy);
 
     proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp);
-    emit StrategyUpdateProposed(msg.sender, strategyId, newStrategy);
+    emit StrategyUpdateProposed(strategyId, newStrategy);
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -88,20 +90,20 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (!isAssetFirstToken) revert AssetIsNotFirstToken(strategyToCheck);
   }
 
-  function _revertIfHasLessTokenThanCurrent(StrategyId strategyId, IEarnStrategy newStrategyToCheck) internal view {
-    IEarnStrategy currentStrategy = this.getStrategy(strategyId);
+  function _revertIfTokensAreNotSuperset(StrategyId strategyId, IEarnStrategy newStrategyToCheck) internal view {
+    IEarnStrategy currentStrategy = getStrategy[strategyId];
     bool isSameAsset = newStrategyToCheck.asset() == currentStrategy.asset();
     if (!isSameAsset) revert AssetMismatch();
     // slither-disable-start unused-return
     (address[] memory newTokens,) = newStrategyToCheck.allTokens();
     (address[] memory currentTokens,) = currentStrategy.allTokens();
     // slither-disable-end unused-return
-    bool sameOrMoreTokensSupported = Utils.isSubset(currentTokens, newTokens);
+    bool sameOrMoreTokensSupported = newTokens.isSupersetOf(currentTokens);
     if (!sameOrMoreTokensSupported) revert TokensSupportedMismatch();
   }
 
   modifier onlyOwner(StrategyId strategyId) {
-    require(this.owner(strategyId) == msg.sender, "Wrong strategy owner");
+    if (owner[strategyId] != msg.sender) revert UnauthorizedStrategyOwner();
     _;
   }
 }

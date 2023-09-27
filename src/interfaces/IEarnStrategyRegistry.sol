@@ -12,13 +12,23 @@ import { StrategyId } from "../types/StrategyId.sol";
 interface IEarnStrategyRegistry {
   /// @notice Thrown when trying to register a strategy that is already registered
   error StrategyAlreadyRegistered();
+
   /// @notice Thrown when trying to propose a strategy update that has another pending proposal
   error StrategyAlreadyProposedUpdate();
+
   /// @notice Thrown when trying to propose a strategy update that doesn't have the same asset as the current strategy
   error AssetMismatch();
-  /// @notice Thrown when trying to propose a strategy update that doesn't support at least same tokens as the current
-  /// strategy
+
+  /**
+   * @notice Thrown when trying to propose a strategy update that doesn't support at least same tokens as the current
+   *         strategy
+   */
   error TokensSupportedMismatch();
+
+  /**
+   * @notice Thrown when the sender is not the owner of the strategy.
+   */
+  error UnauthorizedStrategyOwner();
 
   /**
    * @notice Thrown when trying to register an address that is not an strategy
@@ -42,11 +52,10 @@ interface IEarnStrategyRegistry {
 
   /**
    * @notice Emitted when a new strategy is proposed
-   * @param owner The strategy's owner
    * @param strategyId The strategy id
    * @param newStrategy The strategy
    */
-  event StrategyUpdateProposed(address owner, StrategyId strategyId, IEarnStrategy newStrategy);
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
