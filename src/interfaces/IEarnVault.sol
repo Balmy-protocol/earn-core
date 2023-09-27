@@ -17,6 +17,9 @@ interface IEarnVault is INFTPermissions {
   /// @notice Thrown when a user tries to make an empty deposit
   error ZeroAmountDeposit();
 
+  /// @notice Thrown when a deposit earns the caller zero shares
+  error ZeroSharesDeposit();
+
   /// @notice Thrown when the withdraw input is invalid
   error InvalidWithdrawInput();
 

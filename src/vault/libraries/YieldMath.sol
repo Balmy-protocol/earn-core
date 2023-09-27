@@ -3,10 +3,19 @@ pragma solidity >=0.8.0;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { StrategyId } from "../../types/StrategyId.sol";
+// solhint-disable no-unused-import
+import {
+  PositionYieldDataKey,
+  PositionYieldDataForToken,
+  PositionYieldDataForTokenLibrary
+} from "../types/PositionYieldDataForToken.sol";
+// solhint-enable no-unused-import
 
 library YieldMath {
   using SafeCast for uint256;
   using Math for uint256;
+  using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
 
   /**
    * @dev We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the
@@ -17,60 +26,75 @@ library YieldMath {
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares
-   * @param yielded How much was yielded since the last update
+   * @param currentBalance The current balance for a specific token
+   * @param lastRecordedBalance The last recorded balance for a specific token
    * @param previousAccum The previous value of the accum
    * @param totalShares The current total amount of shares
-   * @return newAccum The new value of the accum
+   * @return The new value of the accum
    */
   function calculateAccum(
-    int256 yielded,
-    int256 previousAccum,
+    uint256 currentBalance,
+    uint256 lastRecordedBalance,
+    uint256 previousAccum,
     uint256 totalShares
   )
     internal
     pure
-    returns (int256 newAccum)
+    returns (uint256)
   {
     if (totalShares == 0) return 0;
-    int256 yieldPerShare = signedMulDiv(ACCUM_PRECISION, yielded, totalShares);
-    newAccum = previousAccum + yieldPerShare;
+    uint256 yieldPerShare =
+      ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares, Math.Rounding.Floor);
+    return previousAccum + yieldPerShare;
   }
 
   /**
-   * @notice Calculates a position's balance based on the accums
-   * @dev Take into account that the balance could be negative
-   * @param preAccountedBalance Any amount of pre-accounted balance
-   * @param currentAccum The current value of the accum
-   * @param baseAccum The base value of the accum
-   * @param positionShares The amount of the position's shares
-   * @return The position's balance
+   * @notice Calculates a position's  for a specific token, based on past events and current balance
+   * @param positionId The position's id
+   * @param token The token to calculate the balance for
+   * @param positionShares The amount of shares owned by the position
+   * @param newAccumulator The new value for the yield accumulator
+   * @param positionRegistry A registry for yield data for each position
    */
   function calculateBalance(
-    int256 preAccountedBalance,
-    int256 currentAccum,
-    int256 baseAccum,
+    uint256 positionId,
+    address token,
+    uint256 positionShares,
+    uint256 newAccumulator,
+    mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry
+  )
+    internal
+    view
+    returns (uint256)
+  {
+    (uint256 initialAccum, uint256 positionBalance,) = positionRegistry.read(positionId, token);
+
+    positionBalance += YieldMath.calculateEarned({
+      initialAccum: initialAccum,
+      finalAccum: newAccumulator,
+      positionShares: positionShares
+    });
+
+    return positionBalance;
+  }
+
+  /**
+   * @notice Calculates how much was earned by a position in a specific time window, delimited by the given
+   *         yield accumulated values
+   * @param initialAccum The initial value of the accumulator
+   * @param finalAccum The final value of the accumulator
+   * @param positionShares The amount of the position's shares
+   * @return The balance earned by the position
+   */
+  function calculateEarned(
+    uint256 initialAccum,
+    uint256 finalAccum,
     uint256 positionShares
   )
     internal
     pure
-    returns (int256)
+    returns (uint256)
   {
-    return signedMulDiv(positionShares, currentAccum - baseAccum, ACCUM_PRECISION) + preAccountedBalance;
-  }
-
-  /**
-   * @notice Performs a signed mul div, by supporting up to uint256 bits of precision. It will always round to
-   *         negative infinity
-   * @param x A part of the numerator
-   * @param y The other part of the numerator, can be signed
-   * @param denominator The denominator
-   * @return result The result of the multipliation and division
-   */
-  function signedMulDiv(uint256 x, int256 y, uint256 denominator) internal pure returns (int256 result) {
-    // We always round towards negative infinity so that any funds lost in precision are assigned to the vault
-    // instead of the positions. By doing so, we can guarantee the vault will always be able to cover all withdrawals.
-    return y >= 0
-      ? x.mulDiv(uint256(y), denominator, Math.Rounding.Floor).toInt256()
-      : -x.mulDiv(uint256(-y), denominator, Math.Rounding.Ceil).toInt256();
+    return positionShares.mulDiv(finalAccum - initialAccum, ACCUM_PRECISION, Math.Rounding.Floor);
   }
 }

@@ -10,8 +10,7 @@ import { StrategyId, StrategyIdConstants } from "../../../src/types/StrategyId.s
 import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
-import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
-import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
+import { EarnStrategyBadMock } from "../../mocks/strategies/EarnStrategyBadMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
@@ -30,7 +29,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectEmit();
     emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID, aStrategy);
@@ -43,7 +42,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy_RevertWhen_StrategyIsAlreadyRegistered() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     strategyRegistry.registerStrategy(owner, aStrategy);
 
@@ -68,8 +67,8 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy_MultipleStrategiesRegistered() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
-    IEarnStrategy anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
     StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner, anotherStrategy);
 
