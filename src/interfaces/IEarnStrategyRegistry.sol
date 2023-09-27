@@ -13,6 +13,23 @@ interface IEarnStrategyRegistry {
   /// @notice Thrown when trying to register a strategy that is already registered
   error StrategyAlreadyRegistered();
 
+  /// @notice Thrown when trying to propose a strategy update that has another pending proposal
+  error StrategyAlreadyProposedUpdate();
+
+  /// @notice Thrown when trying to propose a strategy update that doesn't have the same asset as the current strategy
+  error AssetMismatch();
+
+  /**
+   * @notice Thrown when trying to propose a strategy update that doesn't support at least same tokens as the current
+   *         strategy
+   */
+  error TokensSupportedMismatch();
+
+  /**
+   * @notice Thrown when the sender is not the owner of the strategy.
+   */
+  error UnauthorizedStrategyOwner();
+
   /**
    * @notice Thrown when trying to register an address that is not an strategy
    * @param notStrategy The address that was not a strategy
@@ -32,6 +49,13 @@ interface IEarnStrategyRegistry {
    * @param strategy The strategy
    */
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
+
+  /**
+   * @notice Emitted when a new strategy is proposed
+   * @param strategyId The strategy id
+   * @param newStrategy The strategy
+   */
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update

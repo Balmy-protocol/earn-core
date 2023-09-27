@@ -15,6 +15,7 @@ import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -78,5 +79,138 @@ contract EarnStrategyRegistryTest is PRBTest {
       address(strategyRegistry.getStrategy(anotherRegisteredStrategyId))
     );
     assertFalse(strategyRegistry.assignedId(aStrategy) == strategyRegistry.assignedId(anotherStrategy));
+  }
+
+  function test_proposeStrategyUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.expectEmit();
+    emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy);
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_UpdateWithMoreTokens() public {
+    address[] memory strategyTokens = new address[](2);
+    strategyTokens[0] = Token.NATIVE_TOKEN;
+    strategyTokens[1] = address(1);
+
+    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStrategy(strategyRegistry, strategyTokens, owner);
+
+    address[] memory newStrategyTokens = new address[](2);
+    newStrategyTokens[0] = Token.NATIVE_TOKEN;
+    newStrategyTokens[1] = address(2);
+    newStrategyTokens[1] = address(1);
+    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(newStrategyTokens);
+
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_WrongOwner() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    address anotherOwner = address(2);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
+    vm.prank(anotherOwner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyProposedUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyMock newStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyProposedUpdate.selector));
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    vm.stopPrank();
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    (EarnStrategyMock anotherStrategy,) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.prank(owner);
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered_InAnotherProposedUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    (, StrategyId anotherRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyMock newStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    // The strategy 'newStrategy' was proposed to another strategyId
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
+    strategyRegistry.proposeStrategyUpdate(anotherRegisteredStrategyId, newStrategy);
+    vm.stopPrank();
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_TokensSupportedMismatch() public {
+    address[] memory tokens = new address[](2);
+    tokens[0] = Token.NATIVE_TOKEN;
+    tokens[1] = address(1);
+
+    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStrategy(strategyRegistry, tokens, owner);
+
+    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.prank(owner);
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.TokensSupportedMismatch.selector));
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_AssetMismatch() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(address(1)), owner);
+
+    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetMismatch.selector));
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_AddressIsNotStrategy() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy badStrategy;
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AddressIsNotStrategy.selector, badStrategy));
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy);
+  }
+
+  function test_proposeStrategyUpdate_RevertWhen_AssetIsNotFirstToken() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    address[] memory tokens = new address[](2);
+    tokens[0] = Token.NATIVE_TOKEN;
+    tokens[1] = address(1);
+    IEarnStrategy badStrategy = new EarnStrategyBadMock(tokens);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetIsNotFirstToken.selector, badStrategy));
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy);
   }
 }
