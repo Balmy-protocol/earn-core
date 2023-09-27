@@ -48,7 +48,7 @@ library YieldMath {
   }
 
   /**
-   * @notice Calculates a position's  for a specific token, based on past events and current balance
+   * @notice Calculates a position's balance for a specific token, based on past events
    * @param positionId The position's id
    * @param token The token to calculate the balance for
    * @param positionShares The amount of shares owned by the position
@@ -69,7 +69,7 @@ library YieldMath {
     // slither-disable-next-line unused-return
     (uint256 initialAccum, uint256 positionBalance,) = positionRegistry.read(positionId, token);
 
-    positionBalance += YieldMath.calculateEarned({
+    positionBalance += calculateEarned({
       initialAccum: initialAccum,
       finalAccum: newAccumulator,
       positionShares: positionShares
@@ -91,7 +91,7 @@ library YieldMath {
     uint256 finalAccum,
     uint256 positionShares
   )
-    internal
+    private
     pure
     returns (uint256)
   {
