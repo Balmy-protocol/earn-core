@@ -2,10 +2,12 @@
 pragma solidity >=0.8.0;
 
 library Utils {
-  /// @dev Checks if the potential `superset` array is a superset of the potential `subset` array.
-  /// @param superset The array to be checked as a potential superset.
-  /// @param subset The array to be checked as a potential subset.
-  /// @return if `superset` is a superset of `subset`
+  /**
+   * @notice Checks if the potential `superset` array is a superset of the potential `subset` array.
+   * @param superset The array to be checked as a potential superset.
+   * @param subset The array to be checked as a potential subset.
+   * @return if `superset` is a superset of `subset`
+   */
   function isSupersetOf(address[] memory superset, address[] memory subset) public pure returns (bool) {
     if (superset.length < subset.length) return false;
 
