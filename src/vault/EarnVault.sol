@@ -398,7 +398,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         positionShares: newPositionShares,
         token: tokens[i],
         calculatedData: calculatedData[i],
-        totalBalanceBeforeUpdate: balancesBeforeUpdate[i],
         withdrawn: updateAmounts[i],
         totalBalanceAfterUpdate: balancesAfterUpdate[i]
       });
@@ -450,7 +449,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 positionShares,
     address token,
     CalculatedDataForToken memory calculatedData,
-    uint256 totalBalanceBeforeUpdate,
     uint256 withdrawn,
     uint256 totalBalanceAfterUpdate
   )

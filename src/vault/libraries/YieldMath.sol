@@ -3,7 +3,6 @@ pragma solidity >=0.8.0;
 
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
-import { StrategyId } from "../../types/StrategyId.sol";
 // solhint-disable no-unused-import
 import {
   PositionYieldDataKey,
@@ -67,6 +66,7 @@ library YieldMath {
     view
     returns (uint256)
   {
+    // slither-disable-next-line unused-return
     (uint256 initialAccum, uint256 positionBalance,) = positionRegistry.read(positionId, token);
 
     positionBalance += YieldMath.calculateEarned({

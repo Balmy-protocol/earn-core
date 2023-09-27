@@ -5,18 +5,20 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { YieldMath } from "../../../../src/vault/libraries/YieldMath.sol";
+// solhint-disable no-unused-import
 import {
   PositionYieldDataKey,
   PositionYieldDataForToken,
   PositionYieldDataForTokenLibrary
 } from "../../../../src/vault/types/PositionYieldDataForToken.sol";
+// solhint-enable no-unused-import
 
 contract YieldMathTest is PRBTest, StdUtils {
   using Math for uint256;
   using Math for uint160;
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
 
-  mapping(PositionYieldDataKey => PositionYieldDataForToken) positionRegistry;
+  mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal positionRegistry;
 
   function testFuzz_calculateAccum_ZeroShares(
     uint256 currentBalance,
@@ -53,8 +55,8 @@ contract YieldMathTest is PRBTest, StdUtils {
   )
     public
   {
-    previousBalance = uint104(bound(previousBalance, 0, 2**102 - 1));
-    newAccumulator = uint152(bound(newAccumulator, 0, 2**150 - 1));
+    previousBalance = uint104(bound(previousBalance, 0, 2 ** 102 - 1));
+    newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 150 - 1));
     initialAccum = uint152(bound(initialAccum, 0, newAccumulator));
 
     // Set initial values

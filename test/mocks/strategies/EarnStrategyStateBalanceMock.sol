@@ -3,6 +3,7 @@ pragma solidity >=0.8.0;
 
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+// solhint-disable-next-line no-unused-import
 import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 
