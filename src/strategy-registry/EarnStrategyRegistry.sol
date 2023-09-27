@@ -34,6 +34,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   mapping(StrategyId strategyId => ProposedUpdate proposedUpdate) public proposedUpdate;
 
+  mapping(IEarnStrategy strategy => StrategyId strategyId) internal getIdByProposedUpdate;
+
   /// @inheritdoc IEarnStrategyRegistry
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
 
@@ -65,10 +67,14 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     _revertIfNotStrategy(newStrategy);
     _revertIfNotAssetAsFirstToken(newStrategy);
     if (assignedId[newStrategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
-    if (proposedUpdate[strategyId].executableAt != 0) revert StrategyAlreadyProposedUpdate();
+    if (
+      proposedUpdate[strategyId].executableAt != 0
+        || getIdByProposedUpdate[newStrategy] != StrategyIdConstants.NO_STRATEGY
+    ) revert StrategyAlreadyProposedUpdate();
     _revertIfTokensAreNotSuperset(strategyId, newStrategy);
 
     proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp);
+    getIdByProposedUpdate[newStrategy] = strategyId;
     emit StrategyUpdateProposed(strategyId, newStrategy);
   }
 

@@ -124,12 +124,21 @@ contract EarnStrategyRegistryTest is PRBTest {
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyProposedUpdate() public {
     EarnStrategyMock aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
-    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    EarnStrategyMock newStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    // The StrategyId 'aRegisteredStrategyId' already has a previously proposed update
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyProposedUpdate.selector));
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner, anotherStrategy);
+
+    // The strategy 'newStrategy' was proposed to another strategyId
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyProposedUpdate.selector));
+    strategyRegistry.proposeStrategyUpdate(anotherRegisteredStrategyId, newStrategy);
   }
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered() public {
