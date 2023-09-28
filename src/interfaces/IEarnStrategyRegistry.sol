@@ -43,7 +43,7 @@ interface IEarnStrategyRegistry {
   error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
 
   /**
-   * @notice Thrown when trying to cancel a proposed update, but no new strategy has been proposed for the Strategy ID.
+   * @notice Thrown when trying to cancel a proposed update, but no new strategy has been proposed for the strategy id
    * @param strategyId The strategy id without a proposed update
    */
   error MissingStrategyProposedUpdate(StrategyId strategyId);
