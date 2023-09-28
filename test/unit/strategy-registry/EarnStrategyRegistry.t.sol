@@ -16,6 +16,7 @@ import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrateg
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
+  event StrategyUpdateCanceled(StrategyId strategyId);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -217,5 +218,64 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetIsNotFirstToken.selector, badStrategy));
     vm.prank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy);
+  }
+
+  function test_cancelStrategyUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    vm.expectEmit();
+    emit StrategyUpdateCanceled(aRegisteredStrategyId);
+    strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
+
+    // and can propose same strategy update again
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+  }
+
+  function test_cancelStrategyUpdate_RevertWhen_WrongOwner() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+
+    address anotherOwner = address(2);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
+    vm.prank(anotherOwner);
+    strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
+  }
+
+  function test_cancelStrategyUpdate_RevertWhen_MissingStrategyProposedUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.prank(owner);
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
+    );
+    strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
+  }
+
+  function test_cancelStrategyUpdate_RevertWhen_MissingStrategyProposedUpdate_AlreadyCanceled() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    vm.expectEmit();
+    emit StrategyUpdateCanceled(aRegisteredStrategyId);
+    strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
+    );
+    strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
   }
 }

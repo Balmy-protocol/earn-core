@@ -73,7 +73,13 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function cancelStrategyUpdate(StrategyId strategyId) external { }
+  function cancelStrategyUpdate(StrategyId strategyId) external onlyOwner(strategyId) {
+    ProposedUpdate memory proposedStrategyUpdate = proposedUpdate[strategyId];
+    if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
+    assignedId[proposedStrategyUpdate.newStrategy] = StrategyIdConstants.NO_STRATEGY;
+    delete proposedUpdate[strategyId];
+    emit StrategyUpdateCanceled(strategyId);
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
   function updateStrategy(StrategyId strategyId) external { }

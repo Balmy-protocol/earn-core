@@ -43,6 +43,12 @@ interface IEarnStrategyRegistry {
   error AssetIsNotFirstToken(IEarnStrategy invalidStrategy);
 
   /**
+   * @notice Thrown when trying to cancel a proposed update, but no new strategy has been proposed for the Strategy ID.
+   * @param strategyId The strategy id without a proposed update
+   */
+  error MissingStrategyProposedUpdate(StrategyId strategyId);
+
+  /**
    * @notice Emitted when a new strategy is registered
    * @param owner The strategy's owner
    * @param strategyId The strategy id
@@ -56,6 +62,12 @@ interface IEarnStrategyRegistry {
    * @param newStrategy The strategy
    */
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
+
+  /**
+   * @notice Emitted when a proposed update is canceled
+   * @param strategyId The strategy id
+   */
+  event StrategyUpdateCanceled(StrategyId strategyId);
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
