@@ -233,6 +233,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     // and can propose same strategy update again
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    vm.stopPrank();
   }
 
   function test_cancelStrategyUpdate_RevertWhen_WrongOwner() public {
@@ -277,5 +278,6 @@ contract EarnStrategyRegistryTest is PRBTest {
       abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
     );
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
+    vm.stopPrank();
   }
 }
