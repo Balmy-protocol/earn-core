@@ -49,8 +49,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
-  // Used to represent a position being created
-  uint8 private constant POSITION_BEING_CREATED = 0;
   // slither-disable-start naming-convention
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
@@ -138,7 +136,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       uint256 totalShares,
       address[] memory tokens,
       uint256[] memory totalBalances
-    ) = _loadCurrentState({ positionId: POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
+    ) = _loadCurrentState({ positionId: YieldMath.POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
 
     positionId = _mintWithPermissions(owner, permissions);
 
@@ -309,16 +307,13 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       totalShares: totalShares
     });
 
-    // Make sure we only calculate balance for positions that might have it
-    if (positionId != POSITION_BEING_CREATED) {
-      calculatedData.positionBalance = YieldMath.calculateBalance({
-        positionId: positionId,
-        token: token,
-        newAccumulator: calculatedData.newAccumulator,
-        positionShares: positionShares,
-        positionRegistry: _positionYieldData
-      });
-    }
+    calculatedData.positionBalance = YieldMath.calculateBalance({
+      positionId: positionId,
+      token: token,
+      newAccumulator: calculatedData.newAccumulator,
+      positionShares: positionShares,
+      positionRegistry: _positionYieldData
+    });
   }
 
   // slither-disable-next-line reentrancy-benign

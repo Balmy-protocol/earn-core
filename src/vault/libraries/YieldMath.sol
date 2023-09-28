@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 // solhint-disable no-unused-import
 import {
@@ -12,7 +11,6 @@ import {
 // solhint-enable no-unused-import
 
 library YieldMath {
-  using SafeCast for uint256;
   using Math for uint256;
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
 
@@ -22,6 +20,9 @@ library YieldMath {
    *      understand why we chose this particular amount, please refer refer to the [README](../README.md).
    */
   uint256 internal constant ACCUM_PRECISION = 1e33;
+
+  /// @dev Used to represent a position being created
+  uint256 internal constant POSITION_BEING_CREATED = 0;
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares
@@ -66,14 +67,16 @@ library YieldMath {
     view
     returns (uint256)
   {
+    if (positionId == POSITION_BEING_CREATED) {
+      // If it's being created, then there is nothing to check
+      return 0;
+    }
+
     // slither-disable-next-line unused-return
     (uint256 initialAccum, uint256 positionBalance,) = positionRegistry.read(positionId, token);
 
-    positionBalance += calculateEarned({
-      initialAccum: initialAccum,
-      finalAccum: newAccumulator,
-      positionShares: positionShares
-    });
+    positionBalance +=
+      calculateEarned({ initialAccum: initialAccum, finalAccum: newAccumulator, positionShares: positionShares });
 
     return positionBalance;
   }
