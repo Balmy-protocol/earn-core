@@ -3,49 +3,49 @@ pragma solidity >=0.8.0;
 
 import { IEarnStrategy, StrategyId } from "../../src/vault/EarnVault.sol";
 import { IEarnStrategyRegistry } from "../../src/interfaces/IEarnStrategyRegistry.sol";
-import { EarnStrategyMock } from "../mocks/EarnStrategyMock.sol";
-import { EarnStrategyRegistryMock } from "../mocks/EarnStrategyRegistryMock.sol";
+import { EarnStrategyStateBalanceMock } from "../mocks/strategies/EarnStrategyStateBalanceMock.sol";
+import { EarnStrategyRegistryMock } from "../mocks/strategies/EarnStrategyRegistryMock.sol";
 
 library StrategyUtils {
-  function deployStrategy(
+  function deployStateStrategy(
     IEarnStrategyRegistry registry,
     address[] memory tokens,
     address owner
   )
     internal
-    returns (EarnStrategyMock strategy, StrategyId strategyId)
+    returns (EarnStrategyStateBalanceMock strategy, StrategyId strategyId)
   {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
-    strategy = new EarnStrategyMock(tokens, withdrawalTypes);
+    strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
     strategyId = registry.registerStrategy(owner, strategy);
   }
 
-  function deployStrategy(address[] memory tokens) internal returns (EarnStrategyMock strategy) {
+  function deployStateStrategy(address[] memory tokens) internal returns (EarnStrategyStateBalanceMock strategy) {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
-    return strategy = new EarnStrategyMock(tokens, withdrawalTypes);
+    return strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
   }
 
-  function deployStrategy(
+  function deployStateStrategy(
     EarnStrategyRegistryMock registry,
     address[] memory tokens
   )
     internal
-    returns (StrategyId strategyId, EarnStrategyMock strategy)
+    returns (StrategyId strategyId, EarnStrategyStateBalanceMock strategy)
   {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
-    return deployStrategy(registry, tokens, withdrawalTypes);
+    return deployStateStrategy(registry, tokens, withdrawalTypes);
   }
 
-  function deployStrategy(
+  function deployStateStrategy(
     EarnStrategyRegistryMock registry,
     address[] memory tokens,
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes
   )
     internal
-    returns (StrategyId strategyId, EarnStrategyMock strategy)
+    returns (StrategyId strategyId, EarnStrategyStateBalanceMock strategy)
   {
     require(tokens.length > 0, "Invalid");
-    strategy = new EarnStrategyMock(tokens, withdrawalTypes);
+    strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
     strategyId = registry.registerStrategy(address(this), strategy);
   }
 }

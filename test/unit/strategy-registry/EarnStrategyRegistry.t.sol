@@ -10,8 +10,8 @@ import { StrategyId, StrategyIdConstants } from "../../../src/types/StrategyId.s
 import { Token } from "../../../src/libraries/Token.sol";
 
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
-import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
-import { EarnStrategyBadMock } from "../../mocks/EarnStrategyBadMock.sol";
+import { EarnStrategyBadMock } from "../../mocks/strategies/EarnStrategyBadMock.sol";
+import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
@@ -31,7 +31,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectEmit();
     emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID, aStrategy);
@@ -44,7 +44,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy_RevertWhen_StrategyIsAlreadyRegistered() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     strategyRegistry.registerStrategy(owner, aStrategy);
 
@@ -69,8 +69,8 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_registerStrategy_MultipleStrategiesRegistered() public {
-    IEarnStrategy aStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
-    IEarnStrategy anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
     StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner, anotherStrategy);
 
@@ -83,9 +83,9 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
-    IEarnStrategy anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectEmit();
     emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy);
@@ -98,13 +98,13 @@ contract EarnStrategyRegistryTest is PRBTest {
     strategyTokens[0] = Token.NATIVE_TOKEN;
     strategyTokens[1] = address(1);
 
-    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStrategy(strategyRegistry, strategyTokens, owner);
+    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStateStrategy(strategyRegistry, strategyTokens, owner);
 
     address[] memory newStrategyTokens = new address[](2);
     newStrategyTokens[0] = Token.NATIVE_TOKEN;
     newStrategyTokens[1] = address(2);
     newStrategyTokens[1] = address(1);
-    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(newStrategyTokens);
+    EarnStrategyStateBalanceMock anotherStrategy = StrategyUtils.deployStateStrategy(newStrategyTokens);
 
     vm.prank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
@@ -112,9 +112,10 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_WrongOwner() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
-    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     address anotherOwner = address(2);
 
@@ -125,8 +126,9 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyProposedUpdate() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
-    EarnStrategyMock newStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyStateBalanceMock newStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
@@ -138,10 +140,10 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
-    (EarnStrategyMock anotherStrategy,) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    (EarnStrategyStateBalanceMock anotherStrategy,) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
     vm.prank(owner);
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
@@ -150,10 +152,11 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered_InAnotherProposedUpdate() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
     (, StrategyId anotherRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
-    EarnStrategyMock newStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    EarnStrategyStateBalanceMock newStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
@@ -169,9 +172,10 @@ contract EarnStrategyRegistryTest is PRBTest {
     tokens[0] = Token.NATIVE_TOKEN;
     tokens[1] = address(1);
 
-    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStrategy(strategyRegistry, tokens, owner);
+    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStateStrategy(strategyRegistry, tokens, owner);
 
-    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.prank(owner);
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.TokensSupportedMismatch.selector));
@@ -180,9 +184,10 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_AssetMismatch() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(address(1)), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(address(1)), owner);
 
-    EarnStrategyMock anotherStrategy = StrategyUtils.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    EarnStrategyStateBalanceMock anotherStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetMismatch.selector));
     vm.prank(owner);
@@ -191,7 +196,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_AddressIsNotStrategy() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
     IEarnStrategy badStrategy;
 
@@ -202,7 +207,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_proposeStrategyUpdate_RevertWhen_AssetIsNotFirstToken() public {
     (, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
     address[] memory tokens = new address[](2);
     tokens[0] = Token.NATIVE_TOKEN;

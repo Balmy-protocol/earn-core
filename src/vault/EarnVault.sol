@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
-import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { AccessControlDefaultAdminRules } from
@@ -16,15 +15,21 @@ import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
 
 import { Token } from "../libraries/Token.sol";
 import { SharesMath } from "./libraries/SharesMath.sol";
-import { StorageHelper } from "./libraries/StorageHelper.sol";
-import { DataCalculations } from "./libraries/DataCalculations.sol";
-
+import { YieldMath } from "./libraries/YieldMath.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 // solhint-disable no-unused-import
-import { PositionData, TotalYieldDataForToken } from "./types/Storage.sol";
-import { KeyEncoding, StrategyAndToken } from "./types/KeyEncoding.sol";
-import { CalculatedDataForToken, UpdateAction } from "./types/Memory.sol";
+import { PositionData, PositionDataLibrary } from "./types/PositionData.sol";
+import {
+  TotalYieldDataKey, TotalYieldDataForToken, TotalYieldDataForTokenLibrary
+} from "./types/TotalYieldDataForToken.sol";
+import {
+  PositionYieldDataKey,
+  PositionYieldDataForToken,
+  PositionYieldDataForTokenLibrary
+} from "./types/PositionYieldDataForToken.sol";
+import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
+import { UpdateAction } from "./types/UpdateAction.sol";
 // solhint-disable no-unused-import
 
 // TODO: remove once functions are implemented
@@ -32,11 +37,11 @@ import { CalculatedDataForToken, UpdateAction } from "./types/Memory.sol";
 // slither-disable-start unimplemented-functions
 // solhint-disable no-empty-blocks
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
-  using SafeCast for uint256;
-  using SafeCast for uint104;
   using Token for address;
-  using StorageHelper for mapping(StrategyAndToken => TotalYieldDataForToken);
-  using DataCalculations for CalculatedDataForToken[];
+  using PositionDataLibrary for mapping(uint256 => PositionData);
+  using TotalYieldDataForTokenLibrary for mapping(TotalYieldDataKey => TotalYieldDataForToken);
+  using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
+  using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
   bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
@@ -45,17 +50,18 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   /// @inheritdoc IEarnVault
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
   // slither-disable-start naming-convention
-  // solhint-disable var-name-mixedcase
   /// @inheritdoc IEarnVault
+  // solhint-disable-next-line var-name-mixedcase
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
-  // solhint-enable var-name-mixedcase
 
   // Stores total amount of shares per strategy
   mapping(StrategyId strategyId => uint256 totalShares) internal _totalSharesInStrategy;
   // Stores shares and strategy id per position
   mapping(uint256 positionId => PositionData positionData) internal _positions;
-  // Store relevant yield data for all positions in the strategy, in the context of a specific token
-  mapping(StrategyAndToken strategyAndToken => TotalYieldDataForToken yieldData) internal _totalYieldData;
+  // Stores relevant yield data for all positions in the strategy, in the context of a specific reward token
+  mapping(TotalYieldDataKey key => TotalYieldDataForToken yieldData) internal _totalYieldData;
+  // Stores relevant yield data for a given position in the strategy, in the context of a specific reward token
+  mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal _positionYieldData;
   // slither-disable-end naming-convention
 
   constructor(
@@ -75,8 +81,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   receive() external payable { }
 
   /// @inheritdoc IEarnVault
-  function positionsStrategy(uint256 positionId) external view returns (StrategyId) {
-    return _positions[positionId].strategyId;
+  function positionsStrategy(uint256 positionId) external view returns (StrategyId strategyId) {
+    // slither-disable-next-line unused-return
+    (strategyId,) = _positions.read(positionId);
   }
 
   /// @inheritdoc IEarnVault
@@ -85,9 +92,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     view
     returns (address[] memory, IEarnStrategy.WithdrawalType[] memory, uint256[] memory)
   {
-    (CalculatedDataForToken[] memory calculatedData,, IEarnStrategy strategy,,, address[] memory tokens) =
+    (CalculatedDataForToken[] memory calculatedData,, IEarnStrategy strategy,,, address[] memory tokens,) =
       _loadCurrentState(positionId);
-    uint256[] memory balances = calculatedData.calculateBalances();
+    uint256[] memory balances = calculatedData.extractBalances();
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
     return (tokens, withdrawalTypes, balances);
   }
@@ -127,8 +134,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       CalculatedDataForToken[] memory calculatedData,
       IEarnStrategy strategy,
       uint256 totalShares,
-      address[] memory tokens
-    ) = _loadCurrentState({ strategyId: strategyId, positionShares: 0 });
+      address[] memory tokens,
+      uint256[] memory totalBalances
+    ) = _loadCurrentState({ positionId: YieldMath.POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
 
     positionId = _mintWithPermissions(owner, permissions);
 
@@ -139,6 +147,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       totalShares: totalShares,
       positionShares: 0,
       tokens: tokens,
+      totalBalances: totalBalances,
       calculatedData: calculatedData,
       depositToken: depositToken,
       depositAmount: depositAmount
@@ -204,16 +213,17 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       IEarnStrategy strategy,
       uint256 totalShares,
       uint256 positionShares,
-      address[] memory tokens
+      address[] memory tokens,
+      uint256[] memory totalBalances
     )
   {
-    PositionData memory positionData = _positions[positionId];
-    positionShares = positionData.shares;
-    strategyId = positionData.strategyId;
-    (calculatedData, strategy, totalShares, tokens) = _loadCurrentState(strategyId, positionShares);
+    (strategyId, positionShares) = _positions.read(positionId);
+    (calculatedData, strategy, totalShares, tokens, totalBalances) =
+      _loadCurrentState(positionId, strategyId, positionShares);
   }
 
   function _loadCurrentState(
+    uint256 positionId,
     StrategyId strategyId,
     uint256 positionShares
   )
@@ -223,34 +233,50 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       CalculatedDataForToken[] memory calculatedData,
       IEarnStrategy strategy,
       uint256 totalShares,
-      address[] memory tokens
+      address[] memory tokens,
+      uint256[] memory totalBalances
     )
   {
     totalShares = _totalSharesInStrategy[strategyId];
     strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
-    (calculatedData, tokens) =
-      _calculateAllData({ strategy: strategy, totalShares: totalShares, positionShares: positionShares });
+    (calculatedData, tokens, totalBalances) = _calculateAllData({
+      positionId: positionId,
+      strategyId: strategyId,
+      strategy: strategy,
+      totalShares: totalShares,
+      positionShares: positionShares
+    });
   }
 
   function _calculateAllData(
+    uint256 positionId,
+    StrategyId strategyId,
     IEarnStrategy strategy,
     uint256 totalShares,
     uint256 positionShares
   )
     internal
     view
-    returns (CalculatedDataForToken[] memory calculatedData, address[] memory tokens)
+    returns (CalculatedDataForToken[] memory calculatedData, address[] memory tokens, uint256[] memory totalBalances)
   {
-    uint256[] memory totalBalances;
     (tokens, totalBalances) = strategy.totalBalances();
 
     calculatedData = new CalculatedDataForToken[](tokens.length);
-    for (uint256 i = 0; i < tokens.length;) {
-      calculatedData[i] = _calculateAllDataForToken({
+    // TODO: test if it's cheaper to avoid using the entire `CalculatedDataForToken` for the asset
+    calculatedData[0].positionBalance = SharesMath.convertToAssets({
+      shares: positionShares,
+      totalAssets: totalBalances[0],
+      totalShares: totalShares,
+      rounding: Math.Rounding.Floor
+    });
+    for (uint256 i = 1; i < tokens.length;) {
+      calculatedData[i] = _calculateAllDataForRewardToken({
+        positionId: positionId,
+        strategyId: strategyId,
         totalShares: totalShares,
         positionShares: positionShares,
-        totalBalance: totalBalances[i],
-        isAsset: i == 0
+        token: tokens[i],
+        totalBalance: totalBalances[i]
       });
       unchecked {
         ++i;
@@ -258,33 +284,36 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     }
   }
 
-  function _calculateAllDataForToken(
+  function _calculateAllDataForRewardToken(
+    uint256 positionId,
+    StrategyId strategyId,
     uint256 totalShares,
     uint256 positionShares,
-    uint256 totalBalance,
-    bool isAsset
+    address token,
+    uint256 totalBalance
   )
     internal
-    pure
+    view
     returns (CalculatedDataForToken memory calculatedData)
   {
-    calculatedData.totalBalance = totalBalance;
+    uint256 yieldAccumulator;
+    (yieldAccumulator, calculatedData.lastRecordedBalance, calculatedData.totalLossEvents) =
+      _totalYieldData.read(strategyId, token);
 
-    if (isAsset) {
-      // If we are calculating for the asset, then simply divide available balance based on shares
-      if (positionShares > 0) {
-        calculatedData.positionBalance = SharesMath.convertToAssets({
-          shares: positionShares,
-          totalAssets: totalBalance,
-          totalShares: totalShares,
-          rounding: Math.Rounding.Floor
-        }).toInt256();
-      }
-    } else {
-      // TODO
-      // calculatedData.totalYieldData = _totalYieldData.read(strategyId, token);
-      // int256 yielded = totalBalance.toInt256() - calculatedData.totalYieldData.lastRecordedBalance.toInt256();
-    }
+    calculatedData.newAccumulator = YieldMath.calculateAccum({
+      lastRecordedBalance: calculatedData.lastRecordedBalance,
+      currentBalance: totalBalance,
+      previousAccum: yieldAccumulator,
+      totalShares: totalShares
+    });
+
+    calculatedData.positionBalance = YieldMath.calculateBalance({
+      positionId: positionId,
+      token: token,
+      newAccumulator: calculatedData.newAccumulator,
+      positionShares: positionShares,
+      positionRegistry: _positionYieldData
+    });
   }
 
   // slither-disable-next-line reentrancy-benign
@@ -296,6 +325,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 positionShares,
     address[] memory tokens,
     CalculatedDataForToken[] memory calculatedData,
+    uint256[] memory totalBalances,
     address depositToken,
     uint256 depositAmount
   )
@@ -323,7 +353,11 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       positionShares: positionShares,
       tokens: tokens,
       calculatedData: calculatedData,
-      amounts: deposits,
+      balancesBeforeUpdate: totalBalances,
+      // We use balancesAfterUpdate only for reward tokens, that are not expected to change on a deposit. So we can
+      // reuse totalBalances
+      balancesAfterUpdate: totalBalances,
+      updateAmounts: deposits,
       action: UpdateAction.DEPOSIT
     });
   }
@@ -335,34 +369,32 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 positionShares,
     address[] memory tokens,
     CalculatedDataForToken[] memory calculatedData,
-    uint256[] memory amounts,
+    uint256[] memory balancesBeforeUpdate,
+    uint256[] memory updateAmounts,
+    uint256[] memory balancesAfterUpdate,
     UpdateAction action
   )
     internal
   {
-    uint256 shares = SharesMath.convertToShares({
-      assets: amounts[0],
-      totalAssets: calculatedData[0].totalBalance,
+    uint256 newPositionShares = _updateAccountingForAsset({
+      positionId: positionId,
+      strategyId: strategyId,
       totalShares: totalShares,
-      rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
+      positionShares: positionShares,
+      totalAssetsBeforeUpdate: balancesBeforeUpdate[0],
+      updateAmount: updateAmounts[0],
+      action: action
     });
-    (uint256 newTotalShares, uint256 newPositionShares) = action == UpdateAction.DEPOSIT
-      ? (totalShares + shares, positionShares + shares)
-      : (totalShares - shares, positionShares - shares);
 
-    if (shares != 0) {
-      _totalSharesInStrategy[strategyId] = newTotalShares;
-      _positions[positionId] = PositionData({ shares: newPositionShares.toUint160(), strategyId: strategyId });
-    }
-
-    for (uint256 i = 0; i < calculatedData.length;) {
-      _updateAccountingForToken({
+    for (uint256 i = 1; i < calculatedData.length;) {
+      _updateAccountingForRewardToken({
+        positionId: positionId,
         strategyId: strategyId,
+        positionShares: newPositionShares,
         token: tokens[i],
         calculatedData: calculatedData[i],
-        amount: amounts[i],
-        action: action,
-        isAsset: i == 0
+        withdrawn: updateAmounts[i],
+        totalBalanceAfterUpdate: balancesAfterUpdate[i]
       });
       unchecked {
         ++i;
@@ -370,39 +402,68 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     }
   }
 
-  function _updateAccountingForToken(
+  function _updateAccountingForAsset(
+    uint256 positionId,
     StrategyId strategyId,
+    uint256 totalShares,
+    uint256 positionShares,
+    uint256 totalAssetsBeforeUpdate,
+    uint256 updateAmount,
+    UpdateAction action
+  )
+    internal
+    returns (uint256)
+  {
+    uint256 shares = SharesMath.convertToShares({
+      assets: updateAmount,
+      totalAssets: totalAssetsBeforeUpdate,
+      totalShares: totalShares,
+      rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
+    });
+    if (shares == 0) {
+      if (action == UpdateAction.DEPOSIT) {
+        // If we get to this point, then the user deposited a non-zero amount of assets and is getting zero shares in
+        // return. We don't want this to happen, so we'll revert
+        // TODO: implement and add test for this scenario
+        // revert ZeroSharesDeposit();
+      } else {
+        return positionShares;
+      }
+    }
+    (uint256 newTotalShares, uint256 newPositionShares) = action == UpdateAction.DEPOSIT
+      ? (totalShares + shares, positionShares + shares)
+      : (totalShares - shares, positionShares - shares);
+    _totalSharesInStrategy[strategyId] = newTotalShares;
+    _positions.update({ positionId: positionId, newPositionShares: newPositionShares, strategyId: strategyId });
+    return newPositionShares;
+  }
+
+  function _updateAccountingForRewardToken(
+    uint256 positionId,
+    StrategyId strategyId,
+    uint256 positionShares,
     address token,
     CalculatedDataForToken memory calculatedData,
-    uint256 amount,
-    UpdateAction action,
-    bool isAsset
+    uint256 withdrawn,
+    uint256 totalBalanceAfterUpdate
   )
     internal
   {
-    // TODO: Remove when withdraws are supported
-    // slither-disable-next-line uninitialized-local
-    uint256 newTotalBalance;
-    int256 newPositionBalance;
-
-    int256 signedAmount = amount.toInt256();
-    if (action == UpdateAction.DEPOSIT) {
-      newTotalBalance = calculatedData.totalBalance + amount;
-      newPositionBalance = calculatedData.positionBalance + signedAmount;
-    } else {
-      // TODO: support withdrawals
-    }
-
-    if (!isAsset) {
-      _totalYieldData.update({
-        strategyId: strategyId,
-        token: token,
-        newTotalBalance: newTotalBalance,
-        newAccumulator: calculatedData.newAccumulator,
-        previousValues: calculatedData.totalYieldData
-      });
-      // TODO
-    }
+    _totalYieldData.update({
+      strategyId: strategyId,
+      token: token,
+      newTotalBalance: totalBalanceAfterUpdate,
+      newAccumulator: calculatedData.newAccumulator,
+      newTotalLossEvents: calculatedData.totalLossEvents
+    });
+    _positionYieldData.update({
+      positionId: positionId,
+      token: token,
+      newAccumulator: calculatedData.newAccumulator,
+      newPositionBalance: calculatedData.positionBalance - withdrawn,
+      newProccessedLossEvents: calculatedData.totalLossEvents,
+      newShares: positionShares
+    });
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {

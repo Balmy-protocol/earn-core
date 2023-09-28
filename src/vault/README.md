@@ -22,7 +22,7 @@ And then comes John, and deposits 1000 _$DAI_ into the strategy. He will be awar
 
 $$
 \begin{align}
-  shares(John) & = deposit * totalShares / totalAmount \notag \\
+  shares(John) & = \frac{deposit * totalShares}{totalAmount} \notag \\
   & = 1000 * 2500 / 10000 \notag \\
   & = 250 \notag \\
 \end{align}
@@ -40,14 +40,14 @@ Now that we know how shares are assigned during deposits, we can easily calculat
 amount of _$DAI_ increases/decreases.
 
 $$
-owned(John, DAI) = totalAmount(DAI) * shares(John) / totalShares
+owned(John, DAI) = \frac{totalAmount(DAI) * shares(John)}{totalShares}
 $$
 
 So for example, if the total amount of _$DAI_ increases to 15000, then:
 
 $$
 \begin{align}
-owned(John, DAI) & = totalAmount(DAI) * shares(John) / totalShares \notag \\
+owned(John, DAI) & = \frac{totalAmount(DAI) * shares(John)}{totalShares} \notag \\
 & = [15000 - 0] * 250 / 2750 \notag \\
 & = 15000 * 250 / 2750 \notag \\
 & \approx 1363.63 \notag \\
@@ -68,7 +68,7 @@ how much of that belongs to John?
 
 $$
 \begin{align}
-owned(John, OP) & = yielded(OP) * shares(John) / totalShares \notag \\
+owned(John, OP) & = \frac{yielded(OP) * shares(John)}{totalShares} \notag \\
 & = 50 * 250 / 2750 \notag \\
 & \approx 4.54 \notag \\
 \end{align}
@@ -79,11 +79,11 @@ how much John owns by doing the same as before:
 
 $$
 \begin{align}
-owned(John, OP) & = yielded_{t1 - t0}(OP) * shares(John) / totalShares_{t1} \notag \\
-& \quad+ yielded_{t2 - t1}(OP) * shares(John) / totalShares_{t2}  \notag \\
-& \quad+ yielded_{t3 - t2}(OP) * shares(John) / totalShares_{t3}  \notag \\
+owned(John, OP) & = \frac{yielded_{t1 - t0}(OP) * shares(John)}{totalShares_{t1}} \notag \\
+& \quad+ \frac{yielded_{t2 - t1}(OP) * shares(John)}{totalShares_{t2}}  \notag \\
+& \quad+ \frac{yielded_{t3 - t2}(OP) * shares(John)}{totalShares_{t3}}  \notag \\
 & \quad+ ... \notag \\
-& = shares(John) * \sum_{n=1}^{\infty} [yielded_{tn-t(n-1)} / totalShares_{tn}]  \notag \\
+& = shares(John) * \sum_{n=1}^{\infty} \frac{yielded_{tn-t(n-1)}}{totalShares_{tn}}  \notag \\
 \end{align}
 $$
 
@@ -121,27 +121,24 @@ You can refer to [this file](./types/Storage.sol) to understand the different va
 
 #### Position Balance
 
-We believe that with 104 bits, we can store a strategy's balance. Assuming 18 decimals, we can store up to _1e13_ units
-of tokens in it, which is enough to cover the entire circulating supply of the top 1000 tokens in CoinMarketCap right
-now (Sep 15, 2023), except for _$APENFT_, _$BTT_, _$SHIB_ and _$PEPE_. With all of them, we can cover up to 2% of the
+We believe that with 102 bits, we can store a strategy's balance. Assuming 18 decimals, we can store up to _5e11_ units
+of tokens in it, which is enough to cover the entire circulating supply of ~95% of the top 1000 tokens in CoinMarketCap
+right now (Sep 20, 2023), except for mostly meme coins. At the same time, it's enough to cover up to 1.5% of _$PEPE_'s
 circulating supply, which is good enough for a single strategy. Let's remember that if a strategy is filled, then an
 exact copy can be deployed to manage more funds.
 
 It's important to note that tokens that use a higher amount of decimals or have much bigger supplies might not fit
 correctly. **It will be up to each strategy to make sure that reported tokens can work with these limitations**.
 
-Also, let's remember that the total amount of balance will be stored with `uint256`, so we can handle these amounts when
-accounting for all combined positions.
-
 #### Yield Accumulator
 
-Like we explained before, we can calculate a position's balance for non-asset tokens by calculating the sum of yielded
-tokens divided by the amount of total shares. Like we said before, we'll use an accumulator to keep track of this sum,
-instead of calculating it every time. But we need to be careful with the precision.
+Like we explained before, we can calculate a position's balance for reward (non-asset) tokens by calculating the sum of
+yielded tokens divided by the amount of total shares. Like we said before, we'll use an accumulator to keep track of
+this sum, instead of calculating it every time. But we need to be careful with the precision.
 
 The accumulator is the sum of:
 
-$$ yielded \* ACCUM_PRECISION / total(shares) $$
+$$ \frac{yielded \* ACCUM_PRECISION}{total(shares)} $$
 
 We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
@@ -187,7 +184,7 @@ $$
 
 If the total amount of assets is over _1e30_, then we might start to lose some precision. With 18 decimals, that's
 _1e12_ units of tokens we can have deposited on the strategy. To put it in easier terms, a single strategy would have to
-hold more than 0.25% of PEPE's circulating supply (Sep 15, 2023) before a wei is lost due to precision 🫡
+hold more than 0.25% of _$PEPE_'s circulating supply (Sep 20, 2023) before a wei is lost due to precision 🫡
 
 ##### Worst case analysis: overflow scenario
 
@@ -202,9 +199,9 @@ scenario of one update per block, we have:
 
 $$
 \begin{align}
-max\_size(update) & < total\_space / max\_amount(updates) \notag \\
-& < 2^{152} / 3.154e8 \notag \\
-& < 1.81e37 \notag \\
+max\_size(update) & < \frac{total\_space}{max\_amount(updates)} \notag \\
+& < \frac{2^{150}}{3.154e8} \notag \\
+& < 4.52e36 \notag \\
 \end{align}
 $$
 
@@ -212,9 +209,9 @@ So, we know that:
 
 $$
 \begin{align}
-yielded * ACCUM\_PRECISION / total(shares) & < max\_size(update) \notag \\
-yielded * 1e33 / total(shares) & < 1.81e37 \notag \\
-yielded / total(shares) & < 18100  \notag \\
+\frac{yielded * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
+\frac{yielded * 1e33}{total(shares)} & < 4.52e36 \notag \\
+\frac{yielded}{total(shares)} & < 4520  \notag \\
 \end{align}
 $$
 
@@ -223,19 +220,19 @@ So we have `10 * 1e6 * 1e3` shares, which is _1e10_.
 
 $$
 \begin{align}
-yielded / total(shares) & < 18100  \notag \\
-yielded / 1e10 & < 18100  \notag \\
-yielded & < 18100 * 1e10  \notag \\
-yielded & < 1.81e14  \notag \\
+yielded / total(shares) & < 4520  \notag \\
+yielded / 1e10 & < 4520  \notag \\
+yielded & < 4520 * 1e10  \notag \\
+yielded & < 4.52e13  \notag \\
 \end{align}
 $$
 
-This means that if 10 USDC worth of tokens generate less than _1.8e14_ worth of tokens **per second**, then we have at
+This means that if 10 USDC worth of tokens generate less than _4.52e13_ worth of tokens **per second**, then we have at
 least 10 years before the accum overflows.
 
 To put it in _$OP_ terms (known for its use as a reward), that would be
-$0.00025 (Sep 15, 2023) usd per second, which would
-be $21.6 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
+$0.00006 (Sep 20, 2023) usd per second, which would
+be $5.2 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
 but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.

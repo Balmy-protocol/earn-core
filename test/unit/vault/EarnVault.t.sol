@@ -19,9 +19,9 @@ import {
   StrategyId
 } from "../../../src/vault/EarnVault.sol";
 import { Token } from "../../../src/libraries/Token.sol";
-import { EarnStrategyMock } from "../../mocks/EarnStrategyMock.sol";
-import { EarnStrategyRegistryMock } from "../../mocks/EarnStrategyRegistryMock.sol";
-import { ERC20Mock } from "../../mocks/ERC20Mock.sol";
+import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
+import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
+import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 
@@ -43,12 +43,12 @@ contract EarnVaultTest is PRBTest, StdUtils {
   address private positionOwner = address(3);
   address private operator = address(4);
   EarnStrategyRegistryMock private strategyRegistry;
-  ERC20Mock private erc20;
+  ERC20MintableBurnableMock private erc20;
   EarnVault private vault;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistryMock();
-    erc20 = new ERC20Mock();
+    erc20 = new ERC20MintableBurnableMock();
     vault = new EarnVault(
       strategyRegistry,
       superAdmin,
@@ -98,7 +98,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_createPosition_RevertWhen_Paused() public {
-    (StrategyId strategyId,) = strategyRegistry.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     // Pause deposits
     vm.prank(pauseAdmin);
@@ -111,7 +111,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_createPosition_RevertWhen_EmptyDeposit() public {
-    (StrategyId strategyId,) = strategyRegistry.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroAmountDeposit.selector));
     vault.createPosition(
@@ -120,7 +120,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_createPosition_RevertWhen_UsingFullDepositWithNative() public {
-    (StrategyId strategyId,) = strategyRegistry.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectRevert(abi.encodeWithSelector(Token.OperationNotSupportedForNativeToken.selector));
     vault.createPosition(
@@ -135,8 +135,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
 
-    (StrategyId strategyId, EarnStrategyMock strategy) =
-      strategyRegistry.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectCall(
       address(strategy),
@@ -179,8 +179,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
 
-    (StrategyId strategyId, EarnStrategyMock strategy) =
-      strategyRegistry.deployStrategy(CommonUtils.arrayOf(address(erc20)));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     vm.expectCall(
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
@@ -220,8 +220,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
 
-    (StrategyId strategyId, EarnStrategyMock strategy) =
-      strategyRegistry.deployStrategy(CommonUtils.arrayOf(address(erc20)));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     vm.expectCall(
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
@@ -259,8 +259,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
     amountToDeposit2 = uint104(bound(amountToDeposit2, 1, type(uint104).max));
     vm.deal(address(this), uint256(amountToDeposit1) + amountToDeposit2);
 
-    (StrategyId strategyId, EarnStrategyMock strategy) =
-      strategyRegistry.deployStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     (uint256 positionId1, uint256 assetsDeposited1) = vault.createPosition{ value: amountToDeposit1 }(
       strategyId, Token.NATIVE_TOKEN, amountToDeposit1, positionOwner, PermissionUtils.buildEmptyPermissionSet(), ""

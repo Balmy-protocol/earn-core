@@ -42,6 +42,11 @@ owner (or accounts with explicit permissions) could withdraw funds or deposit mo
 When we talk about an asset, we refer to a token (could be ERC20 or native) that is deposited by the user to start
 generating yield
 
+### Reward Token
+
+Like we said before, a position will deposit an asset, and generate yield in one or more tokens. We'll use the term
+"reward tokens" to refer to the tokens that are being generated, but are not the asset.
+
 ### Strategies
 
 In Earn, a strategy will take an asset and generate yield with it by depositing into one or more "farms". The generated

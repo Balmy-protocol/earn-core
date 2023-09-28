@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import { IEarnStrategyRegistry, IEarnStrategy, StrategyId } from "../../src/interfaces/IEarnStrategyRegistry.sol";
+import { IEarnStrategyRegistry, IEarnStrategy, StrategyId } from "../../../src/interfaces/IEarnStrategyRegistry.sol";
 
 contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
   error NotImplemented();
