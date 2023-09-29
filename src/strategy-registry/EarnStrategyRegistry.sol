@@ -91,10 +91,9 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
     IEarnStrategy oldStrategy = getStrategy[strategyId];
     getStrategy[strategyId] = proposedStrategyUpdate.newStrategy;
-    assignedId[proposedStrategyUpdate.newStrategy] = strategyId;
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
-    emit StrategyUpdated(strategyId);
+    emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {

@@ -50,7 +50,7 @@ interface IEarnStrategyRegistry {
 
   /**
    * @notice Thrown when trying to confirm the proposed update before the delay has passed
-   * @param strategyId The strategy id without a proposed update
+   * @param strategyId The strategy id to update
    */
   error StrategyUpdateBeforeDelay(StrategyId strategyId);
 
@@ -72,8 +72,9 @@ interface IEarnStrategyRegistry {
   /**
    * @notice Emitted when a new strategy is updated
    * @param strategyId The strategy id
+   * @param newStrategy The strategy
    */
-  event StrategyUpdated(StrategyId strategyId);
+  event StrategyUpdated(StrategyId strategyId, IEarnStrategy newStrategy);
 
   /**
    * @notice Emitted when a proposed update is canceled

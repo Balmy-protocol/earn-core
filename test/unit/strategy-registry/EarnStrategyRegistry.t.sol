@@ -17,7 +17,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateCanceled(StrategyId strategyId);
-  event StrategyUpdated(StrategyId strategyId);
+  event StrategyUpdated(StrategyId strategyId, IEarnStrategy strategy);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -93,6 +93,9 @@ contract EarnStrategyRegistryTest is PRBTest {
     emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy);
     vm.prank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    (IEarnStrategy proposedStrategy, uint256 executableAt) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
+    assertEq(address(proposedStrategy), address(anotherStrategy));
+    assertEq(executableAt, block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY());
   }
 
   function test_proposeStrategyUpdate_UpdateWithMoreTokens() public {
@@ -283,7 +286,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   }
 
   function test_updateStrategy() public {
-    (, StrategyId aRegisteredStrategyId) =
+    (EarnStrategyStateBalanceMock oldStrategy, StrategyId aRegisteredStrategyId) =
       StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
@@ -293,13 +296,16 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
     vm.expectEmit();
-    emit StrategyUpdated(aRegisteredStrategyId);
+    emit StrategyUpdated(aRegisteredStrategyId, newStrategy);
     strategyRegistry.updateStrategy(aRegisteredStrategyId);
     vm.stopPrank();
 
     //The strategy was updated
     assertEq(address(newStrategy), address(strategyRegistry.getStrategy(aRegisteredStrategyId)));
     assertTrue(strategyRegistry.assignedId(newStrategy) == aRegisteredStrategyId);
+
+    //Old strategy was removed
+    assertTrue(strategyRegistry.assignedId(oldStrategy) == StrategyIdConstants.NO_STRATEGY);
 
     // The Strategy ID doesn't have any proposed update
     (, uint256 executableAt) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
@@ -348,8 +354,6 @@ contract EarnStrategyRegistryTest is PRBTest {
   function test_updateStrategy_RevertWhen_MissingStrategyProposedUpdate() public {
     (, StrategyId aRegisteredStrategyId) =
       StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
-
-    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
