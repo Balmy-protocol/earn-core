@@ -357,4 +357,23 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.prank(owner);
     strategyRegistry.updateStrategy(aRegisteredStrategyId);
   }
+
+  function test_updateStrategy_RevertWhen_MissingStrategyProposedUpdate_AfterStrategyUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
+    );
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    vm.stopPrank();
+  }
 }
