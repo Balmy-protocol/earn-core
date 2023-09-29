@@ -286,9 +286,9 @@ contract EarnStrategyRegistryTest is PRBTest {
     (, StrategyId aRegisteredStrategyId) =
       StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
 
-    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
@@ -297,8 +297,13 @@ contract EarnStrategyRegistryTest is PRBTest {
     strategyRegistry.updateStrategy(aRegisteredStrategyId);
     vm.stopPrank();
 
-    assertEq(address(anotherStrategy), address(strategyRegistry.getStrategy(aRegisteredStrategyId)));
-    assertTrue(strategyRegistry.assignedId(anotherStrategy) == aRegisteredStrategyId);
+    //The strategy was updated
+    assertEq(address(newStrategy), address(strategyRegistry.getStrategy(aRegisteredStrategyId)));
+    assertTrue(strategyRegistry.assignedId(newStrategy) == aRegisteredStrategyId);
+
+    // The Strategy ID doesn't have any proposed update
+    (, uint256 executableAt) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
+    assertEq(executableAt, 0);
   }
 
   function test_updateStrategy_RevertWhen_WrongOwner() public {
