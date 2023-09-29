@@ -67,7 +67,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedUpdate[strategyId].executableAt != 0) revert StrategyAlreadyProposedUpdate();
     if (assignedId[newStrategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
     _revertIfTokensAreNotSuperset(strategyId, newStrategy);
-    proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp);
+    proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp + STRATEGY_UPDATE_DELAY);
     assignedId[newStrategy] = strategyId;
     emit StrategyUpdateProposed(strategyId, newStrategy);
   }
@@ -82,7 +82,20 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function updateStrategy(StrategyId strategyId) external { }
+  function updateStrategy(StrategyId strategyId) external onlyOwner(strategyId) {
+    ProposedUpdate memory proposedStrategyUpdate = proposedUpdate[strategyId];
+
+    if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
+    //slither-disable-next-line timestamp
+    if (proposedStrategyUpdate.executableAt > block.timestamp) revert StrategyUpdateBeforeDelay(strategyId);
+
+    IEarnStrategy oldStrategy = getStrategy[strategyId];
+    getStrategy[strategyId] = proposedStrategyUpdate.newStrategy;
+    assignedId[proposedStrategyUpdate.newStrategy] = strategyId;
+    assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
+    delete proposedUpdate[strategyId];
+    emit StrategyUpdated(strategyId);
+  }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
     bool isStrategy = ERC165Checker.supportsInterface(address(strategyToCheck), type(IEarnStrategy).interfaceId);

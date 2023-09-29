@@ -49,6 +49,12 @@ interface IEarnStrategyRegistry {
   error MissingStrategyProposedUpdate(StrategyId strategyId);
 
   /**
+   * @notice Thrown when trying to confirm the proposed update before the delay has passed
+   * @param strategyId The strategy id without a proposed update
+   */
+  error StrategyUpdateBeforeDelay(StrategyId strategyId);
+
+  /**
    * @notice Emitted when a new strategy is registered
    * @param owner The strategy's owner
    * @param strategyId The strategy id
@@ -62,6 +68,12 @@ interface IEarnStrategyRegistry {
    * @param newStrategy The strategy
    */
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
+
+  /**
+   * @notice Emitted when a new strategy is updated
+   * @param strategyId The strategy id
+   */
+  event StrategyUpdated(StrategyId strategyId);
 
   /**
    * @notice Emitted when a proposed update is canceled

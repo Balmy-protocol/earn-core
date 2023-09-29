@@ -17,6 +17,7 @@ contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateCanceled(StrategyId strategyId);
+  event StrategyUpdated(StrategyId strategyId);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -279,5 +280,76 @@ contract EarnStrategyRegistryTest is PRBTest {
     );
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
     vm.stopPrank();
+  }
+
+  function test_updateStrategy() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+
+    vm.expectEmit();
+    emit StrategyUpdated(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    vm.stopPrank();
+
+    assertEq(address(anotherStrategy), address(strategyRegistry.getStrategy(aRegisteredStrategyId)));
+    assertTrue(strategyRegistry.assignedId(anotherStrategy) == aRegisteredStrategyId);
+  }
+
+  function test_updateStrategy_RevertWhen_WrongOwner() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.prank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+
+    address anotherOwner = address(2);
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
+    vm.prank(anotherOwner);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+  }
+
+  function test_updateStrategy_RevertWhen_StrategyUpdateBeforeDelay() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.StrategyUpdateBeforeDelay.selector, aRegisteredStrategyId)
+    );
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY() - 1);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.StrategyUpdateBeforeDelay.selector, aRegisteredStrategyId)
+    );
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+
+    vm.stopPrank();
+  }
+
+  function test_updateStrategy_RevertWhen_MissingStrategyProposedUpdate() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
+    );
+    vm.prank(owner);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
   }
 }
