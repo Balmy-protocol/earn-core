@@ -116,7 +116,9 @@ It will be up to each strategy to support one or more of these special withdrawa
 Please refer to [src/types/SpecialWithdrawals.sol](src/types/SpecialWithdrawals.sol) to understand how to execute and
 interpret these withdrawals correctly
 
-### Fee Manager
+### Global Earn Config
+
+A way to read and store a default fee
 
 ## Architecture Summary
 
