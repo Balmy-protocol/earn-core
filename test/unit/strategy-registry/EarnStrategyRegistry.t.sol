@@ -434,6 +434,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.stopPrank();
 
     assertEq(strategyRegistry.proposedOwnershipTransfer(aRegisteredStrategyId), address(0));
+    assertEq(strategyRegistry.owner(aRegisteredStrategyId), owner);
   }
 
   function test_cancelOwnershipTransfer_RevertWhen_StrategyOwnershipTransferWithoutPendingProposal() public {
