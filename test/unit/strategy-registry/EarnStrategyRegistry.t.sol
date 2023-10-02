@@ -18,6 +18,9 @@ contract EarnStrategyRegistryTest is PRBTest {
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateCanceled(StrategyId strategyId);
   event StrategyUpdated(StrategyId strategyId, IEarnStrategy strategy);
+  event StrategyOwnershipTransferProposed(StrategyId strategyId, address newOwner);
+  event StrategyOwnershipTransferCanceled(StrategyId strategyId, address receiver);
+  event StrategyOwnershipTransferred(StrategyId strategyId, address newOwner);
 
   EarnStrategyRegistry private strategyRegistry;
   StrategyId private invalidStrategyId = StrategyId.wrap(1000);
@@ -379,5 +382,115 @@ contract EarnStrategyRegistryTest is PRBTest {
     );
     strategyRegistry.updateStrategy(aRegisteredStrategyId);
     vm.stopPrank();
+  }
+
+  function test_proposeOwnershipTransfer() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+
+    vm.prank(owner);
+    vm.expectEmit();
+    emit StrategyOwnershipTransferProposed(aRegisteredStrategyId, newOwner);
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+
+    assertEq(strategyRegistry.proposedOwnershipTransfer(aRegisteredStrategyId), newOwner);
+    assertEq(strategyRegistry.owner(aRegisteredStrategyId), owner);
+  }
+
+  function test_proposeOwnershipTransfer_RevertWhen_UnauthorizedStrategyOwner() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+  }
+
+  function test_proposeOwnershipTransfer_RevertWhen_StrategyOwnershipTransferAlreadyProposed() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+    vm.startPrank(owner);
+
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyOwnershipTransferAlreadyProposed.selector));
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+    vm.stopPrank();
+  }
+
+  function test_cancelOwnershipTransfer() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+
+    vm.startPrank(owner);
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+
+    vm.expectEmit();
+    emit StrategyOwnershipTransferCanceled(aRegisteredStrategyId, newOwner);
+    strategyRegistry.cancelOwnershipTransfer(aRegisteredStrategyId);
+    vm.stopPrank();
+
+    assertEq(strategyRegistry.proposedOwnershipTransfer(aRegisteredStrategyId), address(0));
+  }
+
+  function test_cancelOwnershipTransfer_RevertWhen_StrategyOwnershipTransferWithoutPendingProposal() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.prank(owner);
+    vm.expectRevert(
+      abi.encodeWithSelector(IEarnStrategyRegistry.StrategyOwnershipTransferWithoutPendingProposal.selector)
+    );
+    strategyRegistry.cancelOwnershipTransfer(aRegisteredStrategyId);
+  }
+
+  function test_cancelOwnershipTransfer_RevertWhen_UnauthorizedStrategyOwner() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
+    strategyRegistry.cancelOwnershipTransfer(aRegisteredStrategyId);
+  }
+
+  function test_acceptOwnershipTransfer() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+
+    vm.prank(owner);
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+
+    vm.prank(newOwner);
+    vm.expectEmit();
+    emit StrategyOwnershipTransferred(aRegisteredStrategyId, newOwner);
+    strategyRegistry.acceptOwnershipTransfer(aRegisteredStrategyId);
+
+    assertEq(strategyRegistry.owner(aRegisteredStrategyId), newOwner);
+    assertEq(strategyRegistry.proposedOwnershipTransfer(aRegisteredStrategyId), address(0));
+  }
+
+  function test_acceptOwnershipTransfer_RevertWhen_UnauthorizedOwnershipReceiver_WithoutProposal() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedOwnershipReceiver.selector));
+    strategyRegistry.acceptOwnershipTransfer(aRegisteredStrategyId);
+  }
+
+  function test_acceptOwnershipTransfer_RevertWhen_UnauthorizedOwnershipReceiver_WithoutPermission() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+    address newOwner = address(2);
+    address anotherOwner = address(3);
+
+    vm.prank(owner);
+    strategyRegistry.proposeOwnershipTransfer(aRegisteredStrategyId, newOwner);
+
+    vm.prank(anotherOwner);
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedOwnershipReceiver.selector));
+    strategyRegistry.acceptOwnershipTransfer(aRegisteredStrategyId);
   }
 }
