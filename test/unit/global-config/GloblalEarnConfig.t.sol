@@ -5,20 +5,15 @@ pragma solidity >=0.8.0;
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { GlobalEarnConfig, IGlobalEarnConfig } from "../../../src/global-config/GlobalEarnConfig.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
-import { StrategyId } from "../../../src/types/StrategyId.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
 
 contract GlobalEarnConfigTest is PRBTest {
   event DefaultFeeChanged(uint16 feeBps);
-  event SpecificFeeChanged(StrategyId strategyId, uint16 feeBps);
-  event SpecificFeeRemoved(StrategyId strategyId);
 
   address private superAdmin = address(1);
   address private manageFeeAdmin = address(2);
   uint16 private defaultFee = 300;
   GlobalEarnConfig private globalConfig;
-  StrategyId private aStrategyId = StrategyId.wrap(1);
-  StrategyId private anotherStrategyId = StrategyId.wrap(2);
 
   function setUp() public virtual {
     vm.expectEmit();
