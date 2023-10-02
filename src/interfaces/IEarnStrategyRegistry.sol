@@ -31,6 +31,11 @@ interface IEarnStrategyRegistry {
   error UnauthorizedStrategyOwner();
 
   /**
+   * @notice Thrown when the sender is not the strategy ownership receiver.
+   */
+  error UnauthorizedOwnershipReceiver();
+
+  /**
    * @notice Thrown when trying to register an address that is not an strategy
    * @param notStrategy The address that was not a strategy
    */
@@ -81,6 +86,27 @@ interface IEarnStrategyRegistry {
    * @param strategyId The strategy id
    */
   event StrategyUpdateCanceled(StrategyId strategyId);
+
+  /**
+   * @notice Emitted when a proposed strategy ownership transfer is proposed
+   * @param strategyId The strategy id
+   * @param newOwner The proposed new owner
+   */
+  event StrategyOwnershipTransferProposed(StrategyId strategyId, address newOwner);
+
+  /**
+   * @notice Emitted when a proposed strategy ownership transfer is canceled
+   * @param strategyId The strategy id
+   * @param receiver The canceled receiver
+   */
+  event StrategyOwnershipTransferCanceled(StrategyId strategyId, address receiver);
+
+  /**
+   * @notice Emitted when a strategy ownership is transferred
+   * @param strategyId The strategy id
+   * @param newOwner The new owner
+   */
+  event StrategyOwnershipTransferred(StrategyId strategyId, address newOwner);
 
   /**
    * @notice Returns the delay (in seconds) necessary to execute a proposed strategy update
