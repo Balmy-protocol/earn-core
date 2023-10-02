@@ -49,6 +49,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   /// @inheritdoc IEarnStrategyRegistry
   function proposeOwnershipTransfer(StrategyId strategyId, address newOwner) external onlyOwner(strategyId) {
+    if (proposedOwnershipTransfer[strategyId] != address(0)) revert StrategyOwnershipTransferAlreadyProposed();
     proposedOwnershipTransfer[strategyId] = newOwner;
     emit StrategyOwnershipTransferProposed(strategyId, newOwner);
   }
@@ -56,6 +57,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   /// @inheritdoc IEarnStrategyRegistry
   function cancelOwnershipTransfer(StrategyId strategyId) external onlyOwner(strategyId) {
     address proposedOwner = proposedOwnershipTransfer[strategyId];
+    if (proposedOwner == address(0)) revert StrategyOwnershipTransferWithoutPendingProposal();
     delete proposedOwnershipTransfer[strategyId];
     emit StrategyOwnershipTransferCanceled(strategyId, proposedOwner);
   }

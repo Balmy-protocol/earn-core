@@ -59,6 +59,12 @@ interface IEarnStrategyRegistry {
    */
   error StrategyUpdateBeforeDelay(StrategyId strategyId);
 
+  /// @notice Thrown when trying to propose a strategy ownership transfer that has a pending proposal
+  error StrategyOwnershipTransferAlreadyProposed();
+
+  // @notice Thrown when trying to cancel a proposed strategy ownership transfer without a pending proposal
+  error StrategyOwnershipTransferWithoutPendingProposal();
+
   /**
    * @notice Emitted when a new strategy is registered
    * @param owner The strategy's owner
