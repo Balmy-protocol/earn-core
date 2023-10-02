@@ -23,20 +23,18 @@ contract GlobalEarnConfig is IGlobalEarnConfig, AccessControlDefaultAdminRules {
     AccessControlDefaultAdminRules(3 days, superAdmin)
   {
     _assignRoles(MANAGE_FEES_ROLE, initialManageFeeAdmins);
-    _revertIfFeeGreaterThanMaximum(initialDefaultFee);
-    defaultFee = initialDefaultFee;
-    emit DefaultFeeChanged(initialDefaultFee);
+    _setDefaultFee(initialDefaultFee);
   }
 
   /// @inheritdoc IGlobalEarnConfig
   function setDefaultFee(uint16 feeBps) external onlyRole(MANAGE_FEES_ROLE) {
-    _revertIfFeeGreaterThanMaximum(feeBps);
-    defaultFee = feeBps;
-    emit DefaultFeeChanged(feeBps);
+    _setDefaultFee(feeBps);
   }
 
-  function _revertIfFeeGreaterThanMaximum(uint16 feeBps) internal pure {
+  function _setDefaultFee(uint16 feeBps) internal {
     if (feeBps > MAX_FEE) revert FeeGreaterThanMaximum();
+    defaultFee = feeBps;
+    emit DefaultFeeChanged(feeBps);
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
