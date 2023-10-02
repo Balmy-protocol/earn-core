@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /**
- * @title Earn Fee Manager Interface
+ * @title Global Earn Config Interface
  * @notice This manager handles fees
  */
 interface IGlobalEarnConfig is IAccessControl {

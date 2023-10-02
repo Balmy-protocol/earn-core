@@ -41,6 +41,15 @@ contract GlobalEarnConfigTest is PRBTest {
     assertEq(globalConfig.defaultFee(), defaultFee);
   }
 
+  function test_constructor_RevertWhen_FeeGreaterThanMaximum() public {
+    vm.expectRevert(abi.encodeWithSelector(IGlobalEarnConfig.FeeGreaterThanMaximum.selector));
+    globalConfig = new GlobalEarnConfig(
+      superAdmin,
+      CommonUtils.arrayOf(manageFeeAdmin),
+      10_000
+    );
+  }
+
   function test_setDefaultFee() public {
     uint16 newDefaultFee = 5;
 
@@ -61,7 +70,7 @@ contract GlobalEarnConfigTest is PRBTest {
     globalConfig.setDefaultFee(200);
   }
 
-  function test_setDefaultFee_RevertWhenFeeGreaterThanMaximum() public {
+  function test_setDefaultFee_RevertWhen_FeeGreaterThanMaximum() public {
     vm.prank(manageFeeAdmin);
     vm.expectRevert(abi.encodeWithSelector(IGlobalEarnConfig.FeeGreaterThanMaximum.selector));
     globalConfig.setDefaultFee(10_000);
