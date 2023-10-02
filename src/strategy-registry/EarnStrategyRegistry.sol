@@ -6,10 +6,6 @@ import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 import { ERC165Checker } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import { Utils } from "./utils/Utils.sol";
 
-// TODO: remove once functions are implemented
-// slither-disable-start unimplemented-functions
-// solhint-disable no-empty-blocks
-
 contract EarnStrategyRegistry is IEarnStrategyRegistry {
   using Utils for address[];
 
@@ -35,7 +31,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   mapping(StrategyId strategyId => ProposedUpdate proposedUpdate) public proposedUpdate;
 
   /// @inheritdoc IEarnStrategyRegistry
-  function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner) { }
+  mapping(StrategyId strategyId => address newOwner) public proposedOwnershipTransfer;
 
   /// @inheritdoc IEarnStrategyRegistry
   function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
@@ -52,13 +48,27 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function proposeOwnershipTransfer(StrategyId strategyId, address newOwner) external { }
+  function proposeOwnershipTransfer(StrategyId strategyId, address newOwner) external onlyOwner(strategyId) {
+    if (proposedOwnershipTransfer[strategyId] != address(0)) revert StrategyOwnershipTransferAlreadyProposed();
+    proposedOwnershipTransfer[strategyId] = newOwner;
+    emit StrategyOwnershipTransferProposed(strategyId, newOwner);
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function cancelOwnershipTransfer(StrategyId strategyId) external { }
+  function cancelOwnershipTransfer(StrategyId strategyId) external onlyOwner(strategyId) {
+    address proposedOwner = proposedOwnershipTransfer[strategyId];
+    if (proposedOwner == address(0)) revert StrategyOwnershipTransferWithoutPendingProposal();
+    delete proposedOwnershipTransfer[strategyId];
+    emit StrategyOwnershipTransferCanceled(strategyId, proposedOwner);
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function acceptOwnershipTransfer(StrategyId strategyId) external { }
+  function acceptOwnershipTransfer(StrategyId strategyId) external onlyReceiver(strategyId) {
+    address newOwner = proposedOwnershipTransfer[strategyId];
+    owner[strategyId] = newOwner;
+    delete proposedOwnershipTransfer[strategyId];
+    emit StrategyOwnershipTransferred(strategyId, newOwner);
+  }
 
   /// @inheritdoc IEarnStrategyRegistry
   function proposeStrategyUpdate(StrategyId strategyId, IEarnStrategy newStrategy) external onlyOwner(strategyId) {
@@ -124,6 +134,9 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (owner[strategyId] != msg.sender) revert UnauthorizedStrategyOwner();
     _;
   }
+
+  modifier onlyReceiver(StrategyId strategyId) {
+    if (proposedOwnershipTransfer[strategyId] != msg.sender) revert UnauthorizedOwnershipReceiver();
+    _;
+  }
 }
-// solhint-enable no-empty-blocks
-// slither-disable-end unimplemented-functions
