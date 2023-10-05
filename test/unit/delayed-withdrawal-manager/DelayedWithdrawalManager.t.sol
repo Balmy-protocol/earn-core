@@ -80,7 +80,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     vm.prank(address(adapter));
     vm.expectEmit();
     emit DelayedWithdrawalRegistered(positions[0], token, address(adapter));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], token);
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
   }
 
   function test_registerDelayedWithdraw_MultiplePositions() public {
@@ -89,18 +89,18 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
     vm.expectEmit();
     emit DelayedWithdrawalRegistered(positions[0], tokens[0], address(adapter1));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokens[0]);
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
 
     vm.expectEmit();
     emit DelayedWithdrawalRegistered(positions[1], tokens[0], address(adapter1));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokens[0]);
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
     vm.stopPrank();
 
     IDelayedWithdrawalAdapter adapter2 = strategy.delayedWithdrawalAdapter(tokens[1]);
     vm.prank(address(adapter2));
     vm.expectEmit();
     emit DelayedWithdrawalRegistered(positions[2], tokens[1], address(adapter2));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokens[1]);
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
   }
 
   function test_registerDelayedWithdraw_RevertWhen_AdapterDuplicated() public {
@@ -117,11 +117,10 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   }
 
   function test_registerDelayedWithdraw_RevertWhen_AdapterMismatch() public {
-    address token = tokens[1];
     IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokens[0]);
     vm.prank(address(adapter));
 
     vm.expectRevert(abi.encodeWithSelector(IDelayedWithdrawalManager.AdapterMismatch.selector));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], token);
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
   }
 }
