@@ -11,20 +11,22 @@ import { IEarnVault } from "./IEarnVault.sol";
  *         pending withdrawals for a specific position in one place (here).
  */
 interface IDelayedWithdrawalManager {
-  /// @notice Thrown when trying to register a delayed withdraw from an address that doesn't correspond with the token
-  /// adapter
+  /**
+   * @notice Thrown when trying to register a delayed withdraw from an address that doesn't correspond with the token
+   *         adapter
+   */
   error AdapterMismatch();
 
   /// @notice Thrown when trying to register a delayed withdraw for the same token and position twice
   error AdapterDuplicated();
 
   /**
-   * @notice Emitted when a delayed withdraw is registered
+   * @notice Emitted when a delayed withdrawal is registered
    * @param positionId The position to associate the withdrawal to
    * @param token The token that is being withdrawn
    * @param adapter The delayed withdrawal adapter responsible for processing the withdrawal
    */
-  event DelayedWithdrawRegistered(uint256 positionId, address token, address adapter);
+  event DelayedWithdrawalRegistered(uint256 positionId, address token, address adapter);
 
   /**
    * @notice Returns the address to Earn's vault

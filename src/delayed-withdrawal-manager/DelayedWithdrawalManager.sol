@@ -12,7 +12,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   type PositionIdTokenKey is bytes32;
 
   // slither-disable-next-line naming-convention
-  mapping(PositionIdTokenKey key => address[] adapter) internal _registeredAdapters;
+  mapping(PositionIdTokenKey key => IDelayedWithdrawalAdapter[] adapter) internal _registeredAdapters;
 
   /// @inheritdoc IDelayedWithdrawalManager
   IEarnVault public immutable vault;
@@ -20,8 +20,8 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   constructor(IEarnVault _vault) {
     vault = _vault;
   }
-  /// @inheritdoc IDelayedWithdrawalManager
 
+  /// @inheritdoc IDelayedWithdrawalManager
   function estimatedPendingFunds(uint256 positionId, address token) external view returns (uint256) { }
 
   /// @inheritdoc IDelayedWithdrawalManager
@@ -38,9 +38,9 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   function registerDelayedWithdraw(uint256 positionId, address token) external {
     _revertIfNotCurrentStrategyAdapter(positionId, token);
     _revertIfAdapterIsDuplicated(positionId, token);
-    _registeredAdapters[_keyFrom(positionId, token)].push(msg.sender);
+    _registeredAdapters[_keyFrom(positionId, token)].push(IDelayedWithdrawalAdapter(msg.sender));
 
-    emit DelayedWithdrawRegistered(positionId, token, msg.sender);
+    emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
@@ -55,9 +55,9 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   function _revertIfAdapterIsDuplicated(uint256 positionId, address token) internal view {
-    address[] memory adapters = _registeredAdapters[_keyFrom(positionId, token)];
+    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters[_keyFrom(positionId, token)];
     for (uint256 i; i < adapters.length;) {
-      if (adapters[i] == msg.sender) revert AdapterDuplicated();
+      if (address(adapters[i]) == msg.sender) revert AdapterDuplicated();
       unchecked {
         ++i;
       }

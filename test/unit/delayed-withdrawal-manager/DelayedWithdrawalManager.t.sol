@@ -66,7 +66,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     positions.push(position);
     tokenByPosition[position] = tokens[0];
 
-    (position,) = vault.createPosition{ value: amountToDeposit3 }(
+    (position,) = vault.createPosition(
       strategyId, tokens[1], amountToDeposit3, address(3), PermissionUtils.buildEmptyPermissionSet(), ""
     );
     positions.push(position);
