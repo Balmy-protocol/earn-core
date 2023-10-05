@@ -4,15 +4,16 @@ pragma solidity >=0.8.0;
 import { IDelayedWithdrawalManager, IEarnVault } from "../interfaces/IDelayedWithdrawalManager.sol";
 import { IDelayedWithdrawalAdapter } from "../interfaces/IDelayedWithdrawalAdapter.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
+// solhint-disable-next-line no-unused-import
+import { RegisteredAdapters, RegisteredAdaptersLibrary, PositionIdTokenKey } from "./types/RegisteredAdapters.sol";
 
 // TODO: remove once functions are implemented
 // solhint-disable no-empty-blocks
 contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
-  /// @notice A key composed of a position id and a token address
-  type PositionIdTokenKey is bytes32;
+  using RegisteredAdaptersLibrary for mapping(PositionIdTokenKey => RegisteredAdapters);
 
   // slither-disable-next-line naming-convention
-  mapping(PositionIdTokenKey key => IDelayedWithdrawalAdapter[] adapter) internal _registeredAdapters;
+  mapping(PositionIdTokenKey key => RegisteredAdapters registeredAdapters) internal _registeredAdapters;
 
   /// @inheritdoc IDelayedWithdrawalManager
   IEarnVault public immutable vault;
@@ -37,8 +38,10 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   /// @inheritdoc IDelayedWithdrawalManager
   function registerDelayedWithdraw(uint256 positionId, address token) external {
     _revertIfNotCurrentStrategyAdapter(positionId, token);
-    _revertIfAdapterIsDuplicated(positionId, token);
-    _registeredAdapters[_keyFrom(positionId, token)].push(IDelayedWithdrawalAdapter(msg.sender));
+    if (_registeredAdapters.isRepeated(positionId, token, IDelayedWithdrawalAdapter(msg.sender))) {
+      revert AdapterDuplicated();
+    }
+    _registeredAdapters.register(positionId, token, IDelayedWithdrawalAdapter(msg.sender));
 
     emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
   }
@@ -52,20 +55,6 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     IDelayedWithdrawalAdapter adapter =
       vault.STRATEGY_REGISTRY().getStrategy(strategyId).delayedWithdrawalAdapter(token);
     if (address(adapter) != msg.sender) revert AdapterMismatch();
-  }
-
-  function _revertIfAdapterIsDuplicated(uint256 positionId, address token) internal view {
-    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters[_keyFrom(positionId, token)];
-    for (uint256 i; i < adapters.length;) {
-      if (address(adapters[i]) == msg.sender) revert AdapterDuplicated();
-      unchecked {
-        ++i;
-      }
-    }
-  }
-
-  function _keyFrom(uint256 positionId, address token) internal pure returns (PositionIdTokenKey) {
-    return PositionIdTokenKey.wrap(keccak256(abi.encode(positionId, token)));
   }
 }
 
