@@ -5,7 +5,9 @@ pragma solidity >=0.8.0;
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 // solhint-disable-next-line no-unused-import
 import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
+import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token } from "../../../src/libraries/Token.sol";
+import { DelayedWithdrawalAdapterDead } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterDead.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances by reading token's state
 contract EarnStrategyStateBalanceMock is EarnStrategyDead {
@@ -13,11 +15,18 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
 
   address[] internal tokens;
   WithdrawalType[] internal withdrawalTypes;
+  mapping(address token => IDelayedWithdrawalAdapter adapter) public override delayedWithdrawalAdapter;
 
   constructor(address[] memory tokens_, WithdrawalType[] memory withdrawalTypes_) {
     require(tokens_.length == withdrawalTypes_.length, "Invalid");
     tokens = tokens_;
     withdrawalTypes = withdrawalTypes_;
+    for (uint256 i; i < tokens_.length;) {
+      delayedWithdrawalAdapter[tokens_[i]] = new DelayedWithdrawalAdapterDead();
+      unchecked {
+        ++i;
+      }
+    }
   }
 
   function asset() external view override returns (address) {
