@@ -20,7 +20,7 @@ import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 
 contract DelayedWithdrawalManagerTest is PRBTest {
-  event DelayedWithdrawRegistered(uint256 positionId, address token, address adapter);
+  event DelayedWithdrawalRegistered(uint256 positionId, address token, address adapter);
 
   using StrategyUtils for EarnStrategyRegistry;
 
@@ -79,7 +79,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(token);
     vm.prank(address(adapter));
     vm.expectEmit();
-    emit DelayedWithdrawRegistered(positions[0], token, address(adapter));
+    emit DelayedWithdrawalRegistered(positions[0], token, address(adapter));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], token);
   }
 
@@ -88,18 +88,18 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     vm.startPrank(address(adapter1));
 
     vm.expectEmit();
-    emit DelayedWithdrawRegistered(positions[0], tokens[0], address(adapter1));
+    emit DelayedWithdrawalRegistered(positions[0], tokens[0], address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokens[0]);
 
     vm.expectEmit();
-    emit DelayedWithdrawRegistered(positions[1], tokens[0], address(adapter1));
+    emit DelayedWithdrawalRegistered(positions[1], tokens[0], address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokens[0]);
     vm.stopPrank();
 
     IDelayedWithdrawalAdapter adapter2 = strategy.delayedWithdrawalAdapter(tokens[1]);
     vm.prank(address(adapter2));
     vm.expectEmit();
-    emit DelayedWithdrawRegistered(positions[2], tokens[1], address(adapter2));
+    emit DelayedWithdrawalRegistered(positions[2], tokens[1], address(adapter2));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokens[1]);
   }
 
