@@ -7,7 +7,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Check
 import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token } from "../../../src/libraries/Token.sol";
-import { DelayedWithdrawalAdapterDead } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterDead.sol";
+import { DelayedWithdrawalAdapterMock } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterMock.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances by reading token's state
 contract EarnStrategyStateBalanceMock is EarnStrategyDead {
@@ -22,7 +22,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     tokens = tokens_;
     withdrawalTypes = withdrawalTypes_;
     for (uint256 i; i < tokens_.length;) {
-      delayedWithdrawalAdapter[tokens_[i]] = new DelayedWithdrawalAdapterDead();
+      delayedWithdrawalAdapter[tokens_[i]] = new DelayedWithdrawalAdapterMock();
       unchecked {
         ++i;
       }
