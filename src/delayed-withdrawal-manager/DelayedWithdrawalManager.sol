@@ -35,7 +35,16 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
-  function withdrawableFunds(uint256 positionId, address token) external view returns (uint256) { }
+  function withdrawableFunds(uint256 positionId, address token) external view returns (uint256 funds) {
+    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
+    for (uint256 i; i < adapters.length;) {
+      // slither-disable-next-line calls-loop
+      funds += adapters[i].withdrawableFunds(positionId, token);
+      unchecked {
+        ++i;
+      }
+    }
+  }
 
   /// @inheritdoc IDelayedWithdrawalManager
   function allPositionFunds(uint256 positionId)

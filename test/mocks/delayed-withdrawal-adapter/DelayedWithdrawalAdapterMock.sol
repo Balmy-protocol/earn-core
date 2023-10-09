@@ -7,4 +7,8 @@ contract DelayedWithdrawalAdapterMock is DelayedWithdrawalAdapterDead {
   function estimatedPendingFunds(uint256 positionId, address) external view virtual override returns (uint256) {
     return positionId;
   }
+
+  function withdrawableFunds(uint256 positionId, address) external view virtual override returns (uint256) {
+    return positionId;
+  }
 }
