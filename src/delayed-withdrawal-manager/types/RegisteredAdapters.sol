@@ -11,6 +11,19 @@ struct RegisteredAdapters {
 type PositionIdTokenKey is bytes32;
 
 library RegisteredAdaptersLibrary {
+  /// @notice Get all adapters for a position and token
+  function get(
+    mapping(PositionIdTokenKey => RegisteredAdapters) storage registeredAdapters,
+    uint256 positionId,
+    address token
+  )
+    internal
+    view
+    returns (IDelayedWithdrawalAdapter[] memory)
+  {
+    return registeredAdapters[_keyFrom(positionId, token)].adapters;
+  }
+
   /// @notice Checks if an adapter is repeated in the list of registered adapters for a position and token
   function isRepeated(
     mapping(PositionIdTokenKey => RegisteredAdapters) storage registeredAdapters,
