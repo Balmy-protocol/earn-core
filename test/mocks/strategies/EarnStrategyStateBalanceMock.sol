@@ -5,6 +5,7 @@ pragma solidity >=0.8.0;
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 // solhint-disable-next-line no-unused-import
 import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
+// solhint-disable-next-line no-unused-import
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { DelayedWithdrawalAdapterMock } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterMock.sol";

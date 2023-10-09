@@ -23,9 +23,8 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
-  function estimatedPendingFunds(uint256 positionId, address token) external view returns (uint256) {
+  function estimatedPendingFunds(uint256 positionId, address token) external view returns (uint256 pendingFunds) {
     IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
-    uint256 pendingFunds;
     for (uint256 i; i < adapters.length;) {
       // slither-disable-next-line calls-loop
       pendingFunds += adapters[i].estimatedPendingFunds(positionId, token);
@@ -33,7 +32,6 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         ++i;
       }
     }
-    return pendingFunds;
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
