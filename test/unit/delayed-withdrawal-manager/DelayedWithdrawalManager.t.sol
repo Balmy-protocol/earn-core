@@ -124,7 +124,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
   }
 
-  function test_estimatedPendingFunds() public {
+  function test_estimatedPendingFunds_and_withdrawableFunds() public {
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
     vm.startPrank(address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
@@ -140,10 +140,15 @@ contract DelayedWithdrawalManagerTest is PRBTest {
         adapter1.estimatedPendingFunds(positions[i], tokenByPosition[positions[i]]),
         delayedWithdrawalManager.estimatedPendingFunds(positions[i], tokenByPosition[positions[i]])
       );
+
+      assertEq(
+        adapter1.withdrawableFunds(positions[i], tokenByPosition[positions[i]]),
+        delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]])
+      );
     }
   }
 
-  function test_estimatedPendingFunds_MultipleAdaptersForPositionAndToken() public {
+  function test_estimatedPendingFunds_and_withdrawableFunds_MultipleAdaptersForPositionAndToken() public {
     uint256 positionId = positions[0];
     address token = tokenByPosition[positions[0]];
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(token);
@@ -168,11 +173,20 @@ contract DelayedWithdrawalManagerTest is PRBTest {
      * estimatedPendingFunds(manager) =
      * estimatedPendingFunds(old strategy adapter) +
      * estimatedPendingFunds(new strategy adapter)
+     *
+     * withdrawableFunds(manager) =
+     * withdrawableFunds(old strategy adapter) +
+     * withdrawableFunds(new strategy adapter)
      */
 
     assertEq(
       adapter1.estimatedPendingFunds(positionId, token) + adapter2.estimatedPendingFunds(positionId, token),
       delayedWithdrawalManager.estimatedPendingFunds(positionId, token)
+    );
+
+    assertEq(
+      adapter1.withdrawableFunds(positionId, token) + adapter2.withdrawableFunds(positionId, token),
+      delayedWithdrawalManager.withdrawableFunds(positionId, token)
     );
   }
 }
