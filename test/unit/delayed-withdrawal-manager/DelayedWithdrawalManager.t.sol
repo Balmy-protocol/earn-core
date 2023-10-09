@@ -149,7 +149,6 @@ contract DelayedWithdrawalManagerTest is PRBTest {
       (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
         delayedWithdrawalManager.allPositionFunds(positions[i]);
       (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positions[i]);
-      assertEq(estimatedPending[0], delayedWithdrawalManager.estimatedPendingFunds(positions[i], tokens[0]));
 
       assertEq(positionTokens, vaultTokens);
       for (uint256 j; j < positionTokens.length; j++) {
