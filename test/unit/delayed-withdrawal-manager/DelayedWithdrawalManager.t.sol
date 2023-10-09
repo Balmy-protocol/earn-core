@@ -30,7 +30,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   mapping(uint256 position => address token) private tokenByPosition;
   IEarnStrategy private strategy;
   StrategyId private strategyId;
-  address[] private tokens = new address[](2);
+  address[] private tokens = new address[](3);
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
@@ -42,6 +42,8 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
     erc20.approve(address(vault), type(uint256).max);
 
+    ERC20MintableBurnableMock anotherErc20 = new ERC20MintableBurnableMock();
+    //anotherErc20.approve(address(vault), type(uint256).max);
     uint104 amountToDeposit1 = 1_000_000;
     uint104 amountToDeposit2 = 1_000_001;
     uint104 amountToDeposit3 = 1_000_003;
@@ -50,6 +52,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
     tokens[0] = Token.NATIVE_TOKEN;
     tokens[1] = address(erc20);
+    tokens[2] = address(anotherErc20);
 
     uint256 position;
     (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
@@ -124,7 +127,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
   }
 
-  function test_estimatedPendingFunds_and_withdrawableFunds() public {
+  function test_positionFunds() public {
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
     vm.startPrank(address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
@@ -145,10 +148,22 @@ contract DelayedWithdrawalManagerTest is PRBTest {
         adapter1.withdrawableFunds(positions[i], tokenByPosition[positions[i]]),
         delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]])
       );
+
+      (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
+        delayedWithdrawalManager.allPositionFunds(positions[i]);
+      (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positions[i]);
+      assertEq(estimatedPending[0], delayedWithdrawalManager.estimatedPendingFunds(positions[i], tokens[0]));
+
+      assertEq(positionTokens, vaultTokens);
+      for (uint256 j; j < positionTokens.length; j++) {
+        assertEq(estimatedPending[j], delayedWithdrawalManager.estimatedPendingFunds(positions[i], positionTokens[j]));
+
+        assertEq(withdrawable[j], delayedWithdrawalManager.withdrawableFunds(positions[i], positionTokens[j]));
+      }
     }
   }
 
-  function test_estimatedPendingFunds_and_withdrawableFunds_MultipleAdaptersForPositionAndToken() public {
+  function test_positionFunds_MultipleAdaptersForPositionAndToken() public {
     uint256 positionId = positions[0];
     address token = tokenByPosition[positions[0]];
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(token);
@@ -188,5 +203,16 @@ contract DelayedWithdrawalManagerTest is PRBTest {
       adapter1.withdrawableFunds(positionId, token) + adapter2.withdrawableFunds(positionId, token),
       delayedWithdrawalManager.withdrawableFunds(positionId, token)
     );
+
+    (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
+      delayedWithdrawalManager.allPositionFunds(positionId);
+    (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positionId);
+
+    assertEq(positionTokens, vaultTokens);
+    for (uint256 i; i < positionTokens.length; i++) {
+      assertEq(estimatedPending[i], delayedWithdrawalManager.estimatedPendingFunds(positionId, positionTokens[i]));
+
+      assertEq(withdrawable[i], delayedWithdrawalManager.withdrawableFunds(positionId, positionTokens[i]));
+    }
   }
 }
