@@ -30,7 +30,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   mapping(uint256 position => address token) private tokenByPosition;
   IEarnStrategy private strategy;
   StrategyId private strategyId;
-  address[] private tokens = new address[](3);
+  address[] private tokens = new address[](2);
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
@@ -42,8 +42,6 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
     erc20.approve(address(vault), type(uint256).max);
 
-    ERC20MintableBurnableMock anotherErc20 = new ERC20MintableBurnableMock();
-    //anotherErc20.approve(address(vault), type(uint256).max);
     uint104 amountToDeposit1 = 1_000_000;
     uint104 amountToDeposit2 = 1_000_001;
     uint104 amountToDeposit3 = 1_000_003;
@@ -52,7 +50,6 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
     tokens[0] = Token.NATIVE_TOKEN;
     tokens[1] = address(erc20);
-    tokens[2] = address(anotherErc20);
 
     uint256 position;
     (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
