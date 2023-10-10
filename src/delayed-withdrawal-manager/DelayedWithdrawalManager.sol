@@ -23,7 +23,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
-  function estimatedPendingFunds(uint256 positionId, address token) external view returns (uint256 pendingFunds) {
+  function estimatedPendingFunds(uint256 positionId, address token) public view returns (uint256 pendingFunds) {
     IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
     for (uint256 i; i < adapters.length;) {
       // slither-disable-next-line calls-loop
@@ -35,7 +35,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
-  function withdrawableFunds(uint256 positionId, address token) external view returns (uint256 funds) {
+  function withdrawableFunds(uint256 positionId, address token) public view returns (uint256 funds) {
     IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
     for (uint256 i; i < adapters.length;) {
       // slither-disable-next-line calls-loop
@@ -61,8 +61,8 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     for (uint256 i; i < tokensQuantity;) {
       address token = tokens[i];
       // slither-disable-start calls-loop
-      estimatedPending[i] = this.estimatedPendingFunds(positionId, token);
-      withdrawable[i] = this.withdrawableFunds(positionId, token);
+      estimatedPending[i] = estimatedPendingFunds(positionId, token);
+      withdrawable[i] = withdrawableFunds(positionId, token);
       // slither-disable-end calls-loop
       unchecked {
         ++i;
