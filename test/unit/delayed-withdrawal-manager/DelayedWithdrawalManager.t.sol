@@ -124,7 +124,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
   }
 
-  function test_estimatedPendingFunds_and_withdrawableFunds() public {
+  function test_positionFunds() public {
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
     vm.startPrank(address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
@@ -145,10 +145,21 @@ contract DelayedWithdrawalManagerTest is PRBTest {
         adapter1.withdrawableFunds(positions[i], tokenByPosition[positions[i]]),
         delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]])
       );
+
+      (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
+        delayedWithdrawalManager.allPositionFunds(positions[i]);
+      (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positions[i]);
+
+      assertEq(positionTokens, vaultTokens);
+      for (uint256 j; j < positionTokens.length; j++) {
+        assertEq(estimatedPending[j], delayedWithdrawalManager.estimatedPendingFunds(positions[i], positionTokens[j]));
+
+        assertEq(withdrawable[j], delayedWithdrawalManager.withdrawableFunds(positions[i], positionTokens[j]));
+      }
     }
   }
 
-  function test_estimatedPendingFunds_and_withdrawableFunds_MultipleAdaptersForPositionAndToken() public {
+  function test_positionFunds_MultipleAdaptersForPositionAndToken() public {
     uint256 positionId = positions[0];
     address token = tokenByPosition[positions[0]];
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(token);
@@ -188,5 +199,16 @@ contract DelayedWithdrawalManagerTest is PRBTest {
       adapter1.withdrawableFunds(positionId, token) + adapter2.withdrawableFunds(positionId, token),
       delayedWithdrawalManager.withdrawableFunds(positionId, token)
     );
+
+    (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
+      delayedWithdrawalManager.allPositionFunds(positionId);
+    (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positionId);
+
+    assertEq(positionTokens, vaultTokens);
+    for (uint256 i; i < positionTokens.length; i++) {
+      assertEq(estimatedPending[i], delayedWithdrawalManager.estimatedPendingFunds(positionId, positionTokens[i]));
+
+      assertEq(withdrawable[i], delayedWithdrawalManager.withdrawableFunds(positionId, positionTokens[i]));
+    }
   }
 }
