@@ -20,6 +20,17 @@ interface IDelayedWithdrawalManager {
   /// @notice Thrown when trying to register a delayed withdraw for the same token and position twice
   error AdapterDuplicated();
 
+  /// @notice Thrown when trying to withdraw funds for a position without withdrawal permission
+  error UnauthorizedWithdrawal();
+
+  /**
+   * @notice Emitted when funds have been withdrawn
+   * @param positionId The position to withdraw
+   * @param token The token to withdraw
+   * @param recipient The withdraw recipient
+   */
+  event WithdrawnFunds(uint256 positionId, address token, address recipient);
+
   /**
    * @notice Emitted when a delayed withdrawal is registered
    * @param positionId The position to associate the withdrawal to
