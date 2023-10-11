@@ -14,7 +14,17 @@ contract DelayedWithdrawalAdapterMock is DelayedWithdrawalAdapterDead {
     return positionId - _withdrawnFunds[positionId][token];
   }
 
-  function withdraw(uint256 positionId, address token, address) external virtual override returns (uint256 withdrawn) {
+  function withdraw(
+    uint256 positionId,
+    address token,
+    address
+  )
+    external
+    virtual
+    override
+    returns (uint256 withdrawn, uint256 stillPending)
+  {
     _withdrawnFunds[positionId][token] += withdrawn = withdrawableFunds(positionId, token);
+    stillPending = 0;
   }
 }

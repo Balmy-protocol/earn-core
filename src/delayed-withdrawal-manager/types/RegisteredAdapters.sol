@@ -57,6 +57,19 @@ library RegisteredAdaptersLibrary {
     registeredAdapters[_keyFrom(positionId, token)].adapters.push(adapter);
   }
 
+  function unregister(
+    mapping(PositionIdTokenKey => RegisteredAdapters) storage registeredAdapters,
+    uint256 positionId,
+    address token,
+    uint256 index
+  )
+    internal
+  {
+    IDelayedWithdrawalAdapter[] storage adapters = registeredAdapters[_keyFrom(positionId, token)].adapters;
+    adapters[index] = adapters[adapters.length - 1];
+    adapters.pop();
+  }
+
   function _keyFrom(uint256 positionId, address token) internal pure returns (PositionIdTokenKey) {
     return PositionIdTokenKey.wrap(keccak256(abi.encode(positionId, token)));
   }

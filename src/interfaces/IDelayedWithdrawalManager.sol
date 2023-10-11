@@ -28,8 +28,9 @@ interface IDelayedWithdrawalManager {
    * @param positionId The position to withdraw
    * @param token The token to withdraw
    * @param recipient The withdraw recipient
+   * @param withdrawn How much was withdrawn
    */
-  event WithdrawnFunds(uint256 positionId, address token, address recipient);
+  event WithdrawnFunds(uint256 positionId, address token, address recipient, uint256 withdrawn);
 
   /**
    * @notice Emitted when a delayed withdrawal is registered
@@ -90,6 +91,13 @@ interface IDelayedWithdrawalManager {
    * @param token The token that is being withdrawn
    * @param recipient The account that will receive the funds
    * @return withdrawn How much was withdrawn
+   * @return stillPending How much is still pending
    */
-  function withdraw(uint256 positionId, address token, address recipient) external returns (uint256 withdrawn);
+  function withdraw(
+    uint256 positionId,
+    address token,
+    address recipient
+  )
+    external
+    returns (uint256 withdrawn, uint256 stillPending);
 }

@@ -29,7 +29,7 @@ contract DelayedWithdrawalAdapterDead is IDelayedWithdrawalAdapter {
     revert NotImplemented();
   }
 
-  function withdraw(uint256, address, address) external virtual returns (uint256) {
+  function withdraw(uint256, address, address) external virtual returns (uint256, uint256) {
     revert NotImplemented();
   }
 

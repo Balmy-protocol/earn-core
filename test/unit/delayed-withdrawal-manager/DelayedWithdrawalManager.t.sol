@@ -21,7 +21,7 @@ import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnab
 
 contract DelayedWithdrawalManagerTest is PRBTest {
   event DelayedWithdrawalRegistered(uint256 positionId, address token, address adapter);
-  event WithdrawnFunds(uint256 positionId, address token, address recipient);
+  event WithdrawnFunds(uint256 positionId, address token, address recipient, uint256 withdrawn);
 
   using StrategyUtils for IEarnStrategyRegistry;
 
@@ -223,16 +223,16 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
       vm.startPrank(owner);
       //Before withdraw
+      uint256 expectedWithdraw = delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]]);
       vm.expectEmit();
-      emit WithdrawnFunds(positions[i], tokenByPosition[positions[i]], recipient);
-      assertEq(
-        delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]]),
-        delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient)
-      );
+      emit WithdrawnFunds(positions[i], tokenByPosition[positions[i]], recipient, expectedWithdraw);
+      (uint256 withdrawn,) = delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient);
+      assertEq(expectedWithdraw, withdrawn);
 
       //After withdraw
       assertEq(delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]]), 0);
-      assertEq(delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient), 0);
+      (withdrawn,) = delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient);
+      assertEq(withdrawn, 0);
       vm.stopPrank();
     }
   }
@@ -260,16 +260,16 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
     vm.startPrank(owner);
     //Before withdraw
-    vm.expectEmit();
-    emit WithdrawnFunds(positionId, token, recipient);
-    assertEq(
-      delayedWithdrawalManager.withdrawableFunds(positionId, token),
-      delayedWithdrawalManager.withdraw(positionId, token, recipient)
-    );
+    uint256 expectedWithdraw = delayedWithdrawalManager.withdrawableFunds(positionId, token);
+    //vm.expectEmit();
+    //emit WithdrawnFunds(positionId, token, recipient, expectedWithdraw);
+    (uint256 withdrawn,) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+    assertEq(expectedWithdraw, withdrawn);
 
     //After withdraw
     assertEq(delayedWithdrawalManager.withdrawableFunds(positionId, token), 0);
-    assertEq(delayedWithdrawalManager.withdraw(positionId, token, recipient), 0);
+    (withdrawn,) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+    assertEq(withdrawn, 0);
     vm.stopPrank();
   }
 
