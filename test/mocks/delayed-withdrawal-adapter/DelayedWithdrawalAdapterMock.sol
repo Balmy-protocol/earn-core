@@ -25,6 +25,6 @@ contract DelayedWithdrawalAdapterMock is DelayedWithdrawalAdapterDead {
     returns (uint256 withdrawn, uint256 stillPending)
   {
     _withdrawnFunds[positionId][token] += withdrawn = withdrawableFunds(positionId, token);
-    stillPending = 0;
+    stillPending = positionId % 2;
   }
 }

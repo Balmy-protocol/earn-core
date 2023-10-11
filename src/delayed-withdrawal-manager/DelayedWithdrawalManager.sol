@@ -93,19 +93,24 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     if (!vault.hasPermission(positionId, msg.sender, vault.WITHDRAW_PERMISSION())) revert UnauthorizedWithdrawal();
 
     IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
-    uint256 removed = 0;
+    uint256 j = 0;
     for (uint256 i; i < adapters.length;) {
       // slither-disable-next-line calls-loop
       (uint256 _withdrawn, uint256 _stillPending) = adapters[i].withdraw(positionId, token, recipient);
       withdrawn += _withdrawn;
       stillPending += _stillPending;
-      if (_stillPending == 0) {
-        _registeredAdapters.unregister(positionId, token, i - removed++);
+      if (_stillPending != 0) {
+        _registeredAdapters.move(positionId, token, i, j);
+        unchecked {
+          ++j;
+        }
       }
       unchecked {
         ++i;
       }
     }
+    _registeredAdapters.pop(positionId, token, adapters.length - j);
+
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }
