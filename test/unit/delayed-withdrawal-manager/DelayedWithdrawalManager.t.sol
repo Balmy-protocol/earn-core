@@ -21,6 +21,7 @@ import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnab
 
 contract DelayedWithdrawalManagerTest is PRBTest {
   event DelayedWithdrawalRegistered(uint256 positionId, address token, address adapter);
+  event WithdrawnFunds(uint256 positionId, address token, address recipient, uint256 withdrawn);
 
   using StrategyUtils for IEarnStrategyRegistry;
 
@@ -31,6 +32,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   IEarnStrategy private strategy;
   StrategyId private strategyId;
   address[] private tokens = new address[](2);
+  address private owner = address(3);
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
@@ -55,19 +57,19 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
 
     (position,) = vault.createPosition{ value: amountToDeposit1 }(
-      strategyId, tokens[0], amountToDeposit1, address(3), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[0], amountToDeposit1, owner, PermissionUtils.buildEmptyPermissionSet(), ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[0];
 
     (position,) = vault.createPosition{ value: amountToDeposit2 }(
-      strategyId, tokens[0], amountToDeposit2, address(3), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[0], amountToDeposit2, owner, PermissionUtils.buildEmptyPermissionSet(), ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[0];
 
     (position,) = vault.createPosition(
-      strategyId, tokens[1], amountToDeposit3, address(3), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[1], amountToDeposit3, owner, PermissionUtils.buildEmptyPermissionSet(), ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[1];
@@ -210,5 +212,87 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
       assertEq(withdrawable[i], delayedWithdrawalManager.withdrawableFunds(positionId, positionTokens[i]));
     }
+  }
+
+  function test_withdraw() public {
+    address recipient = address(10);
+    for (uint8 i; i < 3; i++) {
+      IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokenByPosition[positions[i]]);
+      vm.prank(address(adapter));
+      delayedWithdrawalManager.registerDelayedWithdraw(positions[i], tokenByPosition[positions[i]]);
+
+      vm.startPrank(owner);
+      //Before withdraw
+      uint256 expectedWithdraw = delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]]);
+      vm.expectEmit();
+      emit WithdrawnFunds(positions[i], tokenByPosition[positions[i]], recipient, expectedWithdraw);
+      (uint256 withdrawn,) = delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient);
+      assertEq(expectedWithdraw, withdrawn);
+
+      //After withdraw
+      assertEq(delayedWithdrawalManager.withdrawableFunds(positions[i], tokenByPosition[positions[i]]), 0);
+      (withdrawn,) = delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient);
+      assertEq(withdrawn, 0);
+      vm.stopPrank();
+    }
+  }
+
+  function test_withdraw_MultipleAdaptersForPositionAndToken() public {
+    uint256 positionId = positions[1];
+    address recipient = address(10);
+    address token = tokenByPosition[positions[1]];
+    IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(token);
+    vm.startPrank(address(adapter1));
+    delayedWithdrawalManager.registerDelayedWithdraw(positionId, token);
+    vm.stopPrank();
+
+    // Update strategy to register a new adapter
+    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.vault().STRATEGY_REGISTRY();
+    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
+    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+    strategyRegistry.updateStrategy(strategyId);
+
+    // Register new strategy adapter
+    IDelayedWithdrawalAdapter adapter2 = newStrategy.delayedWithdrawalAdapter(token);
+    vm.prank(address(adapter2));
+    delayedWithdrawalManager.registerDelayedWithdraw(positionId, token);
+
+    //Before withdraw
+    uint256 expectedWithdraw = delayedWithdrawalManager.withdrawableFunds(positionId, token);
+    vm.expectEmit();
+    emit WithdrawnFunds(positionId, token, recipient, expectedWithdraw);
+    vm.prank(owner);
+    (uint256 withdrawn, uint256 stillPending) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+    assertEq(expectedWithdraw, withdrawn);
+
+    //After withdraw
+    assertEq(
+      adapter1.estimatedPendingFunds(positionId, token) + adapter2.estimatedPendingFunds(positionId, token),
+      stillPending
+    );
+
+    assertEq(delayedWithdrawalManager.withdrawableFunds(positionId, token), 0);
+
+    if (adapter2.estimatedPendingFunds(positionId, token) != 0) {
+      vm.expectCall(
+        address(adapter2),
+        abi.encodeWithSelector(IDelayedWithdrawalAdapter.withdraw.selector, positionId, token, recipient)
+      );
+    }
+
+    vm.prank(owner);
+    (withdrawn, stillPending) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+    assertEq(withdrawn, 0);
+  }
+
+  function test_withdraw_RevertWhen_UnauthorizedWithdrawal() public {
+    address recipient = address(10);
+    IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
+    vm.prank(address(adapter));
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
+
+    vm.expectRevert(abi.encodeWithSelector(IDelayedWithdrawalManager.UnauthorizedWithdrawal.selector));
+    delayedWithdrawalManager.withdraw(positions[1], tokenByPosition[positions[1]], recipient);
   }
 }

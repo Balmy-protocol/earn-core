@@ -20,6 +20,18 @@ interface IDelayedWithdrawalManager {
   /// @notice Thrown when trying to register a delayed withdraw for the same token and position twice
   error AdapterDuplicated();
 
+  /// @notice Thrown when trying to withdraw funds for a position without withdrawal permission
+  error UnauthorizedWithdrawal();
+
+  /**
+   * @notice Emitted when funds have been withdrawn
+   * @param positionId The position to withdraw
+   * @param token The token to withdraw
+   * @param recipient The withdraw recipient
+   * @param withdrawn How much was withdrawn
+   */
+  event WithdrawnFunds(uint256 positionId, address token, address recipient, uint256 withdrawn);
+
   /**
    * @notice Emitted when a delayed withdrawal is registered
    * @param positionId The position to associate the withdrawal to
@@ -79,6 +91,13 @@ interface IDelayedWithdrawalManager {
    * @param token The token that is being withdrawn
    * @param recipient The account that will receive the funds
    * @return withdrawn How much was withdrawn
+   * @return stillPending How much is still pending
    */
-  function withdraw(uint256 positionId, address token, address recipient) external returns (uint256 withdrawn);
+  function withdraw(
+    uint256 positionId,
+    address token,
+    address recipient
+  )
+    external
+    returns (uint256 withdrawn, uint256 stillPending);
 }

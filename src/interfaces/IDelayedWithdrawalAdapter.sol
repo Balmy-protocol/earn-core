@@ -60,6 +60,13 @@ interface IDelayedWithdrawalAdapter is IERC165 {
    * @param token The token that is being withdrawn
    * @param recipient The account that will receive the funds
    * @return withdrawn How much was withdrawn
+   * @return stillPending How much is still pending
    */
-  function withdraw(uint256 positionId, address token, address recipient) external returns (uint256 withdrawn);
+  function withdraw(
+    uint256 positionId,
+    address token,
+    address recipient
+  )
+    external
+    returns (uint256 withdrawn, uint256 stillPending);
 }

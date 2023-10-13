@@ -82,7 +82,37 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
-  function withdraw(uint256 positionId, address token, address recipient) external returns (uint256 withdrawn) { }
+  function withdraw(
+    uint256 positionId,
+    address token,
+    address recipient
+  )
+    external
+    returns (uint256 withdrawn, uint256 stillPending)
+  {
+    if (!vault.hasPermission(positionId, msg.sender, vault.WITHDRAW_PERMISSION())) revert UnauthorizedWithdrawal();
+
+    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
+    uint256 j = 0;
+    for (uint256 i; i < adapters.length;) {
+      // slither-disable-next-line calls-loop
+      (uint256 _withdrawn, uint256 _stillPending) = adapters[i].withdraw(positionId, token, recipient);
+      withdrawn += _withdrawn;
+      stillPending += _stillPending;
+      if (_stillPending != 0 && i != j) {
+        _registeredAdapters.set(positionId, token, j, adapters[i]);
+        unchecked {
+          ++j;
+        }
+      }
+      unchecked {
+        ++i;
+      }
+    }
+    _registeredAdapters.pop({ positionId: positionId, token: token, times: adapters.length - j });
+    // slither-disable-next-line reentrancy-events
+    emit WithdrawnFunds(positionId, token, recipient, withdrawn);
+  }
 
   function _revertIfNotCurrentStrategyAdapter(uint256 positionId, address token) internal view {
     StrategyId strategyId = vault.positionsStrategy(positionId);
