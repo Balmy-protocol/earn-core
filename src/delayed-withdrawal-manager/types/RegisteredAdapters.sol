@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import { IDelayedWithdrawalAdapter } from "../../interfaces/IDelayedWithdrawalAdapter.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 struct RegisteredAdapters {
   IDelayedWithdrawalAdapter[] adapters;
@@ -78,7 +79,8 @@ library RegisteredAdaptersLibrary {
     internal
   {
     IDelayedWithdrawalAdapter[] storage adapters = registeredAdapters[_keyFrom(positionId, token)].adapters;
-    for (uint256 i; i < times && i < adapters.length;) {
+    uint256 amountOfPops = Math.min(times, adapters.length);
+    for (uint256 i; i < amountOfPops;) {
       adapters.pop();
       unchecked {
         ++i;

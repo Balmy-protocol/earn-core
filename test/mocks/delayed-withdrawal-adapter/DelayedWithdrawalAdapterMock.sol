@@ -6,8 +6,8 @@ import { DelayedWithdrawalAdapterDead } from "./DelayedWithdrawalAdapterDead.sol
 contract DelayedWithdrawalAdapterMock is DelayedWithdrawalAdapterDead {
   mapping(uint256 positionId => mapping(address token => uint256 withdrawn)) private _withdrawnFunds;
 
-  function estimatedPendingFunds(uint256 positionId, address) external view virtual override returns (uint256) {
-    return positionId;
+  function estimatedPendingFunds(uint256 positionId, address) public view virtual override returns (uint256) {
+    return positionId % 2;
   }
 
   function withdrawableFunds(uint256 positionId, address token) public view virtual override returns (uint256) {
@@ -25,6 +25,6 @@ contract DelayedWithdrawalAdapterMock is DelayedWithdrawalAdapterDead {
     returns (uint256 withdrawn, uint256 stillPending)
   {
     _withdrawnFunds[positionId][token] += withdrawn = withdrawableFunds(positionId, token);
-    stillPending = positionId % 2;
+    stillPending = estimatedPendingFunds(positionId, token);
   }
 }

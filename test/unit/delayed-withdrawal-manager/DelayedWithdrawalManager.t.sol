@@ -238,9 +238,9 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   }
 
   function test_withdraw_MultipleAdaptersForPositionAndToken() public {
-    uint256 positionId = positions[0];
+    uint256 positionId = positions[1];
     address recipient = address(10);
-    address token = tokenByPosition[positions[0]];
+    address token = tokenByPosition[positions[1]];
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(token);
     vm.startPrank(address(adapter1));
     delayedWithdrawalManager.registerDelayedWithdraw(positionId, token);
@@ -258,30 +258,41 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     vm.prank(address(adapter2));
     delayedWithdrawalManager.registerDelayedWithdraw(positionId, token);
 
-    vm.startPrank(owner);
     //Before withdraw
     uint256 expectedWithdraw = delayedWithdrawalManager.withdrawableFunds(positionId, token);
-    //vm.expectEmit();
-    //emit WithdrawnFunds(positionId, token, recipient, expectedWithdraw);
-    (uint256 withdrawn,) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+    vm.expectEmit();
+    emit WithdrawnFunds(positionId, token, recipient, expectedWithdraw);
+    vm.prank(owner);
+    (uint256 withdrawn, uint256 stillPending) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
     assertEq(expectedWithdraw, withdrawn);
 
     //After withdraw
+    assertEq(
+      adapter1.estimatedPendingFunds(positionId, token) + adapter2.estimatedPendingFunds(positionId, token),
+      stillPending
+    );
+
     assertEq(delayedWithdrawalManager.withdrawableFunds(positionId, token), 0);
-    (withdrawn,) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
+
+    if (adapter2.estimatedPendingFunds(positionId, token) != 0) {
+      vm.expectCall(
+        address(adapter2),
+        abi.encodeWithSelector(IDelayedWithdrawalAdapter.withdraw.selector, positionId, token, recipient)
+      );
+    }
+
+    vm.prank(owner);
+    (withdrawn, stillPending) = delayedWithdrawalManager.withdraw(positionId, token, recipient);
     assertEq(withdrawn, 0);
-    vm.stopPrank();
   }
 
   function test_withdraw_RevertWhen_UnauthorizedWithdrawal() public {
     address recipient = address(10);
-    for (uint8 i; i < 3; i++) {
-      IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokenByPosition[positions[i]]);
-      vm.prank(address(adapter));
-      delayedWithdrawalManager.registerDelayedWithdraw(positions[i], tokenByPosition[positions[i]]);
+    IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
+    vm.prank(address(adapter));
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
 
-      vm.expectRevert(abi.encodeWithSelector(IDelayedWithdrawalManager.UnauthorizedWithdrawal.selector));
-      delayedWithdrawalManager.withdraw(positions[i], tokenByPosition[positions[i]], recipient);
-    }
+    vm.expectRevert(abi.encodeWithSelector(IDelayedWithdrawalManager.UnauthorizedWithdrawal.selector));
+    delayedWithdrawalManager.withdraw(positions[1], tokenByPosition[positions[1]], recipient);
   }
 }
