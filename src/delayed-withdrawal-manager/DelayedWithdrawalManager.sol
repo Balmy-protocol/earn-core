@@ -99,8 +99,8 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       (uint256 _withdrawn, uint256 _stillPending) = adapters[i].withdraw(positionId, token, recipient);
       withdrawn += _withdrawn;
       stillPending += _stillPending;
-      if (_stillPending != 0) {
-        _registeredAdapters.move(positionId, token, i, j);
+      if (_stillPending != 0 && i != j) {
+        _registeredAdapters.set(positionId, token, j, adapters[i]);
         unchecked {
           ++j;
         }
@@ -109,8 +109,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         ++i;
       }
     }
-    _registeredAdapters.pop(positionId, token, adapters.length - j);
-
+    _registeredAdapters.pop({ positionId: positionId, token: token, times: adapters.length - j });
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }

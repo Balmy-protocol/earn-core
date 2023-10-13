@@ -57,19 +57,16 @@ library RegisteredAdaptersLibrary {
     registeredAdapters[_keyFrom(positionId, token)].adapters.push(adapter);
   }
 
-  function move(
+  function set(
     mapping(PositionIdTokenKey => RegisteredAdapters) storage registeredAdapters,
     uint256 positionId,
     address token,
-    uint256 from,
-    uint256 to
+    uint256 index,
+    IDelayedWithdrawalAdapter adapter
   )
     internal
   {
-    if (from != to) {
-      IDelayedWithdrawalAdapter[] storage adapters = registeredAdapters[_keyFrom(positionId, token)].adapters;
-      adapters[to] = adapters[from];
-    }
+    registeredAdapters[_keyFrom(positionId, token)].adapters[index] = adapter;
   }
 
   function pop(
