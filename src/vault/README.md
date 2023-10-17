@@ -236,3 +236,80 @@ be $5.2 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
 but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.
+
+### Yield Losses
+
+So far, we've described how we can calculate how much each position has earned for reward tokens. The approach is
+simple, but it has its limitations. For example, it does not handle correctly a scenario where there might be a loss
+between to updates. Let's see an example:
+
+```
+Moment 0
+- Total rewards: 0 $OP
+- John deposits and is assigned 100 shares
+- yieldAccum = 0
+
+Moment 1
+- Total rewards: 100 OP
+- Peter deposits and is assigned 200 shares
+- yieldAccum = 0 + (100 - 0) / 100 = 1
+
+Moment 2
+- Total rewards: 400 OP
+- Alice deposits and is assigned 50 shares
+- yieldAccum = 1 + (400 - 100) / 300 = 1 + 300 / 300 = 2
+
+How much is assigned to each user?
+- John = (2 - 0) * 100 = 200 OP
+- Peter = (2 - 1) * 200 = 200 OP
+- Alice = (2 - 2) * 5 = 0
+
+Moment 3
+- Total rewards: 50 OP
+- yieldAccum = 2 + (50 - 400) / 350 = 2 - 1 = 1
+
+How much is assigned to each user?
+- John = (1 - 0) * 100 = 100 OP
+- Peter = (1 - 1) * 200 = 0 OP
+- Alice = (1 - 2) * 50 = -50 OP
+```
+
+We can see that it doesn't add up 😅 The problem is that earnings can be distributed to everyone based on shares, but
+losses need to be distributed according to what they had earned so far. What would we want the balances to look like?
+Ideally, we would distribute the available funds based on what each user had earned on the previous snapshot. Something
+like this:
+
+$$ balance(user) = \frac{available \* earned(user, last\ snapshot)} {total(last\ snapshot)} $$
+
+So, what would it look like?
+
+```
+- John = 50 OP * 200 OP / 400 OP = 25 OP
+- Peter = 50 OP * 200 OP / 400 OP = 25 OP
+- Alice = 50 OP * 0 OP / 500 OP
+```
+
+#### Storing Losses
+
+We just described how to take losses into account when calculate a position's balance for reward tokens. The approach
+requires storing each instance where there was a loss, so that each position can iterate over them and calculate the
+position's balance after the loss has been accounted for. Now, if left unrestricted, the list of recorded losses could
+grow too big. This could be an issue, since iterating through all of them could be prohibitively expensive in terms of
+gas cost.
+
+Now, a few notes on these losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity,
+as a form of liquidity mining. These rewards tend to be distributed based on amount of liquidity, and the amount of
+rewards tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't tend to
+diminish over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a protocol
+removes all rewards that were unclaimed after a long period of time. But we believe that generally, there shouldn't be
+any losses in reward tokens.
+
+We will leave it **up to each strategy to try to avoid losses as much as possible**. This could be achieved by only
+reporting rewards that the strategy is certain it will be able to claim at a later point in time. For example, if the
+strategy knows that unclaimed rewards expire after a few weeks, then it should always claim them with each update
+(deposit & withdrawals). The vault is prepared to support **up to 15** loss events per token, for each strategy. This
+should be enough to cover for unexpected circumstances such as hacks, but it's very important that the strategy avoids
+losses as much as possible.
+
+After the 15 losses limit has been reached, the vault will simply set all position balances to zero. It will be up to
+each strategy to distribute any left funds in a way they deem fit.
