@@ -10,11 +10,13 @@ import { RegisteredAdapters, RegisteredAdaptersLibrary, PositionIdTokenKey } fro
 // TODO: remove once functions are implemented
 // solhint-disable no-empty-blocks
 contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
-  using RegisteredAdaptersLibrary for mapping(PositionIdTokenKey => RegisteredAdapters);
+  //using RegisteredAdaptersLibrary for mapping(PositionIdTokenKey => RegisteredAdapters);
+  using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => RegisteredAdapters));
 
   // slither-disable-next-line naming-convention
-  mapping(PositionIdTokenKey key => RegisteredAdapters registeredAdapters) internal _registeredAdapters;
-
+  //mapping(PositionIdTokenKey key => RegisteredAdapters registeredAdapters) internal _registeredAdapters;
+  mapping(uint256 positionId => mapping(address token => RegisteredAdapters registeredAdapters)) internal
+    _registeredAdapters;
   /// @inheritdoc IDelayedWithdrawalManager
   IEarnVault public immutable vault;
 
@@ -72,13 +74,12 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
   /// @inheritdoc IDelayedWithdrawalManager
   function registerDelayedWithdraw(uint256 positionId, address token) external {
+    emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
     _revertIfNotCurrentStrategyAdapter(positionId, token);
     if (_registeredAdapters.isRepeated(positionId, token, IDelayedWithdrawalAdapter(msg.sender))) {
       revert AdapterDuplicated();
     }
     _registeredAdapters.register(positionId, token, IDelayedWithdrawalAdapter(msg.sender));
-
-    emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
