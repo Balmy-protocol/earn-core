@@ -87,8 +87,4 @@ library RegisteredAdaptersLibrary {
       }
     }
   }
-
-  function _keyFrom(uint256 positionId, address token) internal pure returns (PositionIdTokenKey) {
-    return PositionIdTokenKey.wrap(keccak256(abi.encode(positionId, token)));
-  }
 }

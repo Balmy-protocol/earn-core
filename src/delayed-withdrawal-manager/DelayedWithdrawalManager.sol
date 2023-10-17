@@ -7,14 +7,10 @@ import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 // solhint-disable-next-line no-unused-import
 import { RegisteredAdapters, RegisteredAdaptersLibrary, PositionIdTokenKey } from "./types/RegisteredAdapters.sol";
 
-// TODO: remove once functions are implemented
-// solhint-disable no-empty-blocks
 contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
-  //using RegisteredAdaptersLibrary for mapping(PositionIdTokenKey => RegisteredAdapters);
   using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => RegisteredAdapters));
 
   // slither-disable-next-line naming-convention
-  //mapping(PositionIdTokenKey key => RegisteredAdapters registeredAdapters) internal _registeredAdapters;
   mapping(uint256 positionId => mapping(address token => RegisteredAdapters registeredAdapters)) internal
     _registeredAdapters;
   /// @inheritdoc IDelayedWithdrawalManager
@@ -123,5 +119,3 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     if (address(adapter) != msg.sender) revert AdapterMismatch();
   }
 }
-
-// solhint-enable no-empty-blocks

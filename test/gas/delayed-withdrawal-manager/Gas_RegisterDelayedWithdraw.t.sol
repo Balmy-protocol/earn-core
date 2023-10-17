@@ -19,7 +19,7 @@ import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 
-contract Gas_RegisterDelayedWithdraw is PRBTest {
+contract GasRegisterDelayedWithdraw is PRBTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   DelayedWithdrawalManager private delayedWithdrawalManager;
@@ -31,7 +31,7 @@ contract Gas_RegisterDelayedWithdraw is PRBTest {
   address[] private tokens = new address[](2);
   address private owner = address(3);
 
-  IDelayedWithdrawalAdapter adapter;
+  IDelayedWithdrawalAdapter private adapter;
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();

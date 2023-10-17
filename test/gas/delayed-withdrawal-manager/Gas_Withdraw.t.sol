@@ -19,7 +19,7 @@ import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 
-contract Gas_Withdraw is PRBTest {
+contract GasWithdraw is PRBTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   DelayedWithdrawalManager private delayedWithdrawalManager;
