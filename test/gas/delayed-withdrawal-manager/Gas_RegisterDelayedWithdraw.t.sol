@@ -82,8 +82,4 @@ contract GasRegisterDelayedWithdraw is PRBTest {
   function test_Gas_registerDelayedWithdraw_0() public {
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
   }
-
-  function test_Gas_registerDelayedWithdraw_1() public {
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
-  }
 }

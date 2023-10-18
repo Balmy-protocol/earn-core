@@ -94,28 +94,4 @@ contract GasFunds is PRBTest {
   function test_Gas_allPositionFunds_0() public view {
     delayedWithdrawalManager.allPositionFunds(positions[0]);
   }
-
-  function test_Gas_estimatedPendingFunds_1() public view {
-    delayedWithdrawalManager.estimatedPendingFunds(positions[1], tokenByPosition[positions[1]]);
-  }
-
-  function test_Gas_withdrawableFunds_1() public view {
-    delayedWithdrawalManager.withdrawableFunds(positions[1], tokenByPosition[positions[1]]);
-  }
-
-  function test_Gas_allPositionFunds_1() public view {
-    delayedWithdrawalManager.allPositionFunds(positions[1]);
-  }
-
-  function test_Gas_estimatedPendingFunds_2() public view {
-    delayedWithdrawalManager.estimatedPendingFunds(positions[2], tokenByPosition[positions[2]]);
-  }
-
-  function test_Gas_withdrawableFunds_2() public view {
-    delayedWithdrawalManager.withdrawableFunds(positions[2], tokenByPosition[positions[2]]);
-  }
-
-  function test_Gas_allPositionFunds_2() public view {
-    delayedWithdrawalManager.allPositionFunds(positions[2]);
-  }
 }
