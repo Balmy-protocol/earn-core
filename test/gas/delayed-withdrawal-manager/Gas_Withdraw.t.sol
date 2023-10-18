@@ -19,57 +19,13 @@ import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 
-contract GasWithdraw is PRBTest {
+import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.t.sol";
+
+contract GasWithdraw is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
-  DelayedWithdrawalManager private delayedWithdrawalManager;
-
-  uint256[] private positions;
-  mapping(uint256 position => address token) private tokenByPosition;
-  IEarnStrategy private strategy;
-  StrategyId private strategyId;
-  address[] private tokens = new address[](2);
-  address private owner = address(3);
-
-  function setUp() public virtual {
-    IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
-    EarnVault vault = new EarnVault(
-      strategyRegistry,
-      address(1),
-      CommonUtils.arrayOf(address(2))
-    );
-    ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
-    erc20.approve(address(vault), type(uint256).max);
-
-    uint104 amountToDeposit1 = 1_000_000;
-    uint104 amountToDeposit2 = 1_000_001;
-    uint104 amountToDeposit3 = 1_000_003;
-    erc20.mint(address(this), amountToDeposit3);
-
-    tokens[0] = Token.NATIVE_TOKEN;
-    tokens[1] = address(erc20);
-
-    uint256 position;
-    (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
-
-    (position,) = vault.createPosition{ value: amountToDeposit1 }(
-      strategyId, tokens[0], amountToDeposit1, owner, PermissionUtils.buildEmptyPermissionSet(), ""
-    );
-    positions.push(position);
-    tokenByPosition[position] = tokens[0];
-
-    (position,) = vault.createPosition{ value: amountToDeposit2 }(
-      strategyId, tokens[0], amountToDeposit2, owner, PermissionUtils.buildEmptyPermissionSet(), ""
-    );
-    positions.push(position);
-    tokenByPosition[position] = tokens[0];
-
-    (position,) = vault.createPosition(
-      strategyId, tokens[1], amountToDeposit3, owner, PermissionUtils.buildEmptyPermissionSet(), ""
-    );
-    positions.push(position);
-    tokenByPosition[position] = tokens[1];
-    delayedWithdrawalManager = new DelayedWithdrawalManager(vault);
+  function setUp() public virtual override {
+    super.setUp();
 
     // setUp
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
