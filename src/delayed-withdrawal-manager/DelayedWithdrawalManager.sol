@@ -5,14 +5,14 @@ import { IDelayedWithdrawalManager, IEarnVault } from "../interfaces/IDelayedWit
 import { IDelayedWithdrawalAdapter } from "../interfaces/IDelayedWithdrawalAdapter.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 // solhint-disable-next-line no-unused-import
-import { RegisteredAdapters, RegisteredAdaptersLibrary, PositionIdTokenKey } from "./types/RegisteredAdapters.sol";
+import { RegisteredAdapter, RegisteredAdaptersLibrary, PositionIdTokenKey } from "./types/RegisteredAdapters.sol";
 
 contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
-  using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => RegisteredAdapters));
+  using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => mapping(uint256 => RegisteredAdapter)));
 
   // slither-disable-next-line naming-convention
-  mapping(uint256 positionId => mapping(address token => RegisteredAdapters registeredAdapters)) internal
-    _registeredAdapters;
+  mapping(uint256 position => mapping(address token => mapping(uint256 index => RegisteredAdapter registeredAdapter)))
+    internal _registeredAdapters;
   /// @inheritdoc IDelayedWithdrawalManager
   IEarnVault public immutable vault;
 
@@ -22,10 +22,13 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
   /// @inheritdoc IDelayedWithdrawalManager
   function estimatedPendingFunds(uint256 positionId, address token) public view returns (uint256 pendingFunds) {
-    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
-    for (uint256 i; i < adapters.length;) {
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
+      _registeredAdapters.get(positionId, token);
+    uint256 i = 0;
+
+    while (registeredAdapters[i].isFilled) {
       // slither-disable-next-line calls-loop
-      pendingFunds += adapters[i].estimatedPendingFunds(positionId, token);
+      pendingFunds += registeredAdapters[i].adapter.estimatedPendingFunds(positionId, token);
       unchecked {
         ++i;
       }
@@ -34,10 +37,13 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
   /// @inheritdoc IDelayedWithdrawalManager
   function withdrawableFunds(uint256 positionId, address token) public view returns (uint256 funds) {
-    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
-    for (uint256 i; i < adapters.length;) {
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
+      _registeredAdapters.get(positionId, token);
+    uint256 i = 0;
+
+    while (registeredAdapters[i].isFilled) {
       // slither-disable-next-line calls-loop
-      funds += adapters[i].withdrawableFunds(positionId, token);
+      funds += registeredAdapters[i].adapter.withdrawableFunds(positionId, token);
       unchecked {
         ++i;
       }
@@ -89,17 +95,19 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   {
     if (!vault.hasPermission(positionId, msg.sender, vault.WITHDRAW_PERMISSION())) revert UnauthorizedWithdrawal();
 
-    IDelayedWithdrawalAdapter[] memory adapters = _registeredAdapters.get(positionId, token);
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
+      _registeredAdapters.get(positionId, token);
+
     uint256 j = 0;
-    for (uint256 i; i < adapters.length;) {
+    uint256 i;
+
+    while (registeredAdapters[i].isFilled) {
       // slither-disable-next-line calls-loop
-      (uint256 _withdrawn, uint256 _stillPending) = adapters[i].withdraw(positionId, token, recipient);
+      (uint256 _withdrawn, uint256 _stillPending) = registeredAdapters[i].adapter.withdraw(positionId, token, recipient);
       withdrawn += _withdrawn;
       stillPending += _stillPending;
-      if (_stillPending != 0) {
-        if (i != j) {
-          _registeredAdapters.set(positionId, token, j, adapters[i]);
-        }
+      if (_stillPending != 0 && i != j) {
+        _registeredAdapters.set(positionId, token, j, registeredAdapters[i].adapter);
         unchecked {
           ++j;
         }
@@ -108,9 +116,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         ++i;
       }
     }
-    if (adapters.length != j) {
-      _registeredAdapters.pop({ positionId: positionId, token: token, times: adapters.length - j });
-    }
+    _registeredAdapters.pop({ positionId: positionId, token: token, amountOfPops: i - j });
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }
