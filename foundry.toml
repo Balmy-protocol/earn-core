@@ -22,6 +22,10 @@
   fuzz = { runs = 10_000 }
   verbosity = 4
 
+[profile.gas]
+test = 'test/gas'
+match-test = 'test_Gas_**'
+
 [fmt]
   bracket_spacing = true
   int_types = "long"
