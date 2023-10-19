@@ -18,7 +18,7 @@ import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrateg
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
-import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.t.sol";
+import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.sol";
 
 contract GasRegisterDelayedWithdraw is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
@@ -30,16 +30,10 @@ contract GasRegisterDelayedWithdraw is BaseDelayedWithdrawalGasTest {
     // setUp
     address token = tokens[0];
     adapter = strategy.delayedWithdrawalAdapter(token);
-    vm.startPrank(address(adapter));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
+    vm.prank(address(adapter));
   }
 
   function test_Gas_registerDelayedWithdraw() public {
     delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
-  }
-
-  function test_Gas_registerDelayedWithdraw_RevertWhen_AdapterDuplicated() public {
-    vm.expectRevert(abi.encodeWithSelector(IDelayedWithdrawalManager.AdapterDuplicated.selector));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
   }
 }

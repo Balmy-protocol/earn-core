@@ -18,7 +18,7 @@ import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrateg
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
-import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.t.sol";
+import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.sol";
 
 contract GasFunds is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
