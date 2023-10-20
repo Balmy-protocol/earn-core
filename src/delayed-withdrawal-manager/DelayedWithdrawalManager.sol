@@ -42,7 +42,6 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
       _registeredAdapters.get(positionId, token);
     uint256 i = 0;
-
     bool shouldContinue = true;
     while (shouldContinue) {
       RegisteredAdapter memory adapter = registeredAdapters[i++];
@@ -103,7 +102,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       _registeredAdapters.get(positionId, token);
 
     uint256 j = 0;
-    uint256 i;
+    uint256 i = 0;
     RegisteredAdapter memory adapter = registeredAdapters[i];
 
     bool shouldContinue = address(adapter.adapter) != address(0);

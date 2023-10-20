@@ -41,7 +41,7 @@ library RegisteredAdaptersLibrary {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
 
-    uint256 i;
+    uint256 i = 0;
     bool shouldContinue = true;
     while (shouldContinue) {
       RegisteredAdapter memory adapterToCompare = registeredAdapter[i];
@@ -68,16 +68,12 @@ library RegisteredAdaptersLibrary {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
 
-    uint256 i;
-    RegisteredAdapter memory currentAdapter = registeredAdapter[i];
-    bool shouldContinue = address(currentAdapter.adapter) != address(0);
+    uint256 i = 0;
+    bool shouldContinue = address(registeredAdapter[i].adapter) != address(0);
     while (shouldContinue) {
-      shouldContinue = currentAdapter.isNextFilled;
-      currentAdapter = registeredAdapter[i];
-      unchecked {
-        ++i;
-      }
+      shouldContinue = registeredAdapter[i++].isNextFilled;
     }
+
     if (i > 0) registeredAdapter[i - 1].isNextFilled = true;
     registeredAdapter[i] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
   }
@@ -110,7 +106,7 @@ library RegisteredAdaptersLibrary {
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
-    uint256 length;
+    uint256 length = 0;
     bool shouldContinue = address(registeredAdapter[length].adapter) != address(0);
     while (shouldContinue) {
       shouldContinue = registeredAdapter[length].isNextFilled;
