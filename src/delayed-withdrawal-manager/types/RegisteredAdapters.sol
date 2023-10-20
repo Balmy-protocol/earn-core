@@ -5,7 +5,7 @@ import { IDelayedWithdrawalAdapter } from "../../interfaces/IDelayedWithdrawalAd
 
 struct RegisteredAdapter {
   IDelayedWithdrawalAdapter adapter;
-  bool isFilled;
+  bool isNextFilled;
 }
 
 /// @notice A key composed of a position id and a token address
@@ -40,10 +40,13 @@ library RegisteredAdaptersLibrary {
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
-    uint256 i;
 
-    while (registeredAdapter[i].isFilled) {
-      if (registeredAdapter[i].adapter == adapter) return true;
+    uint256 i;
+    bool shouldContinue = true;
+    while (shouldContinue) {
+      RegisteredAdapter memory adapterToCompare = registeredAdapter[i];
+      if (adapterToCompare.adapter == adapter) return true;
+      shouldContinue = adapterToCompare.isNextFilled;
       unchecked {
         ++i;
       }
@@ -66,12 +69,17 @@ library RegisteredAdaptersLibrary {
       registeredAdapters[positionId][token];
 
     uint256 i;
-    while (registeredAdapter[i].isFilled) {
+    RegisteredAdapter memory currentAdapter = registeredAdapter[i];
+    bool shouldContinue = address(currentAdapter.adapter) != address(0);
+    while (shouldContinue) {
+      shouldContinue = currentAdapter.isNextFilled;
+      currentAdapter = registeredAdapter[i];
       unchecked {
         ++i;
       }
     }
-    registeredAdapter[i] = RegisteredAdapter({ adapter: adapter, isFilled: true });
+    if (i > 0) registeredAdapter[i - 1].isNextFilled = true;
+    registeredAdapter[i] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
   }
 
   function set(
@@ -84,7 +92,11 @@ library RegisteredAdaptersLibrary {
   )
     internal
   {
-    registeredAdapters[positionId][token][index] = RegisteredAdapter({ adapter: adapter, isFilled: true });
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
+      registeredAdapters[positionId][token];
+    if (index != 0) registeredAdapter[index - 1].isNextFilled = true;
+    registeredAdapter[index] =
+      RegisteredAdapter({ adapter: adapter, isNextFilled: address(registeredAdapter[index + 1].adapter) != address(0) });
   }
 
   function pop(
@@ -99,8 +111,9 @@ library RegisteredAdaptersLibrary {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
     uint256 length;
-
-    while (registeredAdapter[length].isFilled) {
+    bool shouldContinue = address(registeredAdapter[length].adapter) != address(0);
+    while (shouldContinue) {
+      shouldContinue = registeredAdapter[length].isNextFilled;
       unchecked {
         ++length;
       }

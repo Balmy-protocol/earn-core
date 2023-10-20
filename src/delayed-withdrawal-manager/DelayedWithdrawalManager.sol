@@ -26,12 +26,14 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       _registeredAdapters.get(positionId, token);
     uint256 i = 0;
 
-    while (registeredAdapters[i].isFilled) {
-      // slither-disable-next-line calls-loop
-      pendingFunds += registeredAdapters[i].adapter.estimatedPendingFunds(positionId, token);
-      unchecked {
-        ++i;
+    bool shouldContinue = true;
+    while (shouldContinue) {
+      RegisteredAdapter memory adapter = registeredAdapters[i++];
+      if (address(adapter.adapter) != address(0)) {
+        // slither-disable-next-line calls-loop
+        pendingFunds += adapter.adapter.estimatedPendingFunds(positionId, token);
       }
+      shouldContinue = adapter.isNextFilled;
     }
   }
 
@@ -41,12 +43,14 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       _registeredAdapters.get(positionId, token);
     uint256 i = 0;
 
-    while (registeredAdapters[i].isFilled) {
-      // slither-disable-next-line calls-loop
-      funds += registeredAdapters[i].adapter.withdrawableFunds(positionId, token);
-      unchecked {
-        ++i;
+    bool shouldContinue = true;
+    while (shouldContinue) {
+      RegisteredAdapter memory adapter = registeredAdapters[i++];
+      if (address(adapter.adapter) != address(0)) {
+        // slither-disable-next-line calls-loop
+        funds += adapter.adapter.withdrawableFunds(positionId, token);
       }
+      shouldContinue = adapter.isNextFilled;
     }
   }
 
@@ -100,14 +104,16 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
     uint256 j = 0;
     uint256 i;
+    RegisteredAdapter memory adapter = registeredAdapters[i];
 
-    while (registeredAdapters[i].isFilled) {
+    bool shouldContinue = address(adapter.adapter) != address(0);
+    while (shouldContinue) {
       // slither-disable-next-line calls-loop
-      (uint256 _withdrawn, uint256 _stillPending) = registeredAdapters[i].adapter.withdraw(positionId, token, recipient);
+      (uint256 _withdrawn, uint256 _stillPending) = adapter.adapter.withdraw(positionId, token, recipient);
       withdrawn += _withdrawn;
       stillPending += _stillPending;
       if (_stillPending != 0 && i != j) {
-        _registeredAdapters.set(positionId, token, j, registeredAdapters[i].adapter);
+        _registeredAdapters.set(positionId, token, j, adapter.adapter);
         unchecked {
           ++j;
         }
@@ -115,7 +121,12 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       unchecked {
         ++i;
       }
+      shouldContinue = adapter.isNextFilled;
+      if (shouldContinue) {
+        adapter = registeredAdapters[i];
+      }
     }
+
     _registeredAdapters.pop({ positionId: positionId, token: token, amountOfPops: i - j });
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
