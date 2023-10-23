@@ -64,16 +64,28 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     uint256 tokensQuantity = tokens.length;
     estimatedPending = new uint256[](tokensQuantity);
     withdrawable = new uint256[](tokensQuantity);
-
+    // slither-disable-start calls-loop
     for (uint256 i; i < tokensQuantity;) {
       address token = tokens[i];
-      // slither-disable-start calls-loop
-      estimatedPending[i] = estimatedPendingFunds(positionId, token);
-      withdrawable[i] = withdrawableFunds(positionId, token);
-      // slither-disable-end calls-loop
+      mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
+        _registeredAdapters.get(positionId, token);
+      uint256 j = 0;
+      bool shouldContinue = true;
+      while (shouldContinue) {
+        RegisteredAdapter memory adapter = registeredAdapters[j];
+        if (address(adapter.adapter) != address(0)) {
+          withdrawable[i] += adapter.adapter.withdrawableFunds(positionId, token);
+          estimatedPending[i] += adapter.adapter.estimatedPendingFunds(positionId, token);
+        }
+        shouldContinue = adapter.isNextFilled;
+        unchecked {
+          ++j;
+        }
+      }
       unchecked {
         ++i;
       }
+      // slither-disable-end calls-loop
     }
   }
 
