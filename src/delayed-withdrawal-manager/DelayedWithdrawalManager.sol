@@ -9,6 +9,7 @@ import { RegisteredAdapter, RegisteredAdaptersLibrary, PositionIdTokenKey } from
 
 contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => mapping(uint256 => RegisteredAdapter)));
+  using RegisteredAdaptersLibrary for mapping(uint256 => RegisteredAdapter);
 
   // slither-disable-next-line naming-convention
   mapping(uint256 position => mapping(address token => mapping(uint256 index => RegisteredAdapter registeredAdapter)))
@@ -117,33 +118,31 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
     uint256 j = 0;
     uint256 i = 0;
-    RegisteredAdapter memory adapter = registeredAdapters[i];
-
-    bool shouldContinue = address(adapter.adapter) != address(0);
+    bool shouldContinue = true;
     while (shouldContinue) {
-      // slither-disable-next-line calls-loop
-      (uint256 _withdrawn, uint256 _stillPending) = adapter.adapter.withdraw(positionId, token, recipient);
-      withdrawn += _withdrawn;
-      stillPending += _stillPending;
-      if (_stillPending != 0) {
-        if (i != j) {
-          _registeredAdapters.set(positionId, token, j, adapter.adapter);
+      RegisteredAdapter memory adapter = registeredAdapters[i];
+      if (address(adapter.adapter) != address(0)) {
+        // slither-disable-next-line calls-loop
+        (uint256 _withdrawn, uint256 _stillPending) = adapter.adapter.withdraw(positionId, token, recipient);
+        withdrawn += _withdrawn;
+        stillPending += _stillPending;
+        if (_stillPending != 0) {
+          if (i != j) {
+            registeredAdapters.set(j, adapter.adapter);
+          }
+          unchecked {
+            ++j;
+          }
         }
-        unchecked {
-          ++j;
-        }
-      }
-      unchecked {
-        ++i;
       }
       shouldContinue = adapter.isNextFilled;
       if (shouldContinue) {
-        adapter = registeredAdapters[i];
+        unchecked {
+          ++i;
+        }
       }
     }
-    if (i - j > 0) {
-      _registeredAdapters.pop({ positionId: positionId, token: token, start: j, end: i - 1 });
-    }
+    registeredAdapters.pop({ start: j, end: i });
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }

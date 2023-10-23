@@ -73,37 +73,28 @@ library RegisteredAdaptersLibrary {
   }
 
   function set(
-    mapping(uint256 => mapping(address => mapping(uint256 index => RegisteredAdapter registeredAdapter))) storage
-      registeredAdapters,
-    uint256 positionId,
-    address token,
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
     uint256 index,
     IDelayedWithdrawalAdapter adapter
   )
     internal
   {
-    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
-      registeredAdapters[positionId][token];
-    if (index != 0) registeredAdapter[index - 1].isNextFilled = true;
-    registeredAdapter[index] =
-      RegisteredAdapter({ adapter: adapter, isNextFilled: address(registeredAdapter[index + 1].adapter) != address(0) });
+    if (index != 0) registeredAdapters[index - 1].isNextFilled = true;
+    registeredAdapters[index] = RegisteredAdapter({
+      adapter: adapter,
+      isNextFilled: address(registeredAdapters[index + 1].adapter) != address(0)
+    });
   }
 
   function pop(
-    mapping(uint256 => mapping(address => mapping(uint256 index => RegisteredAdapter registeredAdapter))) storage
-      registeredAdapters,
-    uint256 positionId,
-    address token,
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
     uint256 start,
     uint256 end
   )
     internal
   {
-    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
-      registeredAdapters[positionId][token];
-
-    for (uint256 i = start; i <= end;) {
-      delete registeredAdapter[i];
+    for (uint256 i = start; i < end;) {
+      delete registeredAdapters[i];
       unchecked {
         ++i;
       }
