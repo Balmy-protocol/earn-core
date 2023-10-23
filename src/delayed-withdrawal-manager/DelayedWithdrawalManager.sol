@@ -108,7 +108,9 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         ++i;
       }
     }
-    _registeredAdapters.pop({ positionId: positionId, token: token, times: adapters.length - j });
+    if (adapters.length != j) {
+      _registeredAdapters.pop({ positionId: positionId, token: token, times: adapters.length - j });
+    }
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }
