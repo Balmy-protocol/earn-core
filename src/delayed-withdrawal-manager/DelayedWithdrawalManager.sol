@@ -96,8 +96,10 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       (uint256 _withdrawn, uint256 _stillPending) = adapters[i].withdraw(positionId, token, recipient);
       withdrawn += _withdrawn;
       stillPending += _stillPending;
-      if (_stillPending != 0 && i != j) {
-        _registeredAdapters.set(positionId, token, j, adapters[i]);
+      if (_stillPending != 0) {
+        if (i != j) {
+          _registeredAdapters.set(positionId, token, j, adapters[i]);
+        }
         unchecked {
           ++j;
         }
