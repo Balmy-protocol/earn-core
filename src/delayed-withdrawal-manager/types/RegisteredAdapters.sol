@@ -94,22 +94,16 @@ library RegisteredAdaptersLibrary {
       registeredAdapters,
     uint256 positionId,
     address token,
-    uint256 amountOfPops
+    uint256 start,
+    uint256 end
   )
     internal
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
-    uint256 length = 0;
-    bool shouldContinue = address(registeredAdapter[length].adapter) != address(0);
-    while (shouldContinue) {
-      shouldContinue = registeredAdapter[length].isNextFilled;
-      unchecked {
-        ++length;
-      }
-    }
-    for (uint256 i = 0; i < amountOfPops;) {
-      delete registeredAdapter[length - 1 - i];
+
+    for (uint256 i = start; i <= end;) {
+      delete registeredAdapter[i];
       unchecked {
         ++i;
       }

@@ -129,8 +129,9 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         adapter = registeredAdapters[i];
       }
     }
-
-    _registeredAdapters.pop({ positionId: positionId, token: token, amountOfPops: i - j });
+    if (i - j > 0) {
+      _registeredAdapters.pop({ positionId: positionId, token: token, start: j, end: i - 1 });
+    }
     // slither-disable-next-line reentrancy-events
     emit WithdrawnFunds(positionId, token, recipient, withdrawn);
   }
