@@ -81,10 +81,12 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   function registerDelayedWithdraw(uint256 positionId, address token) external {
     emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
     _revertIfNotCurrentStrategyAdapter(positionId, token);
-    if (_registeredAdapters.isRepeated(positionId, token, IDelayedWithdrawalAdapter(msg.sender))) {
+    (bool isRepeated, uint256 length) =
+      _registeredAdapters.isRepeated(positionId, token, IDelayedWithdrawalAdapter(msg.sender));
+    if (isRepeated) {
       revert AdapterDuplicated();
     }
-    _registeredAdapters.register(positionId, token, IDelayedWithdrawalAdapter(msg.sender));
+    _registeredAdapters.register(positionId, token, IDelayedWithdrawalAdapter(msg.sender), length);
   }
 
   /// @inheritdoc IDelayedWithdrawalManager

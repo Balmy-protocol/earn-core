@@ -36,23 +36,22 @@ library RegisteredAdaptersLibrary {
   )
     internal
     view
-    returns (bool)
+    returns (bool result, uint256 length)
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
 
-    uint256 i = 0;
-    bool shouldContinue = true;
+    result = false;
+    RegisteredAdapter memory adapterToCompare = registeredAdapter[length];
+    bool shouldContinue = address(adapterToCompare.adapter) != address(0);
     while (shouldContinue) {
-      RegisteredAdapter memory adapterToCompare = registeredAdapter[i];
-      if (adapterToCompare.adapter == adapter) return true;
+      adapterToCompare = registeredAdapter[length];
+      if (adapterToCompare.adapter == adapter) result = true;
       shouldContinue = adapterToCompare.isNextFilled;
       unchecked {
-        ++i;
+        length++;
       }
     }
-
-    return false;
   }
 
   /// @notice Registers an adapter for a position and token
@@ -61,21 +60,16 @@ library RegisteredAdaptersLibrary {
       registeredAdapters,
     uint256 positionId,
     address token,
-    IDelayedWithdrawalAdapter adapter
+    IDelayedWithdrawalAdapter adapter,
+    uint256 length
   )
     internal
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
 
-    uint256 i = 0;
-    bool shouldContinue = address(registeredAdapter[i].adapter) != address(0);
-    while (shouldContinue) {
-      shouldContinue = registeredAdapter[i++].isNextFilled;
-    }
-
-    if (i > 0) registeredAdapter[i - 1].isNextFilled = true;
-    registeredAdapter[i] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
+    if (length > 0) registeredAdapter[length - 1].isNextFilled = true;
+    registeredAdapter[length] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
   }
 
   function set(
