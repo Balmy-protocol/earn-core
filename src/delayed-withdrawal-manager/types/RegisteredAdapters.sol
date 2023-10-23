@@ -36,22 +36,27 @@ library RegisteredAdaptersLibrary {
   )
     internal
     view
-    returns (bool result, uint256 length)
+    returns (bool, uint256)
   {
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
       registeredAdapters[positionId][token];
 
-    result = false;
-    RegisteredAdapter memory adapterToCompare = registeredAdapter[length];
-    bool shouldContinue = address(adapterToCompare.adapter) != address(0);
+    uint256 length = 0;
+    bool shouldContinue = true;
     while (shouldContinue) {
-      adapterToCompare = registeredAdapter[length];
-      if (adapterToCompare.adapter == adapter) result = true;
-      shouldContinue = adapterToCompare.isNextFilled;
-      unchecked {
-        length++;
+      RegisteredAdapter memory adapterToCompare = registeredAdapter[length];
+      if (adapterToCompare.adapter == adapter) {
+        return (true, 0);
       }
+      if (address(adapterToCompare.adapter) != address(0)) {
+        unchecked {
+          length++;
+        }
+      }
+      shouldContinue = adapterToCompare.isNextFilled;
     }
+
+    return (false, length);
   }
 
   /// @notice Registers an adapter for a position and token
@@ -80,10 +85,7 @@ library RegisteredAdaptersLibrary {
     internal
   {
     if (index != 0) registeredAdapters[index - 1].isNextFilled = true;
-    registeredAdapters[index] = RegisteredAdapter({
-      adapter: adapter,
-      isNextFilled: address(registeredAdapters[index + 1].adapter) != address(0)
-    });
+    registeredAdapters[index] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
   }
 
   function pop(

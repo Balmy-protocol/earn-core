@@ -77,11 +77,11 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
         if (address(adapter.adapter) != address(0)) {
           withdrawable[i] += adapter.adapter.withdrawableFunds(positionId, token);
           estimatedPending[i] += adapter.adapter.estimatedPendingFunds(positionId, token);
+          unchecked {
+            ++j;
+          }
         }
         shouldContinue = adapter.isNextFilled;
-        unchecked {
-          ++j;
-        }
       }
       unchecked {
         ++i;
@@ -134,13 +134,11 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
             ++j;
           }
         }
-      }
-      shouldContinue = adapter.isNextFilled;
-      if (shouldContinue) {
         unchecked {
           ++i;
         }
       }
+      shouldContinue = adapter.isNextFilled;
     }
     registeredAdapters.pop({ start: j, end: i });
     // slither-disable-next-line reentrancy-events
