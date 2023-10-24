@@ -28,29 +28,24 @@ library RegisteredAdaptersLibrary {
 
   /// @notice Checks if an adapter is repeated in the list of registered adapters for a position and token
   function isRepeated(
-    mapping(uint256 => mapping(address => mapping(uint256 index => RegisteredAdapter registeredAdapter))) storage
-      registeredAdapters,
-    uint256 positionId,
-    address token,
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
     IDelayedWithdrawalAdapter adapter
   )
     internal
     view
     returns (bool, uint256)
   {
-    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
-      registeredAdapters[positionId][token];
-
     uint256 length = 0;
     bool shouldContinue = true;
     while (shouldContinue) {
-      RegisteredAdapter memory adapterToCompare = registeredAdapter[length];
+      RegisteredAdapter memory adapterToCompare = registeredAdapters[length];
       if (adapterToCompare.adapter == adapter) {
+        // Since we won't be using the length, we can return any value
         return (true, 0);
       }
       if (address(adapterToCompare.adapter) != address(0)) {
         unchecked {
-          length++;
+          ++length;
         }
       }
       shouldContinue = adapterToCompare.isNextFilled;
@@ -61,20 +56,14 @@ library RegisteredAdaptersLibrary {
 
   /// @notice Registers an adapter for a position and token
   function register(
-    mapping(uint256 => mapping(address => mapping(uint256 index => RegisteredAdapter registeredAdapter))) storage
-      registeredAdapters,
-    uint256 positionId,
-    address token,
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
     IDelayedWithdrawalAdapter adapter,
     uint256 length
   )
     internal
   {
-    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapter =
-      registeredAdapters[positionId][token];
-
-    if (length > 0) registeredAdapter[length - 1].isNextFilled = true;
-    registeredAdapter[length] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
+    if (length > 0) registeredAdapters[length - 1].isNextFilled = true;
+    registeredAdapters[length] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
   }
 
   function set(

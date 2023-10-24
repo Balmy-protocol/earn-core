@@ -29,10 +29,13 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
     bool shouldContinue = true;
     while (shouldContinue) {
-      RegisteredAdapter memory adapter = registeredAdapters[i++];
+      RegisteredAdapter memory adapter = registeredAdapters[i];
       if (address(adapter.adapter) != address(0)) {
         // slither-disable-next-line calls-loop
         pendingFunds += adapter.adapter.estimatedPendingFunds(positionId, token);
+        unchecked {
+          ++i;
+        }
       }
       shouldContinue = adapter.isNextFilled;
     }
@@ -45,10 +48,13 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     uint256 i = 0;
     bool shouldContinue = true;
     while (shouldContinue) {
-      RegisteredAdapter memory adapter = registeredAdapters[i++];
+      RegisteredAdapter memory adapter = registeredAdapters[i];
       if (address(adapter.adapter) != address(0)) {
         // slither-disable-next-line calls-loop
         funds += adapter.adapter.withdrawableFunds(positionId, token);
+        unchecked {
+          ++i;
+        }
       }
       shouldContinue = adapter.isNextFilled;
     }
@@ -94,12 +100,15 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   function registerDelayedWithdraw(uint256 positionId, address token) external {
     emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
     _revertIfNotCurrentStrategyAdapter(positionId, token);
-    (bool isRepeated, uint256 length) =
-      _registeredAdapters.isRepeated(positionId, token, IDelayedWithdrawalAdapter(msg.sender));
+
+    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
+      _registeredAdapters.get(positionId, token);
+
+    (bool isRepeated, uint256 length) = registeredAdapters.isRepeated(IDelayedWithdrawalAdapter(msg.sender));
     if (isRepeated) {
       revert AdapterDuplicated();
     }
-    _registeredAdapters.register(positionId, token, IDelayedWithdrawalAdapter(msg.sender), length);
+    registeredAdapters.register(IDelayedWithdrawalAdapter(msg.sender), length);
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
