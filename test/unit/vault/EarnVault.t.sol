@@ -10,6 +10,8 @@ import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfac
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
+import { stdMath } from "forge-std/StdMath.sol";
+
 import {
   IEarnVault,
   EarnVault,
@@ -20,6 +22,7 @@ import {
 } from "../../../src/vault/EarnVault.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
+import { EarnStrategyRewardsBalanceMock } from "../../mocks/strategies/EarnStrategyRewardsBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
@@ -42,13 +45,16 @@ contract EarnVaultTest is PRBTest, StdUtils {
   address private pauseAdmin = address(2);
   address private positionOwner = address(3);
   address private operator = address(4);
+  address private anoteherPositionOwner = address(5);
   EarnStrategyRegistryMock private strategyRegistry;
   ERC20MintableBurnableMock private erc20;
+  ERC20MintableBurnableMock private anotherErc20;
   EarnVault private vault;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistryMock();
     erc20 = new ERC20MintableBurnableMock();
+    anotherErc20 = new ERC20MintableBurnableMock();
     vault = new EarnVault(
       strategyRegistry,
       superAdmin,
@@ -56,6 +62,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
 
     erc20.approve(address(vault), type(uint256).max);
+    anotherErc20.approve(address(vault), type(uint256).max);
 
     vm.label(address(strategyRegistry), "Strategy Registry");
     vm.label(address(erc20), "ERC20");
@@ -223,9 +230,6 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
-    vm.expectCall(
-      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
-    );
     vm.expectEmit();
     emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) =
@@ -342,6 +346,128 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.expectRevert(abi.encodeWithSelector(Pausable.ExpectedPause.selector));
     vm.prank(pauseAdmin);
     vault.unpause();
+  }
+
+  function test_createPosition_CheckRewards() public {
+    uint256 amountToDeposit1 = 120_000;
+    uint256 amountToDeposit2 = 120_000;
+    uint256 amountToDeposit3 = 240_000;
+    uint256 amountToDeposit4 = 240_000;
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3 + amountToDeposit4);
+
+    uint256[] memory rewards = new uint256[](4);
+    uint256[] memory shares = new uint256[](4);
+    uint256 totalShares;
+    uint256 positionsCreated;
+
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    address[] memory strategyTokens = new address[](2);
+    strategyTokens[0] = address(erc20);
+    strategyTokens[1] = address(anotherErc20);
+    (StrategyId strategyId, EarnStrategyRewardsBalanceMock strategy) =
+      strategyRegistry.deployRewardsStrategy(strategyTokens);
+
+    uint256 previousBalance;
+
+    (uint256 positionId1,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+    positionsCreated++;
+
+    // Shares: 10
+    //Total shares: 20
+    shares[0] = 10;
+    totalShares = 10;
+
+    (,, uint256[] memory balances1) = vault.position(positionId1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertEq(rewards[0], balances1[1]);
+
+    (uint256 positionId2,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+    positionsCreated++;
+
+    //Shares: 10
+    //Total shares: 20
+    shares[1] = 10;
+    totalShares += shares[1];
+
+    // Earn
+    (,, balances1) = vault.position(positionId1);
+    assertEq(balances1.length, 2);
+    assertEq(balances1[0], amountToDeposit1);
+
+    (,, uint256[] memory balances2) = vault.position(positionId2);
+    assertEq(balances2.length, 2);
+    assertEq(balances2[0], amountToDeposit2);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertEq(rewards[0], balances1[1]);
+    assertEq(rewards[1], balances2[1]);
+
+    (uint256 positionId3,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    //Shares: 20
+    // Total shares: 40
+    shares[2] = 20;
+    totalShares += shares[2];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, uint256[] memory balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertEq(rewards[0], balances1[1]);
+    assertEq(rewards[1], balances2[1]);
+    assertEq(rewards[2], balances3[1]);
+
+    (uint256 positionId4,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, misc);
+    positionsCreated++;
+    // Shares: 20
+    // Total shares: 60
+    shares[3] = 20;
+    totalShares += shares[3];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+    (,, uint256[] memory balances4) = vault.position(positionId4);
+
+    //LAST SNAPSHOT
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertLte(stdMath.abs(int256(rewards[0] - balances1[1])), 1);
+    assertLte(stdMath.abs(int256(rewards[1] - balances2[1])), 1);
+    assertLte(stdMath.abs(int256(rewards[2] - balances3[1])), 1);
+    assertLte(stdMath.abs(int256(rewards[3] - balances4[1])), 1);
+  }
+
+  function takeSnapshot(
+    IEarnStrategy strategy,
+    uint256 previousBalance,
+    uint256 totalShares,
+    uint256[] memory rewards,
+    uint256[] memory shares,
+    uint256 positionsLength
+  )
+    internal
+    view
+    returns (uint256 _previousBalance)
+  {
+    (, uint256[] memory strategyBalances) = strategy.totalBalances();
+
+    uint256 yielded = (strategyBalances[1] - previousBalance) / totalShares;
+    _previousBalance = strategyBalances[1];
+
+    for (uint256 i; i < positionsLength; i++) {
+      rewards[i] += shares[i] * (yielded);
+    }
   }
 
   function checkPermissions(uint256 positionId, INFTPermissions.PermissionSet[] memory expected) internal {
