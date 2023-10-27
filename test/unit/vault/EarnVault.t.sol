@@ -11,7 +11,6 @@ import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUt
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { stdMath } from "forge-std/StdMath.sol";
-
 import {
   IEarnVault,
   EarnVault,
@@ -22,7 +21,6 @@ import {
 } from "../../../src/vault/EarnVault.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
-import { EarnStrategyRewardsBalanceMock } from "../../mocks/strategies/EarnStrategyRewardsBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
@@ -45,7 +43,6 @@ contract EarnVaultTest is PRBTest, StdUtils {
   address private pauseAdmin = address(2);
   address private positionOwner = address(3);
   address private operator = address(4);
-  address private anoteherPositionOwner = address(5);
   EarnStrategyRegistryMock private strategyRegistry;
   ERC20MintableBurnableMock private erc20;
   ERC20MintableBurnableMock private anotherErc20;
@@ -230,6 +227,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
+    vm.expectCall(
+      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
+    );
     vm.expectEmit();
     emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) =
@@ -353,13 +353,12 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 amountToDeposit2 = 120_000;
     uint256 amountToDeposit3 = 240_000;
     uint256 amountToDeposit4 = 240_000;
+    uint256 amountToReward = 120_000;
     erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3 + amountToDeposit4);
-
     uint256[] memory rewards = new uint256[](4);
     uint256[] memory shares = new uint256[](4);
     uint256 totalShares;
     uint256 positionsCreated;
-
     INFTPermissions.PermissionSet[] memory permissions =
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
@@ -367,27 +366,29 @@ contract EarnVaultTest is PRBTest, StdUtils {
     address[] memory strategyTokens = new address[](2);
     strategyTokens[0] = address(erc20);
     strategyTokens[1] = address(anotherErc20);
-    (StrategyId strategyId, EarnStrategyRewardsBalanceMock strategy) =
-      strategyRegistry.deployRewardsStrategy(strategyTokens);
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(strategyTokens);
 
     uint256 previousBalance;
 
     (uint256 positionId1,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
     positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
 
     // Shares: 10
-    //Total shares: 20
+    //Total shares: 10
     shares[0] = 10;
     totalShares = 10;
 
     (,, uint256[] memory balances1) = vault.position(positionId1);
     previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
-    assertEq(rewards[0], balances1[1]);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
     positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
 
     //Shares: 10
     //Total shares: 20
@@ -405,12 +406,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
 
-    assertEq(rewards[0], balances1[1]);
-    assertEq(rewards[1], balances2[1]);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
     positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
     //Shares: 20
     // Total shares: 40
     shares[2] = 20;
@@ -422,13 +424,14 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
 
-    assertEq(rewards[0], balances1[1]);
-    assertEq(rewards[1], balances2[1]);
-    assertEq(rewards[2], balances3[1]);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
 
     (uint256 positionId4,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, misc);
     positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
     // Shares: 20
     // Total shares: 60
     shares[3] = 20;
@@ -440,12 +443,12 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (,, uint256[] memory balances4) = vault.position(positionId4);
 
     //LAST SNAPSHOT
-    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
 
-    assertLte(stdMath.abs(int256(rewards[0] - balances1[1])), 1);
-    assertLte(stdMath.abs(int256(rewards[1] - balances2[1])), 1);
-    assertLte(stdMath.abs(int256(rewards[2] - balances3[1])), 1);
-    assertLte(stdMath.abs(int256(rewards[3] - balances4[1])), 1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
+    assertApproxEqAbs(rewards[3], balances4[1], 1);
   }
 
   function takeSnapshot(
@@ -478,6 +481,14 @@ contract EarnVaultTest is PRBTest, StdUtils {
       bool shouldHaveWithdrawPermission = expected[i].permissions.contains(withdrawPermission);
       assertEq(vault.hasPermission(positionId, expected[i].operator, increasePermission), shouldHaveIncreasePermission);
       assertEq(vault.hasPermission(positionId, expected[i].operator, withdrawPermission), shouldHaveWithdrawPermission);
+    }
+  }
+
+  function assertApproxEqAbs(uint256 a, uint256 b, uint256 maxDelta) internal virtual {
+    uint256 delta = stdMath.delta(a, b);
+
+    if (delta > maxDelta) {
+      fail();
     }
   }
 }

@@ -38,7 +38,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     return withdrawalTypes;
   }
 
-  function totalBalances() external view virtual override returns (address[] memory tokens_, uint256[] memory balances) {
+  function totalBalances() external view override returns (address[] memory tokens_, uint256[] memory balances) {
     tokens_ = tokens;
     balances = new uint256[](tokens.length);
     for (uint256 i; i < balances.length; i++) {
