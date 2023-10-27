@@ -59,7 +59,6 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
 
     erc20.approve(address(vault), type(uint256).max);
-    anotherErc20.approve(address(vault), type(uint256).max);
 
     vm.label(address(strategyRegistry), "Strategy Registry");
     vm.label(address(erc20), "ERC20");
