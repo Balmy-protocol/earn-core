@@ -102,19 +102,16 @@ contract YieldMathTest is PRBTest, StdUtils {
   function testFuzz_calculateBalance_WithLoss(
     uint104 previousBalance,
     uint152 newAccumulator,
-    uint152 initialAccum,
     uint160 positionShares,
     uint104 totalBalance
   )
     public
   {
     previousBalance = uint104(bound(previousBalance, 1, 2 ** 102 - 1));
-    newAccumulator = uint152(bound(newAccumulator, 0, initialAccum));
-    initialAccum = uint152(bound(initialAccum, 0, 2 ** 102 - 1));
+    newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 102 - 1));
     totalBalance = uint104(bound(totalBalance, 1, 2 ** 102 - 1));
     positionShares = uint160(bound(positionShares, 1, 2 ** 102 - 1));
     vm.assume(previousBalance <= totalBalance);
-    vm.assume(newAccumulator == initialAccum);
 
     address token = address(0);
 
@@ -122,7 +119,7 @@ contract YieldMathTest is PRBTest, StdUtils {
     positionRegistry.update({
       positionId: 1,
       token: token,
-      newAccumulator: initialAccum,
+      newAccumulator: newAccumulator, //newAcumulator == initialAcumulator
       newPositionBalance: previousBalance,
       newProccessedLossEvents: 0,
       newShares: positionShares
