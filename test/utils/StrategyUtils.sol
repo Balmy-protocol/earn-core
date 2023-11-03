@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 import { IEarnStrategy, StrategyId } from "../../src/vault/EarnVault.sol";
 import { IEarnStrategyRegistry } from "../../src/interfaces/IEarnStrategyRegistry.sol";
 import { EarnStrategyStateBalanceMock } from "../mocks/strategies/EarnStrategyStateBalanceMock.sol";
+import { EarnStrategyCustomBalanceMock } from "../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
 
 library StrategyUtils {
   function deployStateStrategy(
@@ -45,6 +46,17 @@ library StrategyUtils {
   {
     require(tokens.length > 0, "Invalid");
     strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
+    strategyId = registry.registerStrategy(address(this), strategy);
+  }
+
+    function deployCustomStrategy(
+    IEarnStrategyRegistry registry,
+    address asset
+  )
+    internal
+    returns (StrategyId strategyId, EarnStrategyCustomBalanceMock strategy)
+  {
+    strategy = new EarnStrategyCustomBalanceMock(asset);
     strategyId = registry.registerStrategy(address(this), strategy);
   }
 }
