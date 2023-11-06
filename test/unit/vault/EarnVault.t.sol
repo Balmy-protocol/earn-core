@@ -617,7 +617,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     shares[1] = amountToDeposit2;
     totalShares += shares[1];
 
-    previousBalance = takeSnapshoptAndAssertBalances(
+    previousBalance = takeSnapshotAndAssertBalances(
       balances, positionIds, strategy, previousBalance, totalShares, rewards, shares, positionsCreated
     );
 
@@ -630,7 +630,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     shares[2] = amountToDeposit3;
     totalShares += shares[2];
 
-    previousBalance = takeSnapshoptAndAssertBalances(
+    previousBalance = takeSnapshotAndAssertBalances(
       balances, positionIds, strategy, previousBalance, totalShares, rewards, shares, positionsCreated
     );
 
@@ -643,7 +643,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     totalShares += shares[3];
     anotherErc20.mint(address(strategy), amountToReward2);
 
-    previousBalance = takeSnapshoptAndAssertBalances(
+    previousBalance = takeSnapshotAndAssertBalances(
       balances, positionIds, strategy, previousBalance, totalShares, rewards, shares, positionsCreated
     );
 
@@ -655,7 +655,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     shares[4] = amountToDeposit5;
     totalShares += shares[4];
     anotherErc20.burn(address(strategy), amountToLose);
-    previousBalance = takeSnapshoptAndAssertBalances(
+    previousBalance = takeSnapshotAndAssertBalances(
       balances, positionIds, strategy, previousBalance, totalShares, rewards, shares, positionsCreated
     );
   }
@@ -704,7 +704,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(0, balances1[1], 1);
   }
 
-  function takeSnapshoptAndAssertBalances(
+  function takeSnapshotAndAssertBalances(
     uint256[][] memory balances,
     uint256[] memory positionIds,
     IEarnStrategy strategy,
