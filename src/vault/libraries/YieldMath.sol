@@ -89,10 +89,11 @@ library YieldMath {
     returns (uint256)
   {
     if (
-      totalLossEvents == MAX_LOSS_EVENTS
+      positionId == POSITION_BEING_CREATED || totalLossEvents == MAX_LOSS_EVENTS
         || (totalLossEvents == MAX_LOSS_EVENTS - 1 && totalBalance < lastRecordedBalance)
     ) {
-      // We've reached the max amount of loss events. We'll simply report all balances as 0
+      // We've reached the max amount of loss events or the position is being created. We'll simply report all balances
+      // as 0
       return 0;
     }
 
@@ -102,7 +103,7 @@ library YieldMath {
     // The first step of the balance calculation process is to calculate how the balance evolved over time, through loss
     // events. We will calculate how much was earned up until a loss event, and then apply such loss to the position's
     // balance
-    while (processedLossEvents < totalLossEvents && processedLossEvents < 15) {
+    while (processedLossEvents < totalLossEvents && processedLossEvents < MAX_LOSS_EVENTS) {
       RewardLossEvent memory lossEvent = lossEventRegistry.read(strategyId, token, processedLossEvents);
       positionBalance += YieldMath.calculateEarned({
         initialAccum: initialAccum,

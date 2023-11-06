@@ -64,11 +64,10 @@ contract YieldMathTest is PRBTest, StdUtils {
   )
     public
   {
-    previousBalance = uint104(bound(previousBalance, 0, 2 ** 102 - 1));
+    totalBalance = uint104(bound(totalBalance, 0, 2 ** 102 - 1));
+    previousBalance = uint104(bound(previousBalance, 0, totalBalance));
     newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 150 - 1));
     initialAccum = uint152(bound(initialAccum, 0, newAccumulator));
-    totalBalance = uint104(bound(totalBalance, 0, 2 ** 102 - 1));
-    vm.assume(previousBalance <= totalBalance);
 
     // Set initial values
     positionRegistry.update({
@@ -107,11 +106,10 @@ contract YieldMathTest is PRBTest, StdUtils {
   )
     public
   {
-    previousBalance = uint104(bound(previousBalance, 1, 2 ** 102 - 1));
+    previousBalance = uint104(bound(previousBalance, 2, 2 ** 102 - 1));
+    totalBalance = uint104(bound(totalBalance, 1, previousBalance - 1));
     newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 102 - 1));
-    totalBalance = uint104(bound(totalBalance, 1, 2 ** 102 - 1));
     positionShares = uint160(bound(positionShares, 1, 2 ** 102 - 1));
-    vm.assume(previousBalance <= totalBalance);
 
     address token = address(0);
 
@@ -133,19 +131,19 @@ contract YieldMathTest is PRBTest, StdUtils {
       strategyId, token, totalLossEvents++, newAccumulator, lastRecordedTotalBalance, previousBalance
     );
 
-    uint256 currentBalance = YieldMath.calculateBalance(
-      1,
-      strategyId,
-      token,
-      positionShares,
-      lastRecordedTotalBalance,
-      totalBalance,
-      totalLossEvents,
-      newAccumulator,
-      positionRegistry,
-      lossEventRegistry
-    );
+    uint256 currentBalance = YieldMath.calculateBalance({
+      positionId: 1,
+      strategyId: strategyId,
+      token: token,
+      positionShares: positionShares,
+      lastRecordedBalance: previousBalance,
+      totalBalance: totalBalance,
+      totalLossEvents: totalLossEvents,
+      newAccumulator: newAccumulator,
+      positionRegistry: positionRegistry,
+      lossEventRegistry: lossEventRegistry
+    });
 
-    assertEq(currentBalance, previousBalance);
+    assertEq(currentBalance, totalBalance);
   }
 }
