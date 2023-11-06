@@ -51,9 +51,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
-  // Used to represent a position being created
-  //slither-disable-next-line unused-state
-  uint8 private constant POSITION_BEING_CREATED = 0;
   // The maximum amount of losses supported
   uint8 private constant MAX_LOSS_EVENTS = 15;
   // slither-disable-start naming-convention

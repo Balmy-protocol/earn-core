@@ -60,7 +60,7 @@ library YieldMath {
   }
 
   /**
-   * @notice Calculates a position's for a specific token, based on past events and current balance
+   * @notice Calculates a position's balance for a specific token, based on past events and current strategy's balance
    * @param positionId The position's id
    * @param strategyId The position's strategy
    * @param token The token to calculate the balance for
