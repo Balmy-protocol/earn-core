@@ -28,6 +28,7 @@ import {
   PositionYieldDataForToken,
   PositionYieldDataForTokenLibrary
 } from "./types/PositionYieldDataForToken.sol";
+import { RewardLossEventKey, RewardLossEvent, RewardLossEventLibrary } from "./types/RewardLossEvent.sol";
 import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
 import { UpdateAction } from "./types/UpdateAction.sol";
 // solhint-disable no-unused-import
@@ -41,6 +42,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   using PositionDataLibrary for mapping(uint256 => PositionData);
   using TotalYieldDataForTokenLibrary for mapping(TotalYieldDataKey => TotalYieldDataForToken);
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
+  using RewardLossEventLibrary for mapping(RewardLossEventKey => RewardLossEvent);
   using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
@@ -62,6 +64,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   mapping(TotalYieldDataKey key => TotalYieldDataForToken yieldData) internal _totalYieldData;
   // Stores relevant yield data for a given position in the strategy, in the context of a specific reward token
   mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal _positionYieldData;
+  // Stores historical loss events for reward tokens
+  mapping(RewardLossEventKey key => RewardLossEvent lossEvent) internal _lossEvents;
   // slither-disable-end naming-convention
 
   constructor(
@@ -300,19 +304,32 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     (yieldAccumulator, calculatedData.lastRecordedBalance, calculatedData.totalLossEvents) =
       _totalYieldData.read(strategyId, token);
 
-    calculatedData.newAccumulator = YieldMath.calculateAccum({
-      lastRecordedBalance: calculatedData.lastRecordedBalance,
-      currentBalance: totalBalance,
-      previousAccum: yieldAccumulator,
-      totalShares: totalShares
-    });
+    if (
+      totalBalance < calculatedData.lastRecordedBalance || calculatedData.totalLossEvents == YieldMath.MAX_LOSS_EVENTS
+    ) {
+      // If we have just produced a loss, or we already reached the max allowed losses, then avoid updating the
+      // accumulator
+      calculatedData.newAccumulator = yieldAccumulator;
+    } else {
+      calculatedData.newAccumulator = YieldMath.calculateAccum({
+        lastRecordedBalance: calculatedData.lastRecordedBalance,
+        currentBalance: totalBalance,
+        previousAccum: yieldAccumulator,
+        totalShares: totalShares
+      });
+    }
 
     calculatedData.positionBalance = YieldMath.calculateBalance({
       positionId: positionId,
+      strategyId: strategyId,
       token: token,
+      totalBalance: totalBalance,
+      totalLossEvents: calculatedData.totalLossEvents,
+      lastRecordedBalance: calculatedData.lastRecordedBalance,
       newAccumulator: calculatedData.newAccumulator,
       positionShares: positionShares,
-      positionRegistry: _positionYieldData
+      positionRegistry: _positionYieldData,
+      lossEventRegistry: _lossEvents
     });
   }
 
@@ -393,6 +410,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         positionShares: newPositionShares,
         token: tokens[i],
         calculatedData: calculatedData[i],
+        totalBalanceBeforeUpdate: balancesBeforeUpdate[i],
         withdrawn: updateAmounts[i],
         totalBalanceAfterUpdate: balancesAfterUpdate[i]
       });
@@ -444,11 +462,28 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 positionShares,
     address token,
     CalculatedDataForToken memory calculatedData,
+    uint256 totalBalanceBeforeUpdate,
     uint256 withdrawn,
     uint256 totalBalanceAfterUpdate
   )
     internal
   {
+    if (
+      calculatedData.totalLossEvents < YieldMath.MAX_LOSS_EVENTS
+        && totalBalanceBeforeUpdate < calculatedData.lastRecordedBalance
+    ) {
+      // There was a new loss event, let's register it
+      _lossEvents.registerNew({
+        strategyId: strategyId,
+        token: token,
+        eventIndex: calculatedData.totalLossEvents++,
+        // Since there was a loss event, we know that the accumulator wasn't updated. So we can use the "new" accum
+        // value
+        accumPriorToLoss: calculatedData.newAccumulator,
+        totalBalanceBeforeLoss: calculatedData.lastRecordedBalance,
+        totalBalanceAfterLoss: totalBalanceBeforeUpdate
+      });
+    }
     _totalYieldData.update({
       strategyId: strategyId,
       token: token,
