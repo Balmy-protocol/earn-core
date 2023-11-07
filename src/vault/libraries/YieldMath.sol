@@ -33,7 +33,7 @@ library YieldMath {
    * @dev The maximum amount of loss events supported per strategy and token. After this threshold is met, then all
    *      balances will for that strategy and token will be reported as zero.
    */
-  uint256 internal constant MAX_LOSS_EVENTS = 15;
+  uint8 internal constant MAX_LOSS_EVENTS = 15;
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares

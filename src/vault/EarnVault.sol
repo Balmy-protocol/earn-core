@@ -51,8 +51,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
-  // The maximum amount of losses supported
-  uint8 private constant MAX_LOSS_EVENTS = 15;
   // slither-disable-start naming-convention
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
@@ -306,7 +304,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     (yieldAccumulator, calculatedData.lastRecordedBalance, calculatedData.totalLossEvents) =
       _totalYieldData.read(strategyId, token);
 
-    if (totalBalance < calculatedData.lastRecordedBalance || calculatedData.totalLossEvents == MAX_LOSS_EVENTS) {
+    if (
+      totalBalance < calculatedData.lastRecordedBalance || calculatedData.totalLossEvents == YieldMath.MAX_LOSS_EVENTS
+    ) {
       // If we have just produced a loss, or we already reached the max allowed losses, then avoid updating the
       // accumulator
       calculatedData.newAccumulator = yieldAccumulator;
@@ -469,7 +469,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     internal
   {
     if (
-      calculatedData.totalLossEvents < MAX_LOSS_EVENTS && totalBalanceBeforeUpdate < calculatedData.lastRecordedBalance
+      calculatedData.totalLossEvents < YieldMath.MAX_LOSS_EVENTS
+        && totalBalanceBeforeUpdate < calculatedData.lastRecordedBalance
     ) {
       // There was a new loss event, let's register it
       _lossEvents.registerNew({

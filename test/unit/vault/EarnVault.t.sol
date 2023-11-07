@@ -701,7 +701,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     }
 
     (,, balances1) = vault.position(positionId1);
-    assertApproxEqAbs(0, balances1[1], 1);
+    assertEq(0, balances1[1]);
   }
 
   function takeSnapshotAndAssertBalances(
