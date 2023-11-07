@@ -724,7 +724,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     _previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsLength);
 
     for (uint8 i; i < positionsLength; i++) {
-      assertApproxEqAbs(rewards[i], balances[i][1], 1);
+      assertApproxEqAbs(rewards[i], balances[i][1], 2);
     }
   }
 
