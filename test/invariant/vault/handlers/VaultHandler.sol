@@ -22,10 +22,12 @@ contract VaultHandler is StdUtils {
     _asset = _findTokenWithIndex(0);
   }
 
-  // TODO: Why uint80?
-  function deposit(uint256 depositTokenIndex, uint80 depositAmount) external payable {
+  function deposit(uint256 depositTokenIndex, uint256 depositAmount) external payable {
     uint104 previousBalance = _strategy.tokenBalance(_asset);
-    depositAmount = uint80(bound(depositAmount, 1, type(uint80).max));
+    uint256 maxBalanceInVault = (2 ** 102) - 1;
+    uint256 availableToDeposit = maxBalanceInVault - uint256(previousBalance);
+    depositAmount = bound(depositAmount, 1, availableToDeposit * 9 / 10); // We can only deposit up to 90% of what's
+      // available
     address depositToken = _findTokenWithIndex(depositTokenIndex);
     (, uint256 assetsDeposited) = _vault.createPosition(
       _strategyId, depositToken, depositAmount, address(1), PermissionUtils.buildEmptyPermissionSet(), ""
@@ -43,4 +45,3 @@ contract VaultHandler is StdUtils {
     return tokens[tokenIndex];
   }
 }
-

@@ -49,7 +49,7 @@ library StrategyUtils {
     strategyId = registry.registerStrategy(address(this), strategy);
   }
 
-    function deployCustomStrategy(
+  function deployCustomStrategy(
     IEarnStrategyRegistry registry,
     address asset
   )
