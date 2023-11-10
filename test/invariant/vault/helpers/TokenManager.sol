@@ -19,7 +19,7 @@ contract TokenManager {
   }
 
   function getRandomToken() external view returns (address) {
-    return _tokens[block.timestamp % _tokens.length];
+    return _tokens[(block.timestamp + gasleft()) % _tokens.length];
   }
 
   function getTokenNotInList(address[] memory list) external view returns (address) {

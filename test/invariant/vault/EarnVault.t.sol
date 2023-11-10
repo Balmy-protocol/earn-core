@@ -30,9 +30,8 @@ contract EarnVaultInvariantTest is StdInvariant, StdUtils, StdAssertions {
     tokenManager = new TokenManager({tokensToDeploy: 50});
 
     strategyRegistry = new EarnStrategyRegistryMock();
-    (StrategyId strategyId, EarnStrategyCustomBalanceMock strategy_) =
-      strategyRegistry.deployCustomStrategy(tokenManager.getRandomToken());
-    strategy = strategy_;
+    StrategyId strategyId;
+    (strategyId, strategy) = strategyRegistry.deployCustomStrategy(tokenManager.getRandomToken());
     vault = new EarnVault(
       strategyRegistry,
       address(1),
