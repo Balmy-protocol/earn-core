@@ -29,6 +29,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
   using Math for uint256;
+  using Math for uint104;
 
   event PositionCreated(
     uint256 positionId,
@@ -38,6 +39,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
+
+  event PositionWithdrawn(uint256 positionId, address[] tokensToWithdraw, uint256[] withdrawn, address recipient);
 
   using StrategyUtils for EarnStrategyRegistryMock;
   using InternalUtils for INFTPermissions.Permission[];
@@ -702,6 +705,181 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     (,, balances1) = vault.position(positionId1);
     assertEq(0, balances1[1]);
+  }
+
+  function testFuzz_withdraw_WithERC20(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    percentageToWithdraw = uint8(bound(percentageToWithdraw, 1, 100));
+    uint256 amountToWithdraw = percentageToWithdraw == 100
+      ? type(uint256).max
+      : amountToDeposit.mulDiv(percentageToWithdraw, 100, Math.Rounding.Ceil);
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Funds before withdraw
+    (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(erc20.balanceOf(address(strategy)), amountToDeposit);
+
+    vm.prank(operator);
+    vm.expectEmit();
+    emit PositionWithdrawn(
+      positionId,
+      tokens,
+      CommonUtils.arrayOf(amountToWithdraw != type(uint256).max ? amountToWithdraw : amountToDeposit),
+      recipient
+    );
+    vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+
+    // Funds after withdraw
+    (,, balances) = vault.position(positionId);
+    assertEq(erc20.balanceOf(recipient), amountToWithdraw != type(uint256).max ? amountToWithdraw : amountToDeposit);
+    assertEq(
+      erc20.balanceOf(address(strategy)), amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0
+    );
+  }
+
+  function testFuzz_withdraw_WithNative(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    percentageToWithdraw = uint8(bound(percentageToWithdraw, 1, 100));
+    uint256 amountToWithdraw = percentageToWithdraw == 100
+      ? type(uint256).max
+      : amountToDeposit.mulDiv(percentageToWithdraw, 100, Math.Rounding.Ceil);
+    vm.deal(address(this), amountToDeposit);
+    address recipient = address(18);
+
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc
+    );
+
+    // Funds before withdraw
+    (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(address(strategy).balance, amountToDeposit);
+
+    vm.prank(operator);
+    vm.expectEmit();
+    emit PositionWithdrawn(
+      positionId,
+      tokens,
+      CommonUtils.arrayOf(amountToWithdraw != type(uint256).max ? amountToWithdraw : amountToDeposit),
+      recipient
+    );
+    vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+
+    // Funds after withdraw
+    (,, balances) = vault.position(positionId);
+    assertEq(recipient.balance, amountToWithdraw != type(uint256).max ? amountToWithdraw : amountToDeposit);
+    assertEq(address(strategy).balance, amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0);
+  }
+
+  function testFuzz_withdraw_RevertWhen_IntendendWithdrawMoreThanBalance(uint104 amountToDeposit) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max - 1));
+    uint104 amountToWithdraw = uint104(bound(amountToDeposit, amountToDeposit + 1, type(uint104).max));
+
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Funds before withdraw
+    (address[] memory tokens,,) = vault.position(positionId);
+
+    vm.prank(operator);
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.InsufficientFunds.selector));
+    vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+  }
+
+  function testFuzz_withdraw_RevertWhen_AccountWithoutPermission(uint104 amountToDeposit) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions;
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Funds before withdraw
+    (address[] memory tokens,,) = vault.position(positionId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        INFTPermissions.AccountWithoutPermission.selector, positionId, operator, vault.WITHDRAW_PERMISSION()
+      )
+    );
+    vm.prank(operator);
+    vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+  }
+
+  function testFuzz_withdraw_RevertWhen_InvalidWithdrawInput_DifferentToken(uint104 amountToDeposit) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    vm.prank(operator);
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.InvalidWithdrawInput.selector));
+    vault.withdraw(
+      positionId, CommonUtils.arrayOf(address(anotherErc20)), CommonUtils.arrayOf(amountToWithdraw), recipient
+    );
+  }
+
+  function testFuzz_withdraw_RevertWhen_InvalidWithdrawInput_ArraySizeMismatch(uint104 amountToDeposit) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+    (address[] memory tokens,,) = vault.position(positionId);
+
+    uint256[] memory intendendWithdraw = new uint256[](2);
+    intendendWithdraw[0] = intendendWithdraw[1] = amountToWithdraw;
+
+    vm.prank(operator);
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.InvalidWithdrawInput.selector));
+    vault.withdraw(positionId, tokens, intendendWithdraw, recipient);
   }
 
   function takeSnapshotAndAssertBalances(

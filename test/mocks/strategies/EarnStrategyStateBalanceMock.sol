@@ -7,7 +7,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Check
 import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 // solhint-disable-next-line no-unused-import
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
-import { Token } from "../../../src/libraries/Token.sol";
+import { Token, IERC20, Address } from "../../../src/libraries/Token.sol";
 import { DelayedWithdrawalAdapterMock } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterMock.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances by reading token's state
@@ -56,5 +56,25 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
 
   function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
     return interfaceId == type(IEarnStrategy).interfaceId || interfaceId == type(IERC165).interfaceId;
+  }
+
+  function withdraw(
+    uint256,
+    address[] memory tokens_,
+    uint256[] memory toWithdraw,
+    address recipient
+  )
+    external
+    override
+    returns (WithdrawalType[] memory)
+  {
+    for (uint256 i; i < tokens.length; i++) {
+      if (tokens_[i] == Token.NATIVE_TOKEN) {
+        Address.sendValue(payable(recipient), toWithdraw[i]);
+      } else {
+        IERC20(tokens_[i]).transfer(recipient, toWithdraw[i]);
+      }
+    }
+    return withdrawalTypes;
   }
 }
