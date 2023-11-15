@@ -11,6 +11,7 @@ import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUt
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { stdMath } from "forge-std/StdMath.sol";
+import  "forge-std/console2.sol";
 import {
   IEarnVault,
   EarnVault,
@@ -880,6 +881,128 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.prank(operator);
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.InvalidWithdrawInput.selector));
     vault.withdraw(positionId, tokens, intendendWithdraw, recipient);
+  }
+
+  function test_withdraw_CheckRewards() public {
+    uint256 amountToDeposit1 = 120_000;
+    uint256 amountToDeposit2 = 120_000;
+    uint256 amountToDeposit3 = 240_000;
+    uint256 amountToReward = 120_000;
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3);
+    uint256[] memory rewards = new uint256[](3);
+    uint256[] memory shares = new uint256[](3);
+    uint256 totalShares;
+    uint256 positionsCreated;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    address[] memory strategyTokens = new address[](2);
+    strategyTokens[0] = address(erc20);
+    strategyTokens[1] = address(anotherErc20);
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(strategyTokens);
+
+    uint256 previousBalance;
+
+    (uint256 positionId1,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    // Shares: 10
+    //Total shares: 10
+    shares[0] = 10;
+    totalShares = 10;
+
+    (,, uint256[] memory balances1) = vault.position(positionId1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+
+    (uint256 positionId2,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    //Shares: 10
+    //Total shares: 20
+    shares[1] = 10;
+    totalShares += shares[1];
+
+    // Earn
+    (,, balances1) = vault.position(positionId1);
+    assertEq(balances1.length, 2);
+    assertEq(balances1[0], amountToDeposit1);
+
+    (,, uint256[] memory balances2) = vault.position(positionId2);
+    assertEq(balances2.length, 2);
+    assertEq(balances2[0], amountToDeposit2);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+
+    (uint256 positionId3,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+    //Shares: 20
+    // Total shares: 40
+    shares[2] = 20;
+    totalShares += shares[2];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, uint256[] memory balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
+
+    // WITHDRAW ASSET
+
+    uint256 amountToWithdraw1 = balances1[0] / 2;
+    address recipient = address(18);
+    uint256[] memory intendendWithdraw = new uint256[](2);
+    intendendWithdraw[0] = amountToWithdraw1;
+
+    vm.prank(operator);
+    vault.withdraw(positionId1, strategyTokens, intendendWithdraw, recipient);
+    
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+   
+
+    assertApproxEqAbs(amountToDeposit1 - amountToWithdraw1, balances1[0], 1);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+
+    // WITHDRAW REWARDS
+
+    intendendWithdraw[0] = 0;
+    intendendWithdraw[1] = 15000;
+
+    vm.prank(operator);
+    vault.withdraw(positionId1, strategyTokens, intendendWithdraw, recipient);
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(amountToDeposit1 - amountToWithdraw1, balances1[0], 1);
+    assertApproxEqAbs(rewards[0] - intendendWithdraw[1], balances1[1], 1);
+
+    // UPDATE SHARES 
+    //Shares: 5
+    // Total shares: 35
+    shares[0] -= 5;
+    totalShares -= 5;
+
   }
 
   function takeSnapshotAndAssertBalances(

@@ -225,7 +225,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       recipient: recipient
     });
 
-    (,,,,,, uint256[] memory balancesAfterUpdate) = _loadCurrentState(positionId);
+    (CalculatedDataForToken[] memory calculatedDataAfterUpdate,,,,,, uint256[] memory balancesAfterUpdate) =
+      _loadCurrentState(positionId);
 
     // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
     _updateAccounting({
@@ -234,7 +235,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       totalShares: totalShares,
       positionShares: positionShares,
       tokens: tokensToWithdraw,
-      calculatedData: calculatedData,
+      calculatedData: calculatedDataAfterUpdate,
       balancesBeforeUpdate: balancesBeforeUpdate,
       updateAmounts: withdrawn,
       balancesAfterUpdate: balancesAfterUpdate,
