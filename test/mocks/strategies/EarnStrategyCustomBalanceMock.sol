@@ -36,8 +36,23 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     }
   }
 
-  function deposited(address, uint256 depositAmount) external payable override returns (uint256 assetsDeposited) {
+  function deposited(address, uint256 depositAmount) public payable override returns (uint256 assetsDeposited) {
     return depositAmount;
+  }
+
+  function withdraw(
+    uint256,
+    address[] memory tokens,
+    uint256[] memory toWithdraw,
+    address
+  )
+    external
+    override
+    returns (WithdrawalType[] memory)
+  {
+    for (uint256 i; i < tokens.length; i++) {
+      tokenBalance[tokens[i]] -= uint104(toWithdraw[i]);
+    }
   }
 
   function addToken(address token, uint104 balance) external returns (uint256) {

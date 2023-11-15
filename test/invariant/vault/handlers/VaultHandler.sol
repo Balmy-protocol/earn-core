@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
@@ -9,6 +10,7 @@ import { EarnStrategyCustomBalanceMock } from "../../../mocks/strategies/EarnStr
 
 contract VaultHandler is StdUtils {
   using SafeCast for uint256;
+  using Math for uint256;
 
   EarnStrategyCustomBalanceMock private _strategy;
   StrategyId private _strategyId;
@@ -28,15 +30,35 @@ contract VaultHandler is StdUtils {
     uint256 availableToDeposit = maxBalanceInVault - uint256(previousBalance);
     depositAmount = bound(depositAmount, 1, availableToDeposit * 9 / 10); // We can only deposit up to 90% of what's
       // available
+
     address depositToken = _findTokenWithIndex(depositTokenIndex);
+
     (, uint256 assetsDeposited) = _vault.createPosition(
-      _strategyId, depositToken, depositAmount, address(1), PermissionUtils.buildEmptyPermissionSet(), ""
+      _strategyId, depositToken, depositAmount, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
     _strategy.setBalance(_asset, previousBalance + assetsDeposited.toUint104());
   }
 
+  function withdraw(uint104 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
+    if (_vault.totalSupply() != 0) {
+      uint256 positionId = bound(positionIdIndex, 1, _vault.totalSupply());
+      (address[] memory tokens,, uint256[] memory balances) = _vault.position(positionId);
+      tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
+
+      uint256 previousBalance = balances[tokenIndex];
+      if (previousBalance != 0) {
+        uint256[] memory intendendWithdraw = new uint256[](balances.length);
+        intendendWithdraw[tokenIndex] = bound(amountToWithdraw, 1, previousBalance);
+        _vault.withdraw({
+          positionId: positionId,
+          tokensToWithdraw: tokens,
+          intendedWithdraw: intendendWithdraw,
+          recipient: address(1)
+        });
+      }
+    }
+  }
   // TODO: add increase
-  // TODO: add withdraw
   // TODO: add special withdraw?
 
   function _findTokenWithIndex(uint256 tokenIndex) private view returns (address) {
