@@ -199,18 +199,15 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     if (tokensToWithdraw.length != tokens.length || intendedWithdraw.length != tokensToWithdraw.length) {
       revert InvalidWithdrawInput();
     }
-
     withdrawn = new uint256[](intendedWithdraw.length);
     for (uint256 i = 0; i < tokensToWithdraw.length;) {
       if (tokensToWithdraw[i] != tokens[i]) {
         revert InvalidWithdrawInput();
       }
-
       uint256 balance = calculatedData[i].positionBalance;
       if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
         revert InsufficientFunds();
       }
-
       withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
       unchecked {
         ++i;
@@ -224,9 +221,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       toWithdraw: withdrawn,
       recipient: recipient
     });
-
-    (CalculatedDataForToken[] memory calculatedDataAfterUpdate,,,,,, uint256[] memory balancesAfterUpdate) =
-      _loadCurrentState(positionId);
+    (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
 
     // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
     _updateAccounting({
@@ -235,7 +230,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       totalShares: totalShares,
       positionShares: positionShares,
       tokens: tokensToWithdraw,
-      calculatedData: calculatedDataAfterUpdate,
+      calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
       updateAmounts: withdrawn,
       balancesAfterUpdate: balancesAfterUpdate,
