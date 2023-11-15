@@ -36,7 +36,7 @@ contract YieldMathTest is PRBTest, StdUtils {
     public
   {
     uint256 newAccum = YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0);
-    assertEq(newAccum, 0);
+    assertEq(newAccum, previousAccum);
   }
 
   function testFuzz_calculateAccum(
