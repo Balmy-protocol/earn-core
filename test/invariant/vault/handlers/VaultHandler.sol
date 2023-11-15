@@ -39,7 +39,7 @@ contract VaultHandler is StdUtils {
     _strategy.setBalance(_asset, previousBalance + assetsDeposited.toUint104());
   }
 
-  function withdraw(uint104 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
+  function withdraw(uint256 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
     if (_vault.totalSupply() != 0) {
       uint256 positionId = bound(positionIdIndex, 1, _vault.totalSupply());
       (address[] memory tokens,, uint256[] memory balances) = _vault.position(positionId);

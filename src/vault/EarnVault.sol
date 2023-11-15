@@ -221,6 +221,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       toWithdraw: withdrawn,
       recipient: recipient
     });
+
+    // slither-disable-next-line unused-return
     (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
 
     // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
