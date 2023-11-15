@@ -3,10 +3,12 @@ pragma solidity >=0.8.0;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { EarnStrategyDead } from "./EarnStrategyDead.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances set specifically
 contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
   using EnumerableSet for EnumerableSet.AddressSet;
+  using SafeCast for uint256;
 
   mapping(address token => uint104 balance) public tokenBalance;
   EnumerableSet.AddressSet private _tokens;
@@ -37,6 +39,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
   }
 
   function deposited(address, uint256 depositAmount) public payable override returns (uint256 assetsDeposited) {
+    tokenBalance[this.asset()] += depositAmount.toUint104();
     return depositAmount;
   }
 
@@ -51,7 +54,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     returns (WithdrawalType[] memory)
   {
     for (uint256 i; i < tokens.length; i++) {
-      tokenBalance[tokens[i]] -= uint104(toWithdraw[i]);
+      tokenBalance[tokens[i]] -= toWithdraw[i].toUint104();
     }
   }
 

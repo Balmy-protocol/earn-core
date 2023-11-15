@@ -33,10 +33,9 @@ contract VaultHandler is StdUtils {
 
     address depositToken = _findTokenWithIndex(depositTokenIndex);
 
-    (, uint256 assetsDeposited) = _vault.createPosition(
+    _vault.createPosition(
       _strategyId, depositToken, depositAmount, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
-    _strategy.setBalance(_asset, previousBalance + assetsDeposited.toUint104());
   }
 
   function withdraw(uint256 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
