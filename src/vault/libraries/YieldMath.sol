@@ -53,7 +53,7 @@ library YieldMath {
     pure
     returns (uint256)
   {
-    if (totalShares == 0) return 0;
+    if (totalShares == 0) return previousAccum;
     uint256 yieldPerShare =
       ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares, Math.Rounding.Floor);
     return previousAccum + yieldPerShare;

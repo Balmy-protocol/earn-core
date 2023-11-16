@@ -93,7 +93,16 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function withdraw(uint256, address[] memory, uint256[] memory, address) external returns (WithdrawalType[] memory) {
+  function withdraw(
+    uint256,
+    address[] memory,
+    uint256[] memory,
+    address
+  )
+    external
+    virtual
+    returns (WithdrawalType[] memory)
+  {
     revert NotImplemented();
   }
 

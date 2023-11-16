@@ -23,6 +23,9 @@ interface IEarnVault is INFTPermissions {
   /// @notice Thrown when the withdraw input is invalid
   error InvalidWithdrawInput();
 
+  /// @notice Thrown when trying to withdraw amount exceeds balance
+  error InsufficientFunds();
+
   /// @notice Emitted when a new position is created
   event PositionCreated(
     uint256 positionId,
@@ -32,6 +35,9 @@ interface IEarnVault is INFTPermissions {
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
+
+  /// @notice Emitted when a new position is withdrawn
+  event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   /**
    * @notice Returns the role in charge of pausing/unpausing deposits

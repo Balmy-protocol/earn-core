@@ -172,8 +172,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (uint256 assetsDeposited)
   { }
 
-  // TODO: Add nonReentrant
   /// @inheritdoc IEarnVault
+  // slither-disable-next-line reentrancy-benign
   function withdraw(
     uint256 positionId,
     address[] calldata tokensToWithdraw,
@@ -182,8 +182,53 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     external
     payable
-    returns (uint256[] memory, IEarnStrategy.WithdrawalType[] memory)
-  { }
+    onlyWithPermission(positionId, WITHDRAW_PERMISSION)
+    nonReentrant
+    returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes)
+  {
+    (
+      CalculatedDataForToken[] memory calculatedData,
+      StrategyId strategyId,
+      IEarnStrategy strategy,
+      uint256 totalShares,
+      uint256 positionShares,
+      address[] memory tokens,
+      uint256[] memory balancesBeforeUpdate
+    ) = _loadCurrentState(positionId);
+
+    if (tokensToWithdraw.length != tokens.length || intendedWithdraw.length != tokensToWithdraw.length) {
+      revert InvalidWithdrawInput();
+    }
+
+    withdrawn = _calculateWithdrawnAmount(calculatedData, tokens, tokensToWithdraw, intendedWithdraw);
+
+    // slither-disable-next-line reentrancy-no-eth
+    withdrawalTypes = strategy.withdraw({
+      positionId: positionId,
+      tokens: tokensToWithdraw,
+      toWithdraw: withdrawn,
+      recipient: recipient
+    });
+
+    // slither-disable-next-line unused-return
+    (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
+
+    // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
+    _updateAccounting({
+      positionId: positionId,
+      strategyId: strategyId,
+      totalShares: totalShares,
+      positionShares: positionShares,
+      tokens: tokensToWithdraw,
+      calculatedData: calculatedData,
+      balancesBeforeUpdate: balancesBeforeUpdate,
+      updateAmounts: withdrawn,
+      balancesAfterUpdate: balancesAfterUpdate,
+      action: UpdateAction.WITHDRAW
+    });
+
+    emit PositionWithdrawn(positionId, tokensToWithdraw, withdrawn, recipient);
+  }
 
   // TODO: Add nonReentrant
   /// @inheritdoc IEarnVault
@@ -331,6 +376,32 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       positionRegistry: _positionYieldData,
       lossEventRegistry: _lossEvents
     });
+  }
+
+  function _calculateWithdrawnAmount(
+    CalculatedDataForToken[] memory calculatedData,
+    address[] memory tokens,
+    address[] memory tokensToWithdraw,
+    uint256[] memory intendedWithdraw
+  )
+    internal
+    pure
+    returns (uint256[] memory withdrawn)
+  {
+    withdrawn = new uint256[](intendedWithdraw.length);
+    for (uint256 i = 0; i < tokensToWithdraw.length;) {
+      if (tokensToWithdraw[i] != tokens[i]) {
+        revert InvalidWithdrawInput();
+      }
+      uint256 balance = calculatedData[i].positionBalance;
+      if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
+        revert InsufficientFunds();
+      }
+      withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
+      unchecked {
+        ++i;
+      }
+    }
   }
 
   // slither-disable-next-line reentrancy-benign
