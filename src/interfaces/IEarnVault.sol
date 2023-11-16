@@ -37,7 +37,7 @@ interface IEarnVault is INFTPermissions {
   );
 
   /// @notice Emitted when a new position is withdrawn
-  event PositionWithdrawn(uint256 positionId, address[] tokensToWithdraw, uint256[] withdrawn, address recipient);
+  event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   /**
    * @notice Returns the role in charge of pausing/unpausing deposits

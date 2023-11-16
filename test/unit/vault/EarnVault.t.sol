@@ -40,7 +40,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     bytes misc
   );
 
-  event PositionWithdrawn(uint256 positionId, address[] tokensToWithdraw, uint256[] withdrawn, address recipient);
+  event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   using StrategyUtils for EarnStrategyRegistryMock;
   using InternalUtils for INFTPermissions.Permission[];
@@ -728,6 +728,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // Funds before withdraw
     (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
     assertEq(erc20.balanceOf(address(strategy)), amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
 
     vm.prank(operator);
     vm.expectEmit();
@@ -745,6 +746,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertEq(
       erc20.balanceOf(address(strategy)), amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0
     );
+    assertEq(balances[0], amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0);
   }
 
   function testFuzz_withdraw_WithNative(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
@@ -770,6 +772,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // Funds before withdraw
     (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
     assertEq(address(strategy).balance, amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
 
     vm.prank(operator);
     vm.expectEmit();
@@ -785,11 +788,12 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (,, balances) = vault.position(positionId);
     assertEq(recipient.balance, amountToWithdraw != type(uint256).max ? amountToWithdraw : amountToDeposit);
     assertEq(address(strategy).balance, amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0);
+    assertEq(balances[0], amountToWithdraw != type(uint256).max ? amountToDeposit - amountToWithdraw : 0);
   }
 
-  function testFuzz_withdraw_RevertWhen_IntendendWithdrawMoreThanBalance(uint104 amountToDeposit) public {
-    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max - 1));
-    uint104 amountToWithdraw = uint104(bound(amountToDeposit, amountToDeposit + 1, type(uint104).max));
+  function test_withdraw_RevertWhen_IntendendWithdrawMoreThanBalance() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToWithdraw = amountToDeposit + 1;
 
     address recipient = address(18);
     erc20.mint(address(this), amountToDeposit);
@@ -802,7 +806,6 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (uint256 positionId,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
 
-    // Funds before withdraw
     (address[] memory tokens,,) = vault.position(positionId);
 
     vm.prank(operator);
@@ -810,9 +813,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
   }
 
-  function testFuzz_withdraw_RevertWhen_AccountWithoutPermission(uint104 amountToDeposit) public {
-    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
-    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+  function test_withdraw_RevertWhen_AccountWithoutPermission() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToWithdraw = 5000;
 
     address recipient = address(18);
     erc20.mint(address(this), amountToDeposit);
@@ -824,7 +827,6 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (uint256 positionId,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
 
-    // Funds before withdraw
     (address[] memory tokens,,) = vault.position(positionId);
 
     vm.expectRevert(
@@ -836,9 +838,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vault.withdraw(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
   }
 
-  function testFuzz_withdraw_RevertWhen_InvalidWithdrawInput_DifferentToken(uint104 amountToDeposit) public {
-    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
-    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+  function test_withdraw_RevertWhen_InvalidWithdrawInput_DifferentToken() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToWithdraw = 5000;
 
     address recipient = address(18);
     erc20.mint(address(this), amountToDeposit);
@@ -858,9 +860,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
   }
 
-  function testFuzz_withdraw_RevertWhen_InvalidWithdrawInput_ArraySizeMismatch(uint104 amountToDeposit) public {
-    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
-    uint104 amountToWithdraw = uint104(bound(amountToDeposit, 1, amountToDeposit));
+  function test_withdraw_RevertWhen_InvalidWithdrawInput_ArraySizeMismatch() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToWithdraw = 5000;
 
     address recipient = address(18);
     erc20.mint(address(this), amountToDeposit);
@@ -874,8 +876,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
     (address[] memory tokens,,) = vault.position(positionId);
 
-    uint256[] memory intendendWithdraw = new uint256[](2);
-    intendendWithdraw[0] = intendendWithdraw[1] = amountToWithdraw;
+    uint256[] memory intendendWithdraw = CommonUtils.arrayOf(amountToWithdraw, amountToWithdraw);
 
     vm.prank(operator);
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.InvalidWithdrawInput.selector));
@@ -896,9 +897,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
 
-    address[] memory strategyTokens = new address[](2);
-    strategyTokens[0] = address(erc20);
-    strategyTokens[1] = address(anotherErc20);
+    address[] memory strategyTokens = CommonUtils.arrayOf(address(erc20), address(anotherErc20));
     (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
       strategyRegistry.deployStateStrategy(strategyTokens);
 
@@ -965,8 +964,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     uint256 amountToWithdraw1 = 21_000;
     address recipient = address(18);
-    uint256[] memory intendendWithdraw = new uint256[](2);
-    intendendWithdraw[0] = amountToWithdraw1;
+    uint256[] memory intendendWithdraw = CommonUtils.arrayOf(amountToWithdraw1, 0);
 
     vm.prank(operator);
     vault.withdraw(positionId1, strategyTokens, intendendWithdraw, recipient);

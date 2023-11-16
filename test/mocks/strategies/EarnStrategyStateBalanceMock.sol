@@ -68,7 +68,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     override
     returns (WithdrawalType[] memory)
   {
-    for (uint256 i; i < tokens.length; i++) {
+    for (uint256 i; i < tokens_.length; i++) {
       if (tokens_[i] == Token.NATIVE_TOKEN) {
         Address.sendValue(payable(recipient), toWithdraw[i]);
       } else {

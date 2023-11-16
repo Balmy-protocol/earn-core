@@ -199,20 +199,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     if (tokensToWithdraw.length != tokens.length || intendedWithdraw.length != tokensToWithdraw.length) {
       revert InvalidWithdrawInput();
     }
-    withdrawn = new uint256[](intendedWithdraw.length);
-    for (uint256 i = 0; i < tokensToWithdraw.length;) {
-      if (tokensToWithdraw[i] != tokens[i]) {
-        revert InvalidWithdrawInput();
-      }
-      uint256 balance = calculatedData[i].positionBalance;
-      if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
-        revert InsufficientFunds();
-      }
-      withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
-      unchecked {
-        ++i;
-      }
-    }
+
+    withdrawn = _calculateWithdrawnAmount(calculatedData, tokens, tokensToWithdraw, intendedWithdraw);
 
     // slither-disable-next-line reentrancy-no-eth
     withdrawalTypes = strategy.withdraw({
@@ -388,6 +376,32 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       positionRegistry: _positionYieldData,
       lossEventRegistry: _lossEvents
     });
+  }
+
+  function _calculateWithdrawnAmount(
+    CalculatedDataForToken[] memory calculatedData,
+    address[] memory tokens,
+    address[] memory tokensToWithdraw,
+    uint256[] memory intendedWithdraw
+  )
+    internal
+    pure
+    returns (uint256[] memory withdrawn)
+  {
+    withdrawn = new uint256[](intendedWithdraw.length);
+    for (uint256 i = 0; i < tokensToWithdraw.length;) {
+      if (tokensToWithdraw[i] != tokens[i]) {
+        revert InvalidWithdrawInput();
+      }
+      uint256 balance = calculatedData[i].positionBalance;
+      if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
+        revert InsufficientFunds();
+      }
+      withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
+      unchecked {
+        ++i;
+      }
+    }
   }
 
   // slither-disable-next-line reentrancy-benign
