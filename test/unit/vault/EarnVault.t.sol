@@ -40,6 +40,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
     bytes misc
   );
 
+  event PositionIncreased(uint256 positionId, StrategyId strategyId, uint256 assetsDeposited);
+
   event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   using StrategyUtils for EarnStrategyRegistryMock;
@@ -996,6 +998,274 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     //Rewards have to be calculated with previous shares and balance
     assertApproxEqAbs(rewards[0] - intendendWithdraw[1], balances1[1], 1);
+  }
+
+  function testFuzz_increasePosition_WithERC20(uint104 amountToDeposit, uint256 amountToIncrease) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max - 1));
+    amountToIncrease = amountToIncrease > type(uint104).max
+      ? type(uint256).max
+      : uint104(bound(amountToIncrease, 1, type(uint104).max - amountToDeposit));
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(
+      address(vault), amountToIncrease != type(uint256).max ? amountToDeposit + amountToIncrease : type(uint256).max
+    );
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit);
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Funds before increase
+    (,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(erc20.balanceOf(address(strategy)), amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
+
+    erc20.mint(address(operator), amountToIncrease != type(uint256).max ? amountToIncrease : 50_000);
+    uint256 previousOperatorBalance = erc20.balanceOf(operator);
+    uint256 previousStrategyBalance = erc20.balanceOf(address(strategy));
+    vm.expectEmit();
+    emit PositionIncreased(
+      positionId, strategyId, amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance
+    );
+    vm.prank(operator);
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
+
+    // Funds after increase
+    (,, balances) = vault.position(positionId);
+    assertEq(
+      erc20.balanceOf(operator), amountToIncrease != type(uint256).max ? previousOperatorBalance - amountToIncrease : 0
+    );
+    assertEq(
+      erc20.balanceOf(address(strategy)),
+      amountToIncrease != type(uint256).max
+        ? previousStrategyBalance + amountToIncrease
+        : previousStrategyBalance + previousOperatorBalance
+    );
+    assertEq(
+      balances[0],
+      amountToIncrease != type(uint256).max
+        ? amountToDeposit + amountToIncrease
+        : amountToDeposit + previousOperatorBalance
+    );
+  }
+
+  function testFuzz_increasePosition_WithNative(uint104 amountToDeposit, uint104 amountToIncrease) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max - 1));
+    amountToIncrease = uint104(bound(amountToIncrease, 1, type(uint104).max - amountToDeposit));
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.deal(address(this), amountToDeposit);
+    (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc
+    );
+
+    // Funds before increase
+    (,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(address(strategy).balance, amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
+
+    vm.deal(operator, amountToIncrease);
+    uint256 previousOperatorBalance = operator.balance;
+    uint256 previousStrategyBalance = address(strategy).balance;
+
+    vm.expectEmit();
+    emit PositionIncreased(positionId, strategyId, amountToIncrease);
+    vm.prank(operator);
+    vault.increasePosition{ value: amountToIncrease }(positionId, Token.NATIVE_TOKEN, amountToIncrease);
+
+    // Funds after increase
+    (,, balances) = vault.position(positionId);
+    assertEq(operator.balance, previousOperatorBalance - amountToIncrease);
+    assertEq(address(strategy).balance, previousStrategyBalance + amountToIncrease);
+    assertEq(balances[0], amountToDeposit + amountToIncrease);
+  }
+
+  function testFuzz_increasePosition_WithNative_RevertWhen_UsingFullDepositWithNative() public {
+    uint104 amountToDeposit = 120_000;
+    uint256 amountToIncrease = type(uint256).max;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    vm.deal(address(this), amountToDeposit);
+    (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc
+    );
+
+    vm.deal(operator, amountToIncrease);
+
+    vm.expectRevert(Token.OperationNotSupportedForNativeToken.selector);
+    vm.prank(operator);
+    vault.increasePosition{ value: amountToIncrease }(positionId, Token.NATIVE_TOKEN, amountToIncrease);
+  }
+
+  function testFuzz_increasePosition_RevertWhen_AccountWithoutPermission() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToIncrease = 15_000;
+    INFTPermissions.PermissionSet[] memory permissions;
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(address(vault), amountToDeposit + amountToIncrease);
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit);
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        INFTPermissions.AccountWithoutPermission.selector, positionId, operator, vault.INCREASE_PERMISSION()
+      )
+    );
+    vm.prank(operator);
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
+  }
+
+  function testFuzz_increasePosition_RevertWhen_Paused() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToIncrease = 15_000;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(address(vault), amountToDeposit + amountToIncrease);
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit);
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Pause deposits
+    vm.prank(pauseAdmin);
+    vault.pause();
+
+    vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
+    vm.prank(operator);
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
+  }
+
+  function testFuzz_increasePosition_RevertWhen_EmptyDeposit() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToIncrease = 0;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(address(vault), amountToDeposit + amountToIncrease);
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit);
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroAmountDeposit.selector));
+    vm.prank(operator);
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
+  }
+
+  function test_increasePosition_CheckRewards() public {
+    uint256 amountToDeposit1 = 120_000;
+    uint256 amountToDeposit2 = 120_000;
+    uint256 amountToDeposit3 = 240_000;
+    uint256 amountToReward = 120_000;
+    uint256 amountToIncrease1 = 120_000;
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3 + amountToIncrease1);
+    uint256[] memory rewards = new uint256[](3);
+    uint256[] memory shares = new uint256[](3);
+    uint256 totalShares;
+    uint256 positionsCreated;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(address(this), PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    address[] memory strategyTokens = CommonUtils.arrayOf(address(erc20), address(anotherErc20));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(strategyTokens);
+
+    uint256 previousBalance;
+
+    (uint256 positionId1,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    // Shares: 10
+    //Total shares: 10
+    shares[0] = 10;
+    totalShares = 10;
+
+    (,, uint256[] memory balances1) = vault.position(positionId1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    (uint256 positionId2,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    //Shares: 10
+    //Total shares: 20
+    shares[1] = 10;
+    totalShares += shares[1];
+
+    // Earn
+    (,, balances1) = vault.position(positionId1);
+    (,, uint256[] memory balances2) = vault.position(positionId2);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    (uint256 positionId3,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+    //Shares: 20
+    // Total shares: 40
+    shares[2] = 20;
+    totalShares += shares[2];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, uint256[] memory balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    // INCREASE POSITION
+
+    vault.increasePosition(positionId1, address(erc20), amountToIncrease1);
+
+    // UPDATE SHARES
+    //Shares: 20 (+10)
+    // Total shares: 50
+    shares[0] += 10;
+    totalShares += 10;
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(amountToDeposit1 + amountToIncrease1, balances1[0], 1);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
   }
 
   function takeSnapshotAndAssertBalances(

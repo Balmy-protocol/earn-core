@@ -36,6 +36,9 @@ interface IEarnVault is INFTPermissions {
     bytes misc
   );
 
+  /// @notice Emitted when a new position is increased
+  event PositionIncreased(uint256 positionId, StrategyId strategyId, uint256 assetsDeposited);
+
   /// @notice Emitted when a new position is withdrawn
   event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
