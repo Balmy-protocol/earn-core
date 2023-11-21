@@ -57,7 +57,20 @@ contract VaultHandler is StdUtils {
       }
     }
   }
-  // TODO: add increase
+
+  function increasePosition(uint256 positionIdIndex, uint256 depositTokenIndex, uint256 depositAmount) external payable {
+    if (_vault.totalSupply() != 0) {
+      uint256 positionId = bound(positionIdIndex, 1, _vault.totalSupply());
+      uint104 previousBalance = _strategy.tokenBalance(_asset);
+      uint256 maxBalanceInVault = (2 ** 102) - 1;
+      uint256 availableToDeposit = maxBalanceInVault - uint256(previousBalance);
+      depositAmount = bound(depositAmount, 1, availableToDeposit * 9 / 10); // We can only deposit up to 90% of what's
+        // available
+
+      address depositToken = _findTokenWithIndex(depositTokenIndex);
+      _vault.increasePosition({ positionId: positionId, depositToken: depositToken, depositAmount: depositAmount });
+    }
+  }
   // TODO: add special withdraw?
 
   function _findTokenWithIndex(uint256 tokenIndex) private view returns (address) {

@@ -160,7 +160,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     emit PositionCreated(positionId, strategyId, assetsDeposited, owner, permissions, misc);
   }
 
-  // TODO: Add nonReentrant & whenNotPaused
   /// @inheritdoc IEarnVault
   function increasePosition(
     uint256 positionId,
@@ -169,8 +168,36 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     external
     payable
+    onlyWithPermission(positionId, INCREASE_PERMISSION)
+    nonReentrant
+    whenNotPaused
     returns (uint256 assetsDeposited)
-  { }
+  {
+    (
+      CalculatedDataForToken[] memory calculatedData,
+      StrategyId strategyId,
+      IEarnStrategy strategy,
+      uint256 totalShares,
+      uint256 positionShares,
+      address[] memory tokens,
+      uint256[] memory totalBalances
+    ) = _loadCurrentState(positionId);
+
+    assetsDeposited = _increasePosition({
+      positionId: positionId,
+      strategyId: strategyId,
+      strategy: strategy,
+      totalShares: totalShares,
+      positionShares: positionShares,
+      tokens: tokens,
+      totalBalances: totalBalances,
+      calculatedData: calculatedData,
+      depositToken: depositToken,
+      depositAmount: depositAmount
+    });
+
+    emit PositionIncreased(positionId, assetsDeposited);
+  }
 
   /// @inheritdoc IEarnVault
   // slither-disable-next-line reentrancy-benign
