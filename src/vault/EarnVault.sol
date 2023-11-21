@@ -196,7 +196,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       depositAmount: depositAmount
     });
 
-    emit PositionIncreased(positionId, strategyId, assetsDeposited);
+    emit PositionIncreased(positionId, assetsDeposited);
   }
 
   /// @inheritdoc IEarnVault

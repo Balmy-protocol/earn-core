@@ -40,7 +40,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     bytes misc
   );
 
-  event PositionIncreased(uint256 positionId, StrategyId strategyId, uint256 assetsDeposited);
+  event PositionIncreased(uint256 positionId, uint256 assetsDeposited);
 
   event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
@@ -1031,7 +1031,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousStrategyBalance = erc20.balanceOf(address(strategy));
     vm.expectEmit();
     emit PositionIncreased(
-      positionId, strategyId, amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance
+      positionId, amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance
     );
     vm.prank(operator);
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
@@ -1080,7 +1080,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousStrategyBalance = address(strategy).balance;
 
     vm.expectEmit();
-    emit PositionIncreased(positionId, strategyId, amountToIncrease);
+    emit PositionIncreased(positionId, amountToIncrease);
     vm.prank(operator);
     vault.increasePosition{ value: amountToIncrease }(positionId, Token.NATIVE_TOKEN, amountToIncrease);
 
@@ -1091,7 +1091,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertEq(balances[0], amountToDeposit + amountToIncrease);
   }
 
-  function testFuzz_increasePosition_WithNative_RevertWhen_UsingFullDepositWithNative() public {
+  function test_increasePosition_WithNative_RevertWhen_UsingFullDepositWithNative() public {
     uint104 amountToDeposit = 120_000;
     uint256 amountToIncrease = type(uint256).max;
     INFTPermissions.PermissionSet[] memory permissions =
@@ -1112,7 +1112,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vault.increasePosition{ value: amountToIncrease }(positionId, Token.NATIVE_TOKEN, amountToIncrease);
   }
 
-  function testFuzz_increasePosition_RevertWhen_AccountWithoutPermission() public {
+  function test_increasePosition_RevertWhen_AccountWithoutPermission() public {
     uint104 amountToDeposit = 10_000;
     uint104 amountToIncrease = 15_000;
     INFTPermissions.PermissionSet[] memory permissions;
@@ -1136,7 +1136,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
   }
 
-  function testFuzz_increasePosition_RevertWhen_Paused() public {
+  function test_increasePosition_RevertWhen_Paused() public {
     uint104 amountToDeposit = 10_000;
     uint104 amountToIncrease = 15_000;
     INFTPermissions.PermissionSet[] memory permissions =
@@ -1161,7 +1161,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
   }
 
-  function testFuzz_increasePosition_RevertWhen_EmptyDeposit() public {
+  function test_increasePosition_RevertWhen_EmptyDeposit() public {
     uint104 amountToDeposit = 10_000;
     uint104 amountToIncrease = 0;
     INFTPermissions.PermissionSet[] memory permissions =
@@ -1249,6 +1249,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // INCREASE POSITION
 
     vault.increasePosition(positionId1, address(erc20), amountToIncrease1);
+    anotherErc20.mint(address(strategy), amountToReward);
 
     // UPDATE SHARES
     //Shares: 20 (+10)
