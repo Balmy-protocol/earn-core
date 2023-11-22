@@ -113,6 +113,7 @@ contract EarnStrategyDead is IEarnStrategy {
     address
   )
     external
+    virtual
     returns (uint256[] memory, WithdrawalType[] memory, bytes memory)
   {
     revert NotImplemented();

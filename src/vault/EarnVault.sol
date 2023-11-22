@@ -35,7 +35,6 @@ import { UpdateAction } from "./types/UpdateAction.sol";
 
 // TODO: remove once functions are implemented
 // slither-disable-start locked-ether
-// slither-disable-start unimplemented-functions
 // solhint-disable no-empty-blocks
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using Token for address;
@@ -267,8 +266,53 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     external
     payable
-    returns (address[] memory, uint256[] memory, IEarnStrategy.WithdrawalType[] memory, bytes memory)
-  { }
+    onlyWithPermission(positionId, WITHDRAW_PERMISSION)
+    nonReentrant
+    returns (
+      address[] memory tokens,
+      uint256[] memory withdrawn,
+      IEarnStrategy.WithdrawalType[] memory withdrawalTypes,
+      bytes memory result
+    )
+  {
+    (
+      CalculatedDataForToken[] memory calculatedData,
+      StrategyId strategyId,
+      IEarnStrategy strategy,
+      uint256 totalShares,
+      uint256 positionShares,
+      address[] memory tokens_,
+      uint256[] memory balancesBeforeUpdate
+    ) = _loadCurrentState(positionId);
+
+    // slither-disable-next-line reentrancy-no-eth
+    (withdrawn, withdrawalTypes, result) = strategy.specialWithdraw({
+      positionId: positionId,
+      withdrawCode: withdrawalCode,
+      withdrawData: withdrawalData,
+      recipient: recipient
+    });
+    // slither-disable-next-line unused-return
+    (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
+
+    // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
+    _updateAccounting({
+      positionId: positionId,
+      strategyId: strategyId,
+      totalShares: totalShares,
+      positionShares: positionShares,
+      tokens: tokens_,
+      calculatedData: calculatedData,
+      balancesBeforeUpdate: balancesBeforeUpdate,
+      updateAmounts: withdrawn,
+      balancesAfterUpdate: balancesAfterUpdate,
+      action: UpdateAction.WITHDRAW
+    });
+
+    tokens = tokens_;
+
+    emit PositionWithdrawn(positionId, tokens, withdrawn, recipient);
+  }
 
   /// @inheritdoc IEarnVault
   function pause() external payable onlyRole(PAUSE_ROLE) {
@@ -609,5 +653,4 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 }
 // solhint-enable no-empty-blocks
-// slither-disable-end unimplemented-functions
 // slither-disable-end locked-ether

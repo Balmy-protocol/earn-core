@@ -5,6 +5,8 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { EarnStrategyDead } from "./EarnStrategyDead.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
+import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
+
 /// @notice An implementation of IEarnStrategy that returns balances set specifically
 contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -56,6 +58,23 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     for (uint256 i; i < tokens.length; i++) {
       tokenBalance[tokens[i]] -= toWithdraw[i].toUint104();
     }
+  }
+
+  function specialWithdraw(
+    uint256,
+    SpecialWithdrawalCode,
+    bytes calldata withdrawData,
+    address
+  )
+    external
+    override
+    returns (uint256[] memory withdrawn, WithdrawalType[] memory, bytes memory)
+  {
+    // Withdraw specific token
+    (uint256 tokenIndex, uint256 toWithdraw) = abi.decode(withdrawData, (uint256, uint256));
+    tokenBalance[_tokens.values()[tokenIndex]] -= toWithdraw.toUint104();
+    withdrawn = new uint256[](_tokens.length());
+    withdrawn[tokenIndex] = toWithdraw;
   }
 
   function addToken(address token, uint104 balance) external returns (uint256) {
