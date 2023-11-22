@@ -11,6 +11,7 @@ import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUt
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { stdMath } from "forge-std/StdMath.sol";
+
 import {
   IEarnVault,
   EarnVault,
@@ -26,6 +27,7 @@ import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnab
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
 
 contract EarnVaultTest is PRBTest, StdUtils {
   using Math for uint256;
@@ -1267,6 +1269,213 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
     assertApproxEqAbs(rewards[1], balances2[1], 1);
     assertApproxEqAbs(rewards[2], balances3[1], 1);
+  }
+
+  function testFuzz_specialWithdraw_WithERC20(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    percentageToWithdraw = uint8(bound(percentageToWithdraw, 1, 100));
+    uint256 amountToWithdraw = amountToDeposit.mulDiv(percentageToWithdraw, 100, Math.Rounding.Ceil);
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    // Funds before withdraw
+    (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(erc20.balanceOf(address(strategy)), amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
+
+    vm.prank(operator);
+    vm.expectEmit();
+    emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+    // Funds after withdraw
+    (,, balances) = vault.position(positionId);
+    assertEq(erc20.balanceOf(recipient), amountToWithdraw);
+    assertEq(erc20.balanceOf(address(strategy)), amountToDeposit - amountToWithdraw);
+    assertEq(balances[0], amountToDeposit - amountToWithdraw);
+  }
+
+  function testFuzz_specialWithdraw_WithNative(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
+    amountToDeposit = uint104(bound(amountToDeposit, 1, type(uint104).max));
+    percentageToWithdraw = uint8(bound(percentageToWithdraw, 1, 100));
+    uint256 amountToWithdraw = amountToDeposit.mulDiv(percentageToWithdraw, 100, Math.Rounding.Ceil);
+    vm.deal(address(this), amountToDeposit);
+    address recipient = address(18);
+
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc
+    );
+
+    // Funds before withdraw
+    (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
+    assertEq(address(strategy).balance, amountToDeposit);
+    assertEq(balances[0], amountToDeposit);
+
+    vm.prank(operator);
+    vm.expectEmit();
+    emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+
+    // Funds after withdraw
+    (,, balances) = vault.position(positionId);
+    assertEq(recipient.balance, amountToWithdraw);
+    assertEq(address(strategy).balance, amountToDeposit - amountToWithdraw);
+    assertEq(balances[0], amountToDeposit - amountToWithdraw);
+  }
+
+  function test_specialWithdraw_RevertWhen_AccountWithoutPermission() public {
+    uint104 amountToDeposit = 10_000;
+    uint104 amountToWithdraw = 5000;
+
+    address recipient = address(18);
+    erc20.mint(address(this), amountToDeposit);
+    INFTPermissions.PermissionSet[] memory permissions;
+    bytes memory misc = "1234";
+
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    vault.position(positionId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        INFTPermissions.AccountWithoutPermission.selector, positionId, operator, vault.WITHDRAW_PERMISSION()
+      )
+    );
+    vm.prank(operator);
+    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+  }
+
+  function test_specialWithdraw_CheckRewards() public {
+    uint256 amountToDeposit1 = 120_000;
+    uint256 amountToDeposit2 = 120_000;
+    uint256 amountToDeposit3 = 240_000;
+    uint256 amountToReward = 120_000;
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3);
+    uint256[] memory rewards = new uint256[](3);
+    uint256[] memory shares = new uint256[](3);
+    uint256 totalShares;
+    uint256 positionsCreated;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    address[] memory strategyTokens = CommonUtils.arrayOf(address(erc20), address(anotherErc20));
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(strategyTokens);
+
+    uint256 previousBalance;
+
+    (uint256 positionId1,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    // Shares: 10
+    //Total shares: 10
+    shares[0] = 10;
+    totalShares = 10;
+
+    (,, uint256[] memory balances1) = vault.position(positionId1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+
+    (uint256 positionId2,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    //Shares: 10
+    //Total shares: 20
+    shares[1] = 10;
+    totalShares += shares[1];
+
+    // Earn
+    (,, balances1) = vault.position(positionId1);
+    assertEq(balances1.length, 2);
+    assertEq(balances1[0], amountToDeposit1);
+
+    (,, uint256[] memory balances2) = vault.position(positionId2);
+    assertEq(balances2.length, 2);
+    assertEq(balances2[0], amountToDeposit2);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+
+    (uint256 positionId3,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+    //Shares: 20
+    // Total shares: 40
+    shares[2] = 20;
+    totalShares += shares[2];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, uint256[] memory balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
+
+    // WITHDRAW ONLY ASSET
+
+    uint256 amountToWithdraw1 = 21_000;
+    address recipient = address(18);
+    uint256[] memory intendendWithdraw = CommonUtils.arrayOf(amountToWithdraw1, 0);
+
+    vm.prank(operator);
+    vault.specialWithdraw(positionId1, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw1), recipient);
+
+    // UPDATE SHARES
+    //Shares: 5
+    // Total shares: 35
+    shares[0] -= 5;
+    totalShares -= 5;
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(amountToDeposit1 - amountToWithdraw1, balances1[0], 1);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+
+    // WITHDRAW ONLY REWARDS
+
+    intendendWithdraw[0] = 0;
+    intendendWithdraw[1] = amountToWithdraw1;
+
+    vm.prank(operator);
+    vault.specialWithdraw(positionId1, SpecialWithdrawalCode.wrap(0), abi.encode(1, amountToWithdraw1), recipient);
+
+    (,, balances1) = vault.position(positionId1);
+    assertApproxEqAbs(amountToDeposit1 - amountToWithdraw1, balances1[0], 1);
+
+    //Rewards have to be calculated with previous shares and balance
+    assertApproxEqAbs(rewards[0] - intendendWithdraw[1], balances1[1], 1);
   }
 
   function takeSnapshotAndAssertBalances(

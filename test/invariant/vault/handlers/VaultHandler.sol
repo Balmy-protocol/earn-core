@@ -6,6 +6,8 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { IEarnVault, StrategyId } from "../../../../src/vault/EarnVault.sol";
+import { SpecialWithdrawalCode } from "../../../../src/types/SpecialWithdrawals.sol";
+
 import { EarnStrategyCustomBalanceMock } from "../../../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
 
 contract VaultHandler is StdUtils {
@@ -58,6 +60,26 @@ contract VaultHandler is StdUtils {
     }
   }
 
+  function specialWithdraw(uint256 positionId, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
+    if (_vault.totalSupply() != 0) {
+      positionId = bound(positionId, 1, _vault.totalSupply());
+      (address[] memory tokens,, uint256[] memory balances) = _vault.position(positionId);
+      tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
+
+      uint256 previousBalance = balances[tokenIndex];
+      if (previousBalance != 0) {
+        amountToWithdraw = bound(amountToWithdraw, 1, balances[tokenIndex]);
+
+        _vault.specialWithdraw({
+          positionId: positionId,
+          withdrawalCode: SpecialWithdrawalCode.wrap(0),
+          withdrawalData: abi.encode(tokenIndex, amountToWithdraw),
+          recipient: address(1)
+        });
+      }
+    }
+  }
+
   function increasePosition(uint256 positionIdIndex, uint256 depositTokenIndex, uint256 depositAmount) external payable {
     if (_vault.totalSupply() != 0) {
       uint256 positionId = bound(positionIdIndex, 1, _vault.totalSupply());
@@ -71,7 +93,6 @@ contract VaultHandler is StdUtils {
       _vault.increasePosition({ positionId: positionId, depositToken: depositToken, depositAmount: depositAmount });
     }
   }
-  // TODO: add special withdraw?
 
   function _findTokenWithIndex(uint256 tokenIndex) private view returns (address) {
     (address[] memory tokens,) = _strategy.allTokens();

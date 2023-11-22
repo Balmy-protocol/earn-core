@@ -9,6 +9,7 @@ import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token, IERC20, Address } from "../../../src/libraries/Token.sol";
 import { DelayedWithdrawalAdapterMock } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterMock.sol";
+import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances by reading token's state
 contract EarnStrategyStateBalanceMock is EarnStrategyDead {
@@ -76,5 +77,26 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
       }
     }
     return withdrawalTypes;
+  }
+
+  function specialWithdraw(
+    uint256,
+    SpecialWithdrawalCode,
+    bytes calldata withdrawData,
+    address recipient
+  )
+    external
+    override
+    returns (uint256[] memory withdrawn, WithdrawalType[] memory, bytes memory)
+  {
+    // Withdraw specific token
+    (uint256 tokenIndex, uint256 toWithdraw) = abi.decode(withdrawData, (uint256, uint256));
+    if (tokens[tokenIndex] == Token.NATIVE_TOKEN) {
+      Address.sendValue(payable(recipient), toWithdraw);
+    } else {
+      IERC20(tokens[tokenIndex]).transfer(recipient, toWithdraw);
+    }
+    withdrawn = new uint256[](tokens.length);
+    withdrawn[tokenIndex] = toWithdraw;
   }
 }
