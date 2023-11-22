@@ -18,8 +18,8 @@ import { SharesMath } from "./libraries/SharesMath.sol";
 import { YieldMath } from "./libraries/YieldMath.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
-// solhint-disable no-unused-import
 import { PositionData, PositionDataLibrary } from "./types/PositionData.sol";
+// solhint-disable no-unused-import
 import {
   TotalYieldDataKey, TotalYieldDataForToken, TotalYieldDataForTokenLibrary
 } from "./types/TotalYieldDataForToken.sol";
@@ -31,11 +31,8 @@ import {
 import { RewardLossEventKey, RewardLossEvent, RewardLossEventLibrary } from "./types/RewardLossEvent.sol";
 import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
 import { UpdateAction } from "./types/UpdateAction.sol";
-// solhint-disable no-unused-import
+// solhint-enable no-unused-import
 
-// TODO: remove once functions are implemented
-// slither-disable-start locked-ether
-// solhint-disable no-empty-blocks
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using Token for address;
   using PositionDataLibrary for mapping(uint256 => PositionData);
@@ -81,6 +78,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 
   /// @dev Needed to receive native tokens
+  // solhint-disable-next-line no-empty-blocks
   receive() external payable { }
 
   /// @inheritdoc IEarnVault
@@ -581,6 +579,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
     });
     if (shares == 0) {
+      // solhint-disable-next-line no-empty-blocks
       if (action == UpdateAction.DEPOSIT) {
         // If we get to this point, then the user deposited a non-zero amount of assets and is getting zero shares in
         // return. We don't want this to happen, so we'll revert
@@ -652,5 +651,3 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     }
   }
 }
-// solhint-enable no-empty-blocks
-// slither-disable-end locked-ether
