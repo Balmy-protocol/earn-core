@@ -3,14 +3,14 @@ pragma solidity >=0.8.0;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
 import { StrategyId } from "../../../src/vault/EarnVault.sol";
-import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
+import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 
 contract GasEarnVaultOneTokenZeroPositions is BaseEarnVaultGasTest {
-  using StrategyUtils for EarnStrategyRegistryMock;
+  using StrategyUtils for IEarnStrategyRegistry;
 
   // solhint-disable const-name-snakecase
   StrategyId public strategyIdNative;
@@ -19,8 +19,8 @@ contract GasEarnVaultOneTokenZeroPositions is BaseEarnVaultGasTest {
   function setUp() public virtual override {
     super.setUp();
 
-    (strategyIdNative,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
-    (strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+    (strategyIdNative,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (strategyId,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
   }
 
   function test_Gas_createPosition_WithNative() public {

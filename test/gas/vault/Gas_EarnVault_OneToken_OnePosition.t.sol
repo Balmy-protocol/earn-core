@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
-import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
+import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
@@ -10,7 +10,7 @@ import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 
 contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
-  using StrategyUtils for EarnStrategyRegistryMock;
+  using StrategyUtils for IEarnStrategyRegistry;
 
   // solhint-disable const-name-snakecase
   uint256 public constant amountToDeposit = 6_000_000;
@@ -25,7 +25,7 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
   function setUp() public virtual override {
     super.setUp();
 
-    (strategyId, strategy) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+    (strategyId, ) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
     (positionId,) = vault.createPosition(
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
