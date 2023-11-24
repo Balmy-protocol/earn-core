@@ -20,12 +20,7 @@ contract BaseEarnVaultGasTest is PRBTest, StdUtils {
   IEarnStrategy public strategy;
 
   function setUp() public virtual {
-    vault = new EarnVault(
-      strategyRegistry,
-      address(this),
-      CommonUtils.arrayOf(address(this))
-    );
-
+    vault = new EarnVault(strategyRegistry, address(this), CommonUtils.arrayOf(address(this)));
     vm.deal(address(this), type(uint256).max);
     erc20.mint(address(this), type(uint256).max);
     erc20.approve(address(vault), type(uint256).max);

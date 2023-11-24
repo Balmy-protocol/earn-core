@@ -18,12 +18,7 @@ contract GlobalEarnConfigTest is PRBTest {
   function setUp() public virtual {
     vm.expectEmit();
     emit DefaultFeeChanged(defaultFee);
-
-    globalConfig = new GlobalEarnConfig(
-      superAdmin,
-      CommonUtils.arrayOf(manageFeeAdmin),
-      defaultFee
-    );
+    globalConfig = new GlobalEarnConfig(superAdmin, CommonUtils.arrayOf(manageFeeAdmin), defaultFee);
   }
 
   function test_constants() public {
@@ -43,11 +38,7 @@ contract GlobalEarnConfigTest is PRBTest {
 
   function test_constructor_RevertWhen_FeeGreaterThanMaximum() public {
     vm.expectRevert(abi.encodeWithSelector(IGlobalEarnConfig.FeeGreaterThanMaximum.selector));
-    globalConfig = new GlobalEarnConfig(
-      superAdmin,
-      CommonUtils.arrayOf(manageFeeAdmin),
-      10_000
-    );
+    globalConfig = new GlobalEarnConfig(superAdmin, CommonUtils.arrayOf(manageFeeAdmin), 10_000);
   }
 
   function test_setDefaultFee() public {

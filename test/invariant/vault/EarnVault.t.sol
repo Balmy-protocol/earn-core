@@ -27,22 +27,13 @@ contract EarnVaultInvariantTest is StdInvariant, StdUtils, StdAssertions {
   StrategyHandler internal strategyHandler;
 
   function setUp() public virtual {
-    tokenManager = new TokenManager({tokensToDeploy: 50});
-
+    tokenManager = new TokenManager({ tokensToDeploy: 50 });
     strategyRegistry = new EarnStrategyRegistryMock();
     StrategyId strategyId;
     (strategyId, strategy) = strategyRegistry.deployCustomStrategy(tokenManager.getRandomToken());
-    vault = new EarnVault(
-      strategyRegistry,
-      address(1),
-      new address[](0)
-    );
+    vault = new EarnVault(strategyRegistry, address(1), new address[](0));
 
-    vaultHandler = new VaultHandler(
-      strategy, 
-      strategyId, 
-      vault
-    );
+    vaultHandler = new VaultHandler(strategy, strategyId, vault);
 
     strategyHandler = new StrategyHandler(strategy, vault, tokenManager);
 

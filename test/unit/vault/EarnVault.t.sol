@@ -62,11 +62,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     strategyRegistry = new EarnStrategyRegistryMock();
     erc20 = new ERC20MintableBurnableMock();
     anotherErc20 = new ERC20MintableBurnableMock();
-    vault = new EarnVault(
-      strategyRegistry,
-      superAdmin,
-      CommonUtils.arrayOf(pauseAdmin)
-    );
+    vault = new EarnVault(strategyRegistry, superAdmin, CommonUtils.arrayOf(pauseAdmin));
 
     erc20.approve(address(vault), type(uint256).max);
 
