@@ -20,22 +20,16 @@ import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.sol";
 
-contract GasWithdraw is BaseDelayedWithdrawalGasTest {
+contract GasDelayedWithdrawalManagerRegisterDelayedWithdraw is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   function setUp() public virtual override {
     super.setUp();
 
     // setUp
-    IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
-    vm.startPrank(address(adapter1));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
+    IDelayedWithdrawalAdapter adapter = strategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
+    vm.prank(address(adapter));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
-    vm.stopPrank();
-
-    IDelayedWithdrawalAdapter adapter2 = strategy.delayedWithdrawalAdapter(tokens[1]);
-    vm.prank(address(adapter2));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
 
     // Update strategy to register a new adapter
     IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.vault().STRATEGY_REGISTRY();
@@ -45,14 +39,11 @@ contract GasWithdraw is BaseDelayedWithdrawalGasTest {
     strategyRegistry.updateStrategy(strategyId);
 
     // Register new strategy adapter
-    adapter2 = newStrategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
-    vm.prank(address(adapter2));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
-
-    vm.prank(address(owner));
+    adapter = newStrategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
+    vm.prank(address(adapter));
   }
 
-  function test_Gas_withdraw_twoAdapters() public {
-    delayedWithdrawalManager.withdraw(positions[1], tokenByPosition[positions[1]], address(10));
+  function test_Gas_registerDelayedWithdraw_twoAdapters() public {
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
   }
 }

@@ -18,29 +18,22 @@ import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrateg
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
-
 import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.sol";
 
-contract GasWithdraw is BaseDelayedWithdrawalGasTest {
+contract GasDelayedWithdrawalManagerRegisterDelayedWithdraw is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   function setUp() public virtual override {
     super.setUp();
+    IDelayedWithdrawalAdapter adapter;
 
     // setUp
-    IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
-    vm.startPrank(address(adapter1));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
-    vm.stopPrank();
-
-    IDelayedWithdrawalAdapter adapter2 = strategy.delayedWithdrawalAdapter(tokens[1]);
-    vm.prank(address(adapter2));
-    delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
-    vm.prank(address(owner));
+    address token = tokens[0];
+    adapter = strategy.delayedWithdrawalAdapter(token);
+    vm.prank(address(adapter));
   }
 
-  function test_Gas_withdraw() public {
-    delayedWithdrawalManager.withdraw(positions[0], tokenByPosition[positions[0]], address(10));
+  function test_Gas_registerDelayedWithdraw() public {
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[0], tokenByPosition[positions[0]]);
   }
 }

@@ -2,35 +2,31 @@
 pragma solidity >=0.8.0;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
+import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 
 contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
   using StrategyUtils for EarnStrategyRegistryMock;
 
+  // solhint-disable const-name-snakecase
   uint256 public positionId;
-
   address[] public tokens;
   uint256[] public intendedToWithdrawRewards;
-  uint256 public amountToIncrease = 100_000;
+  uint256 public constant amountToIncrease = 100_000;
+  uint256 public constant amountToDeposit = 6_000_000;
+  uint256 public constant amountToReward = 1_000_000;
+  uint256 public constant amountToWithdraw = 200_000;
 
   function setUp() public virtual override {
     super.setUp();
 
-    uint256 amountToDeposit = 6_000_000;
-    uint256 amountToReward = 1_000_000;
-    uint256 amountToWithdraw = 200_000;
-
-    permissions = PermissionUtils.buildPermissionSet(
-      address(this), PermissionUtils.permissions(vault.INCREASE_PERMISSION(), vault.WITHDRAW_PERMISSION())
-    );
-
-    erc20.mint(address(this), type(uint256).max);
     tokens = CommonUtils.arrayOf(address(erc20), address(anotherErc20), address(thirdErc20));
     (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
-    (positionId,) = vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, "");
+    (positionId,) = vault.createPosition(
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+    );
     thirdErc20.mint(address(strategy), amountToReward);
 
     intendedToWithdrawRewards = CommonUtils.arrayOf(0, 0, amountToWithdraw);
