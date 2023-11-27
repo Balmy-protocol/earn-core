@@ -23,7 +23,7 @@ jobs:
       - name: Install Foundry
         uses: "foundry-rs/foundry-toolchain@v1"
         with:
-          version: nightly-55dd5de4948a92440296f330c779d4ed778c0123
+          version: nightly
 
       # Add any step generating a gas report to a temporary file named gasreport.ansi. For example:
       - name: Run tests

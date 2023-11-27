@@ -36,10 +36,11 @@ contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
   function test_Gas_position() public view {
     vault.position(positionId);
   }
-
-  /* function test_Gas_withdraw_RewardToken() public {
+  /* 
+   function test_Gas_withdraw_RewardToken() public {
     vault.withdraw(positionId, tokens, intendedToWithdrawRewards, address(this));
-  } */
+  }  
+  */
 
   function test_Gas_increasePosition() public {
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
