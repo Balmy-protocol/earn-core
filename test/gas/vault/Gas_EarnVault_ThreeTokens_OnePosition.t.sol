@@ -12,9 +12,12 @@ contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
 
   // solhint-disable const-name-snakecase
   uint256 public positionId;
+  address[] public tokens;
+  uint256[] public intendedToWithdrawRewards;
   uint256 public constant amountToIncrease = 100_000;
   uint256 public constant amountToDeposit = 6_000_000;
   uint256 public constant amountToReward = 1_000_000;
+  uint256 public constant amountToWithdraw = 200_000;
 
   function setUp() public virtual override {
     super.setUp();
@@ -26,9 +29,19 @@ contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
     anotherErc20.mint(address(strategy), amountToReward);
+    (tokens,,) = vault.position(positionId);
+    intendedToWithdrawRewards = CommonUtils.arrayOf(0, amountToWithdraw, 0);
   }
 
   function test_Gas_position() public view {
     vault.position(positionId);
+  }
+
+  /* function test_Gas_withdraw_RewardToken() public {
+    vault.withdraw(positionId, tokens, intendedToWithdrawRewards, address(this));
+  } */
+
+  function test_Gas_increasePosition() public {
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
   }
 }
