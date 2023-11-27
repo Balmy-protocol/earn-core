@@ -8,11 +8,13 @@ import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { StrategyId } from "../../../src/vault/EarnVault.sol";
 
 contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   // solhint-disable const-name-snakecase
+  StrategyId public strategyIdNative;
   uint256 public constant amountToDeposit = 6_000_000;
   uint256 public constant amountToWithdraw = 200_000;
   uint256 public constant amountToIncrease = 100_000;
@@ -24,14 +26,31 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
 
   function setUp() public virtual override {
     super.setUp();
-
-    (strategyId, ) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+    (strategyIdNative,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    (strategyId,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
     (positionId,) = vault.createPosition(
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
 
     (tokens,,) = vault.position(positionId);
     intendedToWithdraw = CommonUtils.arrayOf(amountToWithdraw);
+  }
+
+  function test_Gas_createPosition_WithNative() public {
+    vault.createPosition{ value: amountToDeposit }(
+      strategyIdNative,
+      Token.NATIVE_TOKEN,
+      amountToDeposit,
+      address(this),
+      PermissionUtils.buildEmptyPermissionSet(),
+      ""
+    );
+  }
+
+  function test_Gas_createPosition_WithERC20() public {
+    vault.createPosition(
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+    );
   }
 
   function test_Gas_position() public view {

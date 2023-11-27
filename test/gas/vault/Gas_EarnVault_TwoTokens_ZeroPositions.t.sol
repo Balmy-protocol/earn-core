@@ -16,7 +16,8 @@ contract GasEarnVaultTwoTokensZeroPositions is BaseEarnVaultGasTest {
   function setUp() public virtual override {
     super.setUp();
 
-    (strategyId,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(anotherErc20)));
+    (strategyId,) =
+      vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(anotherErc20)));
   }
 
   function test_Gas_createPosition() public {

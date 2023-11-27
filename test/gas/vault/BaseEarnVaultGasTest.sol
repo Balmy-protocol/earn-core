@@ -14,7 +14,8 @@ contract BaseEarnVaultGasTest is PRBTest, StdUtils {
   ERC20MintableBurnableMock public immutable erc20 = new ERC20MintableBurnableMock();
   ERC20MintableBurnableMock public immutable anotherErc20 = new ERC20MintableBurnableMock();
   ERC20MintableBurnableMock public immutable thirdErc20 = new ERC20MintableBurnableMock();
-  EarnVault public immutable vault = new EarnVault(new EarnStrategyRegistryMock(), address(this), CommonUtils.arrayOf(address(this)));
+  EarnVault public immutable vault =
+    new EarnVault(new EarnStrategyRegistryMock(), address(this), CommonUtils.arrayOf(address(this)));
   StrategyId public strategyId;
   IEarnStrategy public strategy;
 
