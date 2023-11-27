@@ -21,10 +21,12 @@
 [profile.ci]
   fuzz = { runs = 10_000 }
   verbosity = 4
+  no-match-test = 'test_Gas_**'
 
 [profile.gas]
-test = 'test/gas'
-match-test = 'test_Gas_**'
+  test = 'test/gas'
+  match-test = 'test_Gas_**'
+  memory_limit = 22474836480
 
 [fmt]
   bracket_spacing = true

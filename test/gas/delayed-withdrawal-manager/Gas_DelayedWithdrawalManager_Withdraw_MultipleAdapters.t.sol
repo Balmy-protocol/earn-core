@@ -20,11 +20,12 @@ import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { BaseDelayedWithdrawalGasTest } from "./BaseDelayedWithdrawalGasTest.sol";
 
-contract GasFunds is BaseDelayedWithdrawalGasTest {
+contract GasDelayedWithdrawalManagerWithdraw is BaseDelayedWithdrawalGasTest {
   using StrategyUtils for IEarnStrategyRegistry;
 
   function setUp() public virtual override {
     super.setUp();
+
     // setUp
     IDelayedWithdrawalAdapter adapter1 = strategy.delayedWithdrawalAdapter(tokens[0]);
     vm.startPrank(address(adapter1));
@@ -35,17 +36,23 @@ contract GasFunds is BaseDelayedWithdrawalGasTest {
     IDelayedWithdrawalAdapter adapter2 = strategy.delayedWithdrawalAdapter(tokens[1]);
     vm.prank(address(adapter2));
     delayedWithdrawalManager.registerDelayedWithdraw(positions[2], tokenByPosition[positions[2]]);
+
+    // Update strategy to register a new adapter
+    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.vault().STRATEGY_REGISTRY();
+    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
+    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+    strategyRegistry.updateStrategy(strategyId);
+
+    // Register new strategy adapter
+    adapter2 = newStrategy.delayedWithdrawalAdapter(tokenByPosition[positions[1]]);
+    vm.prank(address(adapter2));
+    delayedWithdrawalManager.registerDelayedWithdraw(positions[1], tokenByPosition[positions[1]]);
+
+    vm.prank(address(owner));
   }
 
-  function test_Gas_estimatedPendingFunds() public view {
-    delayedWithdrawalManager.estimatedPendingFunds(positions[0], tokenByPosition[positions[0]]);
-  }
-
-  function test_Gas_withdrawableFunds() public view {
-    delayedWithdrawalManager.withdrawableFunds(positions[0], tokenByPosition[positions[0]]);
-  }
-
-  function test_Gas_allPositionFunds() public view {
-    delayedWithdrawalManager.allPositionFunds(positions[0]);
+  function test_Gas_withdraw_twoAdapters() public {
+    delayedWithdrawalManager.withdraw(positions[1], tokenByPosition[positions[1]], address(10));
   }
 }

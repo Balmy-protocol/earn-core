@@ -36,11 +36,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
-    EarnVault vault = new EarnVault(
-      strategyRegistry,
-      address(1),
-      CommonUtils.arrayOf(address(2))
-    );
+    EarnVault vault = new EarnVault(strategyRegistry, address(1), CommonUtils.arrayOf(address(2)));
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
     erc20.approve(address(vault), type(uint256).max);
 
