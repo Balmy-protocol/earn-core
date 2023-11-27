@@ -27,9 +27,9 @@ contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
     (positionId,) = vault.createPosition(
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
-    thirdErc20.mint(address(strategy), amountToReward);
+    anotherErc20.mint(address(strategy), amountToReward);
 
-    intendedToWithdrawRewards = CommonUtils.arrayOf(0, 0, amountToWithdraw);
+    intendedToWithdrawRewards = CommonUtils.arrayOf(0, amountToWithdraw, 0);
   }
 
   function test_Gas_position() public view {
