@@ -7,8 +7,10 @@ struct CalculatedDataForToken {
   // The last recorded total balance reported by the strategy. This value is used to understand how
   // much yield was generated when we ask for the total balance in the future
   uint256 lastRecordedBalance;
-  // The total amount of loss events that have happened in the past on this strategy and token
+  // The total amount of total loss events that have happened in the past on this strategy and token
   uint256 totalLossEvents;
+  // The total amount of loss that have happened in the past on this strategy and token
+  uint256 totalLossAccum;
   // CALCULATED VALUES
   // The position's total balance
   uint256 positionBalance;

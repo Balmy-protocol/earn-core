@@ -23,22 +23,29 @@ import { PositionData, PositionDataLibrary } from "./types/PositionData.sol";
 import {
   TotalYieldDataKey, TotalYieldDataForToken, TotalYieldDataForTokenLibrary
 } from "./types/TotalYieldDataForToken.sol";
+import { TotalYieldLossDataKey, TotalYieldLossDataForTokenLibrary } from "./types/TotalYieldLossDataForToken.sol";
 import {
   PositionYieldDataKey,
   PositionYieldDataForToken,
   PositionYieldDataForTokenLibrary
 } from "./types/PositionYieldDataForToken.sol";
-import { RewardLossEventKey, RewardLossEvent, RewardLossEventLibrary } from "./types/RewardLossEvent.sol";
+
+import {
+  PositionYieldLossDataKey, PositionYieldLossDataForTokenLibrary
+} from "./types/PositionYieldLossDataForToken.sol";
 import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
 import { UpdateAction } from "./types/UpdateAction.sol";
+
 // solhint-enable no-unused-import
 
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
+  using Math for uint256;
   using Token for address;
   using PositionDataLibrary for mapping(uint256 => PositionData);
   using TotalYieldDataForTokenLibrary for mapping(TotalYieldDataKey => TotalYieldDataForToken);
+  using TotalYieldLossDataForTokenLibrary for mapping(TotalYieldLossDataKey => uint256);
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using RewardLossEventLibrary for mapping(RewardLossEventKey => RewardLossEvent);
+  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => uint256);
   using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
@@ -58,10 +65,10 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   mapping(uint256 positionId => PositionData positionData) internal _positions;
   // Stores relevant yield data for all positions in the strategy, in the context of a specific reward token
   mapping(TotalYieldDataKey key => TotalYieldDataForToken yieldData) internal _totalYieldData;
+  mapping(TotalYieldLossDataKey key => uint256 lossAccum) internal _totalYieldLossData;
   // Stores relevant yield data for a given position in the strategy, in the context of a specific reward token
   mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal _positionYieldData;
-  // Stores historical loss events for reward tokens
-  mapping(RewardLossEventKey key => RewardLossEvent lossEvent) internal _lossEvents;
+  mapping(PositionYieldLossDataKey key => uint256 lossAccum) internal _positionYieldLossData;
   // slither-disable-end naming-convention
 
   constructor(
@@ -417,33 +424,36 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 yieldAccumulator;
     (yieldAccumulator, calculatedData.lastRecordedBalance, calculatedData.totalLossEvents) =
       _totalYieldData.read(strategyId, token);
-
     if (
-      totalBalance < calculatedData.lastRecordedBalance || calculatedData.totalLossEvents == YieldMath.MAX_LOSS_EVENTS
+      (totalBalance < calculatedData.lastRecordedBalance && totalBalance == 0)
+        || calculatedData.totalLossEvents == YieldMath.MAX_TOTAL_LOSS_EVENTS
     ) {
-      // If we have just produced a loss, or we already reached the max allowed losses, then avoid updating the
-      // accumulator
-      calculatedData.newAccumulator = yieldAccumulator;
+      // If we have just produced a total loss, or we already reached the max allowed losses, then we reset the
+      // accumulators
+      calculatedData.newAccumulator = 0;
+      calculatedData.totalLossAccum =
+        calculatedData.totalLossEvents == YieldMath.MAX_TOTAL_LOSS_EVENTS ? 0 : YieldMath.LOSS_ACCUM_INITIAL;
     } else {
-      calculatedData.newAccumulator = YieldMath.calculateAccum({
+      (calculatedData.newAccumulator, calculatedData.totalLossAccum) = YieldMath.calculateAccum({
         lastRecordedBalance: calculatedData.lastRecordedBalance,
         currentBalance: totalBalance,
         previousAccum: yieldAccumulator,
-        totalShares: totalShares
+        totalShares: totalShares,
+        currentTotalLossAccum: _totalYieldLossData.read(strategyId, token)
       });
     }
 
     calculatedData.positionBalance = YieldMath.calculateBalance({
       positionId: positionId,
-      strategyId: strategyId,
       token: token,
       totalBalance: totalBalance,
+      totalLossAccum: calculatedData.totalLossAccum,
       totalLossEvents: calculatedData.totalLossEvents,
       lastRecordedBalance: calculatedData.lastRecordedBalance,
       newAccumulator: calculatedData.newAccumulator,
       positionShares: positionShares,
       positionRegistry: _positionYieldData,
-      lossEventRegistry: _lossEvents
+      positionLossRegistry: _positionYieldLossData
     });
   }
 
@@ -610,21 +620,15 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     internal
   {
     if (
-      calculatedData.totalLossEvents < YieldMath.MAX_LOSS_EVENTS
+      calculatedData.totalLossEvents < YieldMath.MAX_TOTAL_LOSS_EVENTS && totalBalanceBeforeUpdate == 0
         && totalBalanceBeforeUpdate < calculatedData.lastRecordedBalance
     ) {
-      // There was a new loss event, let's register it
-      _lossEvents.registerNew({
-        strategyId: strategyId,
-        token: token,
-        eventIndex: calculatedData.totalLossEvents++,
-        // Since there was a loss event, we know that the accumulator wasn't updated. So we can use the "new" accum
-        // value
-        accumPriorToLoss: calculatedData.newAccumulator,
-        totalBalanceBeforeLoss: calculatedData.lastRecordedBalance,
-        totalBalanceAfterLoss: totalBalanceBeforeUpdate
-      });
+      calculatedData.totalLossEvents++;
     }
+
+    _totalYieldLossData.update({ strategyId: strategyId, token: token, lossAccum: calculatedData.totalLossAccum });
+    _positionYieldLossData.update({ positionId: positionId, token: token, lossAccum: calculatedData.totalLossAccum });
+
     _totalYieldData.update({
       strategyId: strategyId,
       token: token,

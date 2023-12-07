@@ -12,9 +12,12 @@ import {
   PositionYieldDataForToken,
   PositionYieldDataForTokenLibrary
 } from "../../../../src/vault/types/PositionYieldDataForToken.sol";
+
 import {
-  RewardLossEventKey, RewardLossEvent, RewardLossEventLibrary
-} from "../../../../src/vault/types/RewardLossEvent.sol";
+  PositionYieldLossDataKey,
+  PositionYieldLossDataForTokenLibrary
+} from "../../../../src/vault/types/PositionYieldLossDataForToken.sol";
+
 import { StrategyId } from "../../../../src/types/StrategyId.sol";
 
 // solhint-enable no-unused-import
@@ -23,10 +26,10 @@ contract YieldMathTest is PRBTest, StdUtils {
   using Math for uint256;
   using Math for uint160;
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using RewardLossEventLibrary for mapping(RewardLossEventKey => RewardLossEvent);
+  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => uint256);
 
   mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal positionRegistry;
-  mapping(RewardLossEventKey key => RewardLossEvent lossEvent) internal lossEventRegistry;
+  mapping(PositionYieldLossDataKey key => uint256 lossAmount) internal positionLossRegistry;
 
   function testFuzz_calculateAccum_ZeroShares(
     uint256 currentBalance,
@@ -35,8 +38,15 @@ contract YieldMathTest is PRBTest, StdUtils {
   )
     public
   {
-    uint256 newAccum = YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0);
-    assertEq(newAccum, previousAccum);
+    uint256 previousLossAccum = 1;
+
+    (uint256 newAccum, uint256 newTotalLossAccum) =
+      YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0, previousLossAccum);
+    if (currentBalance > lastRecordedBalance) {
+      assertEq(newAccum, previousAccum);
+    } else {
+      assertEq(newAccum, previousAccum.mulDiv(newTotalLossAccum, previousLossAccum));
+    }
   }
 
   function testFuzz_calculateAccum(
@@ -49,10 +59,28 @@ contract YieldMathTest is PRBTest, StdUtils {
   {
     totalShares = uint128(bound(totalShares, 1, type(uint256).max));
     lastRecordedBalance = uint104(bound(lastRecordedBalance, 0, currentBalance));
-    uint256 newAccum = YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, totalShares);
+    (uint256 newAccum,) = YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, totalShares, 1);
     assertEq(
       newAccum, previousAccum + YieldMath.ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares)
     );
+  }
+
+  function testFuzz_calculateAccum_WithLoss(
+    uint104 currentBalance,
+    uint104 lastRecordedBalance,
+    uint152 previousAccum,
+    uint128 totalShares
+  )
+    public
+  {
+    totalShares = uint128(bound(totalShares, 1, type(uint256).max));
+    lastRecordedBalance = uint104(bound(lastRecordedBalance, 1, type(uint104).max));
+    currentBalance = uint104(bound(currentBalance, 0, lastRecordedBalance - 1));
+    (, uint256 newTotalLossAccum) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL
+    );
+
+    assertEq(newTotalLossAccum, YieldMath.LOSS_ACCUM_INITIAL.mulDiv(currentBalance, lastRecordedBalance));
   }
 
   function testFuzz_calculateBalance(
@@ -64,8 +92,8 @@ contract YieldMathTest is PRBTest, StdUtils {
   )
     public
   {
-    totalBalance = uint104(bound(totalBalance, 0, 2 ** 102 - 1));
-    previousBalance = uint104(bound(previousBalance, 0, totalBalance));
+    totalBalance = uint104(bound(totalBalance, 2, 2 ** 102 - 1));
+    previousBalance = uint104(bound(previousBalance, 1, totalBalance));
     newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 150 - 1));
     initialAccum = uint152(bound(initialAccum, 0, newAccumulator));
 
@@ -80,18 +108,19 @@ contract YieldMathTest is PRBTest, StdUtils {
     });
 
     (, uint256 lastRecordedTotalBalance, uint256 totalLossEvents) = positionRegistry.read(1, address(0));
+    uint256 totalLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
 
     uint256 currentBalance = YieldMath.calculateBalance(
       1,
-      StrategyId.wrap(1),
       address(0),
       positionShares,
       lastRecordedTotalBalance,
       totalBalance,
+      totalLossAccum,
       totalLossEvents,
       newAccumulator,
       positionRegistry,
-      lossEventRegistry
+      positionLossRegistry
     );
     assertEq(
       currentBalance, positionShares.mulDiv(newAccumulator - initialAccum, YieldMath.ACCUM_PRECISION) + previousBalance
@@ -107,7 +136,7 @@ contract YieldMathTest is PRBTest, StdUtils {
     public
   {
     previousBalance = uint104(bound(previousBalance, 2, 2 ** 102 - 1));
-    totalBalance = uint104(bound(totalBalance, 1, previousBalance - 1));
+    totalBalance = uint104(bound(totalBalance, 0, previousBalance - 1));
     newAccumulator = uint152(bound(newAccumulator, 0, 2 ** 102 - 1));
     positionShares = uint160(bound(positionShares, 1, 2 ** 102 - 1));
 
@@ -123,27 +152,22 @@ contract YieldMathTest is PRBTest, StdUtils {
       newShares: positionShares
     });
 
-    StrategyId strategyId = StrategyId.wrap(1);
-
     (, uint256 lastRecordedTotalBalance, uint256 totalLossEvents) = positionRegistry.read(1, token);
-
-    lossEventRegistry.registerNew(
-      strategyId, token, totalLossEvents++, newAccumulator, lastRecordedTotalBalance, previousBalance
-    );
+    uint256 totalLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
 
     uint256 currentBalance = YieldMath.calculateBalance({
       positionId: 1,
-      strategyId: strategyId,
       token: token,
       positionShares: positionShares,
-      lastRecordedBalance: previousBalance,
+      lastRecordedBalance: lastRecordedTotalBalance,
       totalBalance: totalBalance,
+      totalLossAccum: totalLossAccum,
       totalLossEvents: totalLossEvents,
       newAccumulator: newAccumulator,
       positionRegistry: positionRegistry,
-      lossEventRegistry: lossEventRegistry
+      positionLossRegistry: positionLossRegistry
     });
 
-    assertEq(currentBalance, totalBalance);
+    assertEq(currentBalance, totalBalance == 0 ? 0 : previousBalance);
   }
 }
