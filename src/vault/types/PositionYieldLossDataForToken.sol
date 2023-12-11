@@ -19,8 +19,8 @@ library PositionYieldLossDataForTokenLibrary {
     view
     returns (uint256)
   {
-    uint256 lossAccum = positionYieldLossData[_keyFrom(positionId, token)];
-    return (lossAccum == 0) ? YieldMath.LOSS_ACCUM_INITIAL : lossAccum;
+    uint256 positionLossAccum = positionYieldLossData[_keyFrom(positionId, token)];
+    return (positionLossAccum == 0) ? YieldMath.LOSS_ACCUM_INITIAL : positionLossAccum;
   }
 
   /**
@@ -30,11 +30,11 @@ library PositionYieldLossDataForTokenLibrary {
     mapping(PositionYieldLossDataKey => uint256) storage positionYieldLossData,
     uint256 positionId,
     address token,
-    uint256 lossAccum
+    uint256 newPositionLossAccum
   )
     internal
   {
-    positionYieldLossData[_keyFrom(positionId, token)] = lossAccum;
+    positionYieldLossData[_keyFrom(positionId, token)] = newPositionLossAccum;
   }
 
   function _keyFrom(uint256 positionId, address token) internal pure returns (PositionYieldLossDataKey) {

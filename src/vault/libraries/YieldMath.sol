@@ -26,9 +26,8 @@ library YieldMath {
    *      understand why we chose this particular amount, please refer refer to the [README](../README.md).
    */
   uint256 internal constant ACCUM_PRECISION = 1e33;
-  uint256 internal constant LOSS_ACCUM_PRECISION = 1e18;
   // slither-disable-next-line unused-state
-  uint256 internal constant LOSS_ACCUM_INITIAL = type(uint256).max / LOSS_ACCUM_PRECISION;
+  uint256 internal constant LOSS_ACCUM_INITIAL = type(uint256).max;
 
   /// @dev Used to represent a position being created
   uint256 internal constant POSITION_BEING_CREATED = 0;
@@ -37,40 +36,40 @@ library YieldMath {
    * @dev The maximum amount of loss events supported per strategy and token. After this threshold is met, then all
    *      balances will for that strategy and token will be reported as zero.
    */
-  uint8 internal constant MAX_TOTAL_LOSS_EVENTS = 15;
+  uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = 15;
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares
    * @param currentBalance The current balance for a specific token
    * @param lastRecordedBalance The last recorded balance for a specific token
-   * @param previousAccum The previous value of the accum
+   * @param previousStrategyYieldAccum The previous value of the yield accum
    * @param totalShares The current total amount of shares
-   * @param currentTotalLossAccum The current total loss accum
-   * @return newYieldAccum The new value of the accum
-   * @return newTotalLossAccum The new total loss accum
+   * @param currentStrategyLossAccum The current total loss accum
+   * @return newStrategyYieldAccum The new value of the yield accum
+   * @return newStrategyLossAccum The new total loss accum
    */
   function calculateAccum(
     uint256 currentBalance,
     uint256 lastRecordedBalance,
-    uint256 previousAccum,
+    uint256 previousStrategyYieldAccum,
     uint256 totalShares,
-    uint256 currentTotalLossAccum
+    uint256 currentStrategyLossAccum
   )
     internal
     pure
-    returns (uint256 newYieldAccum, uint256 newTotalLossAccum)
+    returns (uint256 newStrategyYieldAccum, uint256 newStrategyLossAccum)
   {
     if (currentBalance < lastRecordedBalance) {
-      newTotalLossAccum = currentTotalLossAccum.mulDiv(currentBalance, lastRecordedBalance, Math.Rounding.Floor)
-        * YieldMath.LOSS_ACCUM_PRECISION / YieldMath.LOSS_ACCUM_PRECISION;
-      newYieldAccum = previousAccum.mulDiv(newTotalLossAccum, currentTotalLossAccum, Math.Rounding.Floor);
+      newStrategyLossAccum = currentStrategyLossAccum.mulDiv(currentBalance, lastRecordedBalance, Math.Rounding.Floor);
+      newStrategyYieldAccum =
+        previousStrategyYieldAccum.mulDiv(newStrategyLossAccum, currentStrategyLossAccum, Math.Rounding.Floor);
     } else if (totalShares == 0) {
-      return (previousAccum, currentTotalLossAccum);
+      return (previousStrategyYieldAccum, currentStrategyLossAccum);
     } else {
       uint256 yieldPerShare =
         ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares, Math.Rounding.Floor);
-      newYieldAccum = previousAccum + yieldPerShare;
-      newTotalLossAccum = currentTotalLossAccum;
+      newStrategyYieldAccum = previousStrategyYieldAccum + yieldPerShare;
+      newStrategyLossAccum = currentStrategyLossAccum;
     }
   }
 
@@ -79,9 +78,10 @@ library YieldMath {
    * @param positionId The position's id
    * @param token The token to calculate the balance for
    * @param positionShares The amount of shares owned by the position
-   * @param totalLossAccum The total amount of loss that happened for this strategy and token
-   * @param totalLossEvents The total amount of loss events that happened for this strategy and token
-   * @param newAccumulator The new value for the yield accumulator
+   * @param strategyLossAccum The total amount of loss that happened for this strategy and token
+   * @param strategyCompleteLossEvents The total amount of complete loss events that happened for this strategy and
+   * token
+   * @param newStrategyYieldAccum The new value for the yield accumulator
    * @param positionRegistry A registry for yield data for each position
    */
   function calculateBalance(
@@ -90,9 +90,9 @@ library YieldMath {
     uint256 positionShares,
     uint256 lastRecordedBalance,
     uint256 totalBalance,
-    uint256 totalLossAccum,
-    uint256 totalLossEvents,
-    uint256 newAccumulator,
+    uint256 strategyLossAccum,
+    uint256 strategyCompleteLossEvents,
+    uint256 newStrategyYieldAccum,
     mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry,
     mapping(PositionYieldLossDataKey => uint256) storage positionLossRegistry
   )
@@ -101,31 +101,34 @@ library YieldMath {
     returns (uint256)
   {
     if (
-      positionId == POSITION_BEING_CREATED || totalLossEvents == MAX_TOTAL_LOSS_EVENTS
-        || (totalLossEvents == MAX_TOTAL_LOSS_EVENTS - 1 && totalBalance < lastRecordedBalance && totalBalance == 0)
+      positionId == POSITION_BEING_CREATED || strategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS
+        || (
+          strategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS - 1 && totalBalance < lastRecordedBalance
+            && totalBalance == 0
+        )
     ) {
       // We've reached the max amount of loss events or the position is being created. We'll simply report all balances
       // as 0
       return 0;
     }
 
-    (uint256 initialAccum, uint256 positionBalance, uint256 processedTotalLossEvents) =
+    (uint256 initialAccum, uint256 positionBalance, uint256 positionProcessedCompleteLossEvents) =
       positionRegistry.read(positionId, token);
-    uint256 lossAccum = positionLossRegistry.read(positionId, token);
-    if (processedTotalLossEvents < totalLossEvents) {
+    uint256 positionLossAccum = positionLossRegistry.read(positionId, token);
+    if (positionProcessedCompleteLossEvents < strategyCompleteLossEvents) {
       positionBalance = 0;
       initialAccum = 0;
-      lossAccum = YieldMath.LOSS_ACCUM_INITIAL;
+      positionLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
     } else {
-      positionBalance = positionBalance.mulDiv(totalLossAccum, lossAccum, Math.Rounding.Floor);
+      positionBalance = positionBalance.mulDiv(strategyLossAccum, positionLossAccum, Math.Rounding.Floor);
     }
 
     positionBalance += YieldMath.calculateEarned({
       initialAccum: initialAccum,
-      finalAccum: newAccumulator,
+      finalAccum: newStrategyYieldAccum,
       positionShares: positionShares,
-      lossAccum: lossAccum,
-      totalLossAccum: totalLossAccum
+      positionLossAccum: positionLossAccum,
+      strategyLossAccum: strategyLossAccum
     });
 
     if (totalBalance < lastRecordedBalance && totalBalance == 0) {
@@ -147,14 +150,14 @@ library YieldMath {
     uint256 initialAccum,
     uint256 finalAccum,
     uint256 positionShares,
-    uint256 lossAccum,
-    uint256 totalLossAccum
+    uint256 positionLossAccum,
+    uint256 strategyLossAccum
   )
     internal
     pure
     returns (uint256)
   {
-    uint256 initialAccumWithLoss = initialAccum.mulDiv(totalLossAccum, lossAccum, Math.Rounding.Ceil);
+    uint256 initialAccumWithLoss = initialAccum.mulDiv(strategyLossAccum, positionLossAccum, Math.Rounding.Ceil);
     return initialAccumWithLoss < finalAccum
       ? positionShares.mulDiv(finalAccum - initialAccumWithLoss, ACCUM_PRECISION, Math.Rounding.Floor)
       : 0;

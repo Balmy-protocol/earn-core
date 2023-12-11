@@ -809,7 +809,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_createPosition_CheckRewardsWithLoss_FilledMaxTotalLosses() public {
-    uint8 positions = (YieldMath.MAX_TOTAL_LOSS_EVENTS + 2) * 2;
+    uint8 positions = (YieldMath.MAX_COMPLETE_LOSS_EVENTS + 2) * 2;
     uint256 amountToDeposit1 = 100_000;
     uint256 amountToBurn = 1000;
     uint256 amountToReward = amountToBurn;
