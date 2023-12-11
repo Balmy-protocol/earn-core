@@ -27,7 +27,7 @@ library YieldMath {
    */
   uint256 internal constant ACCUM_PRECISION = 1e33;
   uint256 internal constant LOSS_ACCUM_PRECISION = 1e18;
-  // slither-disable-next-line unused-state-variable
+  // slither-disable-next-line unused-state
   uint256 internal constant LOSS_ACCUM_INITIAL = type(uint256).max / LOSS_ACCUM_PRECISION;
 
   /// @dev Used to represent a position being created

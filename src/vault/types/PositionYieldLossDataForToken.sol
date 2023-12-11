@@ -7,7 +7,6 @@ import { YieldMath } from "../libraries/YieldMath.sol";
 type PositionYieldLossDataKey is bytes32;
 
 library PositionYieldLossDataForTokenLibrary {
-
   /**
    * @notice Reads a position's yield data from storage
    */
