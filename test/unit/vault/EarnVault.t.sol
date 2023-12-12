@@ -837,7 +837,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     totalShares += shares[0];
 
     uint256[] memory balances1;
-    for (uint8 i = 1; i < positions; i++) {
+    for (uint8 i = 1; i < positions - 1; i++) {
       (,, balances1) = vault.position(positionId1);
       previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);

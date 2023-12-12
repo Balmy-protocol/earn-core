@@ -34,7 +34,8 @@ library PositionYieldLossDataForTokenLibrary {
   )
     internal
   {
-    positionYieldLossData[_keyFrom(positionId, token)] = newPositionLossAccum;
+    positionYieldLossData[_keyFrom(positionId, token)] =
+      newPositionLossAccum != YieldMath.MAX_COMPLETE_LOSS_EVENTS ? newPositionLossAccum : 0;
   }
 
   function _keyFrom(uint256 positionId, address token) internal pure returns (PositionYieldLossDataKey) {

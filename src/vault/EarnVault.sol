@@ -427,32 +427,21 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     view
     returns (CalculatedDataForToken memory calculatedData)
   {
-    uint256 strategyYieldAccum;
-    uint256 lastRecordedBalance;
-    (strategyYieldAccum, lastRecordedBalance, calculatedData.strategyCompleteLossEvents) =
+    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, uint256 strategyCompleteLossEvents) =
       _strategyYieldData.read(strategyId, token);
-    if (
-      (totalBalance == 0 && lastRecordedBalance != 0)
-        || calculatedData.strategyCompleteLossEvents == YieldMath.MAX_COMPLETE_LOSS_EVENTS
-    ) {
-      // If we have just produced a complete loss, or we already reached the max allowed complete losses, then we reset
-      // the accumulators
-      calculatedData.newStrategyYieldAccum = 0;
-      if (calculatedData.strategyCompleteLossEvents < YieldMath.MAX_COMPLETE_LOSS_EVENTS) {
-        calculatedData.strategyCompleteLossEvents++;
-        calculatedData.newStrategyLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
-      } else {
-        calculatedData.newStrategyLossAccum = 0;
-      }
-    } else {
-      (calculatedData.newStrategyYieldAccum, calculatedData.newStrategyLossAccum) = YieldMath.calculateAccum({
-        lastRecordedBalance: lastRecordedBalance,
-        currentBalance: totalBalance,
-        previousStrategyYieldAccum: strategyYieldAccum,
-        totalShares: totalShares,
-        currentStrategyLossAccum: _strategyYieldLossData.read(strategyId, token)
-      });
-    }
+
+    (
+      calculatedData.newStrategyYieldAccum,
+      calculatedData.newStrategyLossAccum,
+      calculatedData.strategyCompleteLossEvents
+    ) = YieldMath.calculateAccum({
+      lastRecordedBalance: lastRecordedBalance,
+      currentBalance: totalBalance,
+      previousStrategyYieldAccum: strategyYieldAccum,
+      totalShares: totalShares,
+      previousStrategyLossAccum: _strategyYieldLossData.read(strategyId, token),
+      strategyCompleteLossEvents: strategyCompleteLossEvents
+    });
 
     calculatedData.positionBalance = YieldMath.calculateBalance({
       positionId: positionId,
@@ -572,7 +561,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         token: tokens[i],
         calculatedData: calculatedData[i],
         withdrawn: updateAmounts[i],
-        totalBalanceAfterUpdate: balancesAfterUpdate[i]
+        newStrategyBalance: balancesAfterUpdate[i]
       });
       unchecked {
         ++i;
@@ -624,7 +613,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     address token,
     CalculatedDataForToken memory calculatedData,
     uint256 withdrawn,
-    uint256 totalBalanceAfterUpdate
+    uint256 newStrategyBalance
   )
     internal
   {
@@ -642,7 +631,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     _strategyYieldData.update({
       strategyId: strategyId,
       token: token,
-      newTotalBalance: totalBalanceAfterUpdate,
+      newTotalBalance: newStrategyBalance,
       newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
       newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
     });

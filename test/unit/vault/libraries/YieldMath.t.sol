@@ -40,10 +40,12 @@ contract YieldMathTest is PRBTest, StdUtils {
   {
     uint256 previousLossAccum = 1;
 
-    (uint256 newAccum, uint256 newTotalLossAccum) =
-      YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0, previousLossAccum);
+    (uint256 newAccum, uint256 newTotalLossAccum,) =
+      YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0, previousLossAccum, 0);
     if (currentBalance > lastRecordedBalance) {
       assertEq(newAccum, previousAccum);
+    } else if (currentBalance == 0 && lastRecordedBalance != 0) {
+      assertEq(newAccum, 0);
     } else {
       assertEq(newAccum, previousAccum.mulDiv(newTotalLossAccum, previousLossAccum));
     }
@@ -59,7 +61,9 @@ contract YieldMathTest is PRBTest, StdUtils {
   {
     totalShares = uint128(bound(totalShares, 1, type(uint256).max));
     lastRecordedBalance = uint104(bound(lastRecordedBalance, 0, currentBalance));
-    (uint256 newAccum,) = YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, totalShares, 1);
+    (uint256 newAccum,,) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 0
+    );
     assertEq(
       newAccum, previousAccum + YieldMath.ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares)
     );
@@ -74,13 +78,30 @@ contract YieldMathTest is PRBTest, StdUtils {
     public
   {
     totalShares = uint128(bound(totalShares, 1, type(uint256).max));
-    lastRecordedBalance = uint104(bound(lastRecordedBalance, 1, type(uint104).max));
-    currentBalance = uint104(bound(currentBalance, 0, lastRecordedBalance - 1));
-    (, uint256 newTotalLossAccum) = YieldMath.calculateAccum(
-      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL
+    lastRecordedBalance = uint104(bound(lastRecordedBalance, 2, type(uint104).max));
+    currentBalance = uint104(bound(currentBalance, 1, lastRecordedBalance - 1));
+    (, uint256 newTotalLossAccum,) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 0
     );
 
     assertEq(newTotalLossAccum, YieldMath.LOSS_ACCUM_INITIAL.mulDiv(currentBalance, lastRecordedBalance));
+  }
+
+  function testFuzz_calculateAccum_WithCompleteLoss(
+    uint104 lastRecordedBalance,
+    uint152 previousAccum,
+    uint128 totalShares
+  )
+    public
+  {
+    totalShares = uint128(bound(totalShares, 1, type(uint256).max));
+    lastRecordedBalance = uint104(bound(lastRecordedBalance, 2, type(uint104).max));
+    uint104 currentBalance = 0;
+    (, uint256 newTotalLossAccum,) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 1
+    );
+
+    assertEq(newTotalLossAccum, YieldMath.LOSS_ACCUM_INITIAL);
   }
 
   function testFuzz_calculateBalance(
