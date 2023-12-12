@@ -25,9 +25,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: 2 ** 150,
+      newPositionYieldAccum: 2 ** 150,
       newPositionBalance: 2 ** 102 - 1,
-      newProccessedLossEvents: 2 ** 4 - 1,
+      newPositionProccessedLossEvents: 2 ** 4 - 1,
       newShares: 1
     });
   }
@@ -37,9 +37,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: 2 ** 150 - 1,
+      newPositionYieldAccum: 2 ** 150 - 1,
       newPositionBalance: 2 ** 102,
-      newProccessedLossEvents: 2 ** 4 - 1,
+      newPositionProccessedLossEvents: 2 ** 4 - 1,
       newShares: 1
     });
   }
@@ -49,9 +49,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: 2 ** 150 - 1,
+      newPositionYieldAccum: 2 ** 150 - 1,
       newPositionBalance: 2 ** 102 - 1,
-      newProccessedLossEvents: 2 ** 4,
+      newPositionProccessedLossEvents: 2 ** 4,
       newShares: 1
     });
   }
@@ -63,9 +63,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: accumulator,
+      newPositionYieldAccum: accumulator,
       newPositionBalance: totalBalance,
-      newProccessedLossEvents: lossEvents,
+      newPositionProccessedLossEvents: lossEvents,
       newShares: 1
     });
 
@@ -81,9 +81,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: 2 ** 150 - 1,
+      newPositionYieldAccum: 2 ** 150 - 1,
       newPositionBalance: 2 ** 102 - 1,
-      newProccessedLossEvents: 2 ** 4 - 1,
+      newPositionProccessedLossEvents: 2 ** 4 - 1,
       newShares: 1
     });
 
@@ -91,9 +91,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newAccumulator: 2 ** 150 - 1,
+      newPositionYieldAccum: 2 ** 150 - 1,
       newPositionBalance: 0,
-      newProccessedLossEvents: 2 ** 4 - 1,
+      newPositionProccessedLossEvents: 2 ** 4 - 1,
       newShares: 0
     });
 

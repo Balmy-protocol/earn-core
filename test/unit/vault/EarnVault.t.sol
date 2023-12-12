@@ -21,6 +21,7 @@ import {
   StrategyId
 } from "../../../src/vault/EarnVault.sol";
 import { Token } from "../../../src/libraries/Token.sol";
+import { YieldMath } from "../../../src/vault/libraries/YieldMath.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
@@ -555,6 +556,105 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[3], balances4[1], 1);
   }
 
+  function test_createPosition_CheckRewardsWithTotalLoss() public {
+    uint256 amountToDeposit1 = 100_000;
+    uint256 amountToDeposit2 = 200_000;
+    uint256 amountToDeposit3 = 50_000;
+    uint256 amountToReward = 100_000;
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2 + amountToDeposit3 * 2);
+    uint256[] memory rewards = new uint256[](4);
+    uint256[] memory shares = new uint256[](4);
+    uint256 totalShares;
+    uint256 positionsCreated;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
+    bytes memory misc = "1234";
+
+    address[] memory strategyTokens = new address[](2);
+    strategyTokens[0] = address(erc20);
+    strategyTokens[1] = address(anotherErc20);
+    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
+      strategyRegistry.deployStateStrategy(strategyTokens);
+
+    uint256 previousBalance;
+
+    (uint256 positionId1,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward);
+
+    // Shares: 100
+    //Total shares: 100
+    shares[0] = 100;
+    totalShares += shares[0];
+
+    (,, uint256[] memory balances1) = vault.position(positionId1);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+
+    (uint256 positionId2,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.mint(address(strategy), amountToReward * 3);
+
+    //Shares: 200
+    //Total shares: 300
+    shares[1] = 200;
+    totalShares += shares[1];
+
+    // Earn
+    (,, balances1) = vault.position(positionId1);
+    assertEq(balances1.length, 2);
+    assertEq(balances1[0], amountToDeposit1);
+
+    (,, uint256[] memory balances2) = vault.position(positionId2);
+    assertEq(balances2.length, 2);
+    assertEq(balances2[0], amountToDeposit2);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+
+    (uint256 positionId3,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    anotherErc20.burn(address(strategy), amountToReward);
+    //Shares: 50
+    // Total shares: 350
+    shares[2] = 50;
+    totalShares += shares[2];
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, uint256[] memory balances3) = vault.position(positionId3);
+
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
+
+    // FINAL SNAPSHOT
+
+    (uint256 positionId4,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc);
+    positionsCreated++;
+    shares[3] = 50;
+    totalShares += shares[3];
+    anotherErc20.mint(address(strategy), 350_000);
+
+    (,, balances1) = vault.position(positionId1);
+    (,, balances2) = vault.position(positionId2);
+    (,, balances3) = vault.position(positionId3);
+    (,, uint256[] memory balances4) = vault.position(positionId4);
+    previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    assertApproxEqAbs(rewards[0], balances1[1], 1);
+    assertApproxEqAbs(rewards[1], balances2[1], 1);
+    assertApproxEqAbs(rewards[2], balances3[1], 1);
+    assertApproxEqAbs(rewards[3], balances4[1], 1);
+  }
+
   function testFuzz_createPosition_CheckRewardsWithLosses(
     uint104 amountToDeposit1,
     uint104 amountToDeposit2,
@@ -663,13 +763,14 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
   }
 
-  function test_createPosition_CheckRewardsWithLoss_FilledMaxLosses() public {
+  function test_createPosition_CheckRewardsWithLoss_FilledMaxCompleteLosses() public {
+    uint8 positions = (YieldMath.MAX_COMPLETE_LOSS_EVENTS + 2) * 2;
     uint256 amountToDeposit1 = 100_000;
-    uint256 amountToReward = 200_000;
-    uint256 amountToBurn = 10_000;
-    erc20.mint(address(this), amountToDeposit1 * 16);
-    uint256[] memory rewards = new uint256[](16);
-    uint256[] memory shares = new uint256[](16);
+    uint256 amountToBurn = 1000;
+    uint256 amountToReward = amountToBurn;
+    erc20.mint(address(this), amountToDeposit1 * positions);
+    uint256[] memory rewards = new uint256[](positions);
+    uint256[] memory shares = new uint256[](positions);
     uint256 totalShares;
     uint256 positionsCreated;
     INFTPermissions.PermissionSet[] memory permissions =
@@ -687,24 +788,29 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (uint256 positionId1,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
     positionsCreated++;
-    anotherErc20.mint(address(strategy), amountToReward);
     shares[0] = 10;
     totalShares += shares[0];
 
     uint256[] memory balances1;
-    for (uint16 i = 1; i < 16; i++) {
+    for (uint8 i = 1; i < positions - 1; i++) {
       (,, balances1) = vault.position(positionId1);
       previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
-      assertApproxEqAbs(rewards[0], balances1[1], 1);
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+
       positionsCreated++;
-      anotherErc20.burn(address(strategy), amountToBurn);
+      if (i % 2 == 0) {
+        anotherErc20.burn(address(strategy), anotherErc20.balanceOf(address(strategy)));
+      } else {
+        assertApproxEqAbs(0, balances1[1], 1);
+
+        anotherErc20.mint(address(strategy), amountToReward);
+      }
       shares[i] = 10;
       totalShares += shares[i];
     }
 
     (,, balances1) = vault.position(positionId1);
-    assertEq(0, balances1[1]);
+    assertApproxEqAbs(0, balances1[1], 1);
   }
 
   function testFuzz_withdraw_WithERC20(uint104 amountToDeposit, uint8 percentageToWithdraw) public {
@@ -1518,7 +1624,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       }
     } else {
       for (uint256 i; i < positionsLength; i++) {
-        rewards[i] = strategyBalances[1].mulDiv(rewards[i], previousBalance, Math.Rounding.Floor);
+        rewards[i] = strategyBalances[1].mulDiv(rewards[i], previousBalance, Math.Rounding.Ceil);
       }
     }
   }

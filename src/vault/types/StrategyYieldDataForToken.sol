@@ -11,28 +11,28 @@ import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
  *      - Last recorded balance: the last recorded total balance reported by the strategy. This value is used to
  *        understand how much yield was generated when we ask for the total balance in the future. Will use
  *        102 bits
- *      - Total loss events: total number of reported loss events. Will use 4 bits.
+ *      - Complete loss events: total number of reported complete loss events. Will use 4 bits.
  *      To understand why we chose these variable sizes, please refer to the [README](../README.md).
  */
-type TotalYieldDataForToken is uint256;
+type StrategyYieldDataForToken is uint256;
 
 /// @notice A key composed of a strategy id and a token address
-type TotalYieldDataKey is bytes32;
+type StrategyYieldDataKey is bytes32;
 
-library TotalYieldDataForTokenLibrary {
+library StrategyYieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
 
   /**
    * @notice Reads total yield data from storage
    */
   function read(
-    mapping(TotalYieldDataKey => TotalYieldDataForToken) storage totalYieldData,
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
     StrategyId strategyId,
     address token
   )
     internal
     view
-    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, uint256 totalLossEvents)
+    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, uint256 strategyCompleteLossEvents)
   {
     return _decode(totalYieldData[_keyFrom(strategyId, token)]);
   }
@@ -41,51 +41,52 @@ library TotalYieldDataForTokenLibrary {
    * @notice Updates total yield data based on the given values
    */
   function update(
-    mapping(TotalYieldDataKey => TotalYieldDataForToken) storage totalYieldData,
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
     StrategyId strategyId,
     address token,
     uint256 newTotalBalance,
-    uint256 newAccumulator,
-    uint256 newTotalLossEvents
+    uint256 newStrategyYieldAccum,
+    uint256 newStrategyCompleteLossEvents
   )
     internal
   {
     // TODO: make some gas tests to understand gas savings if we remember the previous value and compare it before
     // writing
     totalYieldData[_keyFrom(strategyId, token)] = _encode({
-      yieldAccumulator: newAccumulator,
+      yieldAccumulator: newStrategyYieldAccum,
       recordedBalance: newTotalBalance,
-      totalLossEvents: newTotalLossEvents
+      strategyCompleteLossEvents: newStrategyCompleteLossEvents
     });
   }
 
-  function _decode(TotalYieldDataForToken encoded)
+  function _decode(StrategyYieldDataForToken encoded)
     private
     pure
-    returns (uint256 yieldAccumulator, uint256 recordedBalance, uint256 totalLossEvents)
+    returns (uint256 yieldAccumulator, uint256 recordedBalance, uint256 strategyCompleteLossEvents)
   {
-    uint256 unwrapped = TotalYieldDataForToken.unwrap(encoded);
+    uint256 unwrapped = StrategyYieldDataForToken.unwrap(encoded);
     yieldAccumulator = unwrapped >> 106;
     recordedBalance = (unwrapped >> 4) & 0x3fffffffffffffffffffffffff;
-    totalLossEvents = unwrapped & 0xF;
+    strategyCompleteLossEvents = unwrapped & 0xF;
   }
 
   function _encode(
     uint256 yieldAccumulator,
     uint256 recordedBalance,
-    uint256 totalLossEvents
+    uint256 strategyCompleteLossEvents
   )
     private
     pure
-    returns (TotalYieldDataForToken)
+    returns (StrategyYieldDataForToken)
   {
     yieldAccumulator.assertFitsInUint150();
     recordedBalance.assertFitsInUint102();
-    totalLossEvents.assertFitsInUint4();
-    return TotalYieldDataForToken.wrap((yieldAccumulator << 106) | (recordedBalance << 4) | totalLossEvents);
+    strategyCompleteLossEvents.assertFitsInUint4();
+    return
+      StrategyYieldDataForToken.wrap((yieldAccumulator << 106) | (recordedBalance << 4) | strategyCompleteLossEvents);
   }
 
-  function _keyFrom(StrategyId strategyId, address token) internal pure returns (TotalYieldDataKey) {
-    return TotalYieldDataKey.wrap(keccak256(abi.encode(strategyId, token)));
+  function _keyFrom(StrategyId strategyId, address token) internal pure returns (StrategyYieldDataKey) {
+    return StrategyYieldDataKey.wrap(keccak256(abi.encode(strategyId, token)));
   }
 }

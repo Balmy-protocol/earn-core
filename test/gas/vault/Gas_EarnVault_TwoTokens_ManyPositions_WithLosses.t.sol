@@ -29,7 +29,7 @@ contract GasEarnVaultTwoTokensManyPositionsWithLosses is BaseEarnVaultGasTest {
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
     );
     anotherErc20.mint(address(strategy), amountToReward);
-    for (uint8 i; i < MAX_LOSSES - 1; i++) {
+    for (uint8 i; i < 100; i++) {
       vault.increasePosition(positionId, address(erc20), amountToIncrease);
       anotherErc20.burn(address(strategy), amountToLose);
     }

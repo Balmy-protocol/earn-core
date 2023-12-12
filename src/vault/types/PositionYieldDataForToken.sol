@@ -8,7 +8,7 @@ import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
  * @dev Occupies 1 slot. Holds:
  *      - Base yield accumulator: the yield accumulator when the position was last updated. Will use 150 bits
  *      - Pre-accounted balance: balance already accounted for. Will use 102 bits
- *      - Position loss events: number of loss events processed for the position. Will use 4 bits.
+ *      - Position complete loss events: number of complete loss events processed for the position. Will use 4 bits.
  *      To understand why we chose these variable sizes, please refer to the [README](../README.md).
  */
 type PositionYieldDataForToken is uint256;
@@ -43,9 +43,9 @@ library PositionYieldDataForTokenLibrary {
     mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionYieldData,
     uint256 positionId,
     address token,
-    uint256 newAccumulator,
+    uint256 newPositionYieldAccum,
     uint256 newPositionBalance,
-    uint256 newProccessedLossEvents,
+    uint256 newPositionProccessedLossEvents,
     uint256 newShares
   )
     internal
@@ -57,9 +57,9 @@ library PositionYieldDataForTokenLibrary {
       // TODO: make some gas tests to understand gas savings if we remember the previous value and compare it before
       // writing
       positionYieldData[_keyFrom(positionId, token)] = _encode({
-        baseYieldAccumulator: newAccumulator,
+        baseYieldAccumulator: newPositionYieldAccum,
         preAccountedBalance: newPositionBalance,
-        processedLossEvents: newProccessedLossEvents
+        positionProcessedCompleteLossEvents: newPositionProccessedLossEvents
       });
     }
   }
@@ -67,18 +67,18 @@ library PositionYieldDataForTokenLibrary {
   function _decode(PositionYieldDataForToken encoded)
     private
     pure
-    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, uint256 processedLossEvents)
+    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, uint256 positionProcessedCompleteLossEvents)
   {
     uint256 unwrapped = PositionYieldDataForToken.unwrap(encoded);
     baseYieldAccumulator = unwrapped >> 106;
     preAccountedBalance = (unwrapped >> 4) & 0x3fffffffffffffffffffffffff;
-    processedLossEvents = unwrapped & 0xF;
+    positionProcessedCompleteLossEvents = unwrapped & 0xF;
   }
 
   function _encode(
     uint256 baseYieldAccumulator,
     uint256 preAccountedBalance,
-    uint256 processedLossEvents
+    uint256 positionProcessedCompleteLossEvents
   )
     private
     pure
@@ -86,9 +86,10 @@ library PositionYieldDataForTokenLibrary {
   {
     baseYieldAccumulator.assertFitsInUint150();
     preAccountedBalance.assertFitsInUint102();
-    processedLossEvents.assertFitsInUint4();
-    return
-      PositionYieldDataForToken.wrap((baseYieldAccumulator << 106) | (preAccountedBalance << 4) | processedLossEvents);
+    positionProcessedCompleteLossEvents.assertFitsInUint4();
+    return PositionYieldDataForToken.wrap(
+      (baseYieldAccumulator << 106) | (preAccountedBalance << 4) | positionProcessedCompleteLossEvents
+    );
   }
 
   function _keyFrom(uint256 positionId, address token) internal pure returns (PositionYieldDataKey) {
