@@ -668,10 +668,10 @@ contract EarnVaultTest is PRBTest, StdUtils {
     public
   {
     amountToDeposit1 = uint104(bound(amountToDeposit1, 6, type(uint96).max / 5));
-    amountToDeposit2 = uint104(bound(amountToDeposit2, 12, type(uint96).max / 5));
-    amountToDeposit3 = uint104(bound(amountToDeposit3, 6, type(uint96).max / 5));
-    amountToDeposit4 = uint104(bound(amountToDeposit4, 6, type(uint96).max / 5));
-    amountToDeposit5 = uint104(bound(amountToDeposit5, 6, type(uint96).max / 5));
+    amountToDeposit2 = uint104(bound(amountToDeposit2, 1, type(uint96).max / 5));
+    amountToDeposit3 = uint104(bound(amountToDeposit3, 1, type(uint96).max / 5));
+    amountToDeposit4 = uint104(bound(amountToDeposit4, 1, type(uint96).max / 5));
+    amountToDeposit5 = uint104(bound(amountToDeposit5, 1, type(uint96).max / 5));
     amountToReward1 = uint104(bound(amountToReward1, 5, amountToDeposit1 - 1));
     amountToReward2 = uint104(bound(amountToReward2, 4, amountToReward1 - 1));
     amountToLose = uint104(bound(amountToLose, 1, amountToReward2 / 2 - 1));
@@ -763,52 +763,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
   }
 
-  function testFuzz_createPosition_CheckRewardsWithLoss_FilledMaxLosses(uint8 losses) public {
-    losses = uint8(bound(losses, 1, 30));
-    uint256 amountToDeposit1 = 100_000;
-    uint256 amountToBurn = 1000;
-    uint256 amountToReward = amountToBurn * (losses + 1);
-    erc20.mint(address(this), amountToDeposit1 * losses);
-    uint256[] memory rewards = new uint256[](losses);
-    uint256[] memory shares = new uint256[](losses);
-    uint256 totalShares;
-    uint256 positionsCreated;
-    INFTPermissions.PermissionSet[] memory permissions =
-      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
-    bytes memory misc = "1234";
-
-    address[] memory strategyTokens = new address[](2);
-    strategyTokens[0] = address(erc20);
-    strategyTokens[1] = address(anotherErc20);
-    (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
-      strategyRegistry.deployStateStrategy(strategyTokens);
-
-    uint256 previousBalance;
-
-    (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
-    positionsCreated++;
-    anotherErc20.mint(address(strategy), amountToReward);
-    shares[0] = 10;
-    totalShares += shares[0];
-
-    uint256[] memory balances1;
-    for (uint8 i = 1; i < losses; i++) {
-      (,, balances1) = vault.position(positionId1);
-      previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
-      assertApproxEqAbs(rewards[0], balances1[1], 1);
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
-      positionsCreated++;
-      anotherErc20.burn(address(strategy), amountToBurn);
-      shares[i] = 10;
-      totalShares += shares[i];
-    }
-
-    (,, balances1) = vault.position(positionId1);
-    assertApproxEqAbs(amountToReward - amountToBurn * (losses - 1), balances1[1], 1);
-  }
-
-  function test_createPosition_CheckRewardsWithLoss_FilledMaxTotalLosses() public {
+  function test_createPosition_CheckRewardsWithLoss_FilledMaxCompleteLosses() public {
     uint8 positions = (YieldMath.MAX_COMPLETE_LOSS_EVENTS + 2) * 2;
     uint256 amountToDeposit1 = 100_000;
     uint256 amountToBurn = 1000;

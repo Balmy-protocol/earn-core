@@ -447,7 +447,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       positionId: positionId,
       token: token,
       totalBalance: totalBalance,
-      strategyLossAccum: calculatedData.newStrategyLossAccum,
+      newStrategyLossAccum: calculatedData.newStrategyLossAccum,
       strategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents,
       lastRecordedBalance: lastRecordedBalance,
       newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
@@ -622,12 +622,12 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       token: token,
       newStrategyLossAccum: calculatedData.newStrategyLossAccum
     });
+    // TODO: If strategyLossAccum wasn't updated, skip the write in the next line.
     _positionYieldLossData.update({
       positionId: positionId,
       token: token,
       newPositionLossAccum: calculatedData.newStrategyLossAccum
     });
-
     _strategyYieldData.update({
       strategyId: strategyId,
       token: token,

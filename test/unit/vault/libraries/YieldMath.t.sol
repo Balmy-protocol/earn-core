@@ -34,20 +34,20 @@ contract YieldMathTest is PRBTest, StdUtils {
   function testFuzz_calculateAccum_ZeroShares(
     uint256 currentBalance,
     uint256 lastRecordedBalance,
-    uint256 previousAccum
+    uint256 previousYieldAccum
   )
     public
   {
-    uint256 previousLossAccum = 1;
+    uint256 previousLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
 
-    (uint256 newAccum, uint256 newTotalLossAccum,) =
-      YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousAccum, 0, previousLossAccum, 0);
+    (uint256 newYieldAccum, uint256 newTotalLossAccum,) =
+      YieldMath.calculateAccum(currentBalance, lastRecordedBalance, previousYieldAccum, 0, previousLossAccum, 0);
     if (currentBalance > lastRecordedBalance) {
-      assertEq(newAccum, previousAccum);
+      assertEq(newYieldAccum, previousYieldAccum);
     } else if (currentBalance == 0 && lastRecordedBalance != 0) {
-      assertEq(newAccum, 0);
+      assertEq(newYieldAccum, 0);
     } else {
-      assertEq(newAccum, previousAccum.mulDiv(newTotalLossAccum, previousLossAccum));
+      assertEq(newYieldAccum, previousYieldAccum.mulDiv(newTotalLossAccum, previousLossAccum));
     }
   }
 
@@ -183,13 +183,13 @@ contract YieldMathTest is PRBTest, StdUtils {
       positionShares: positionShares,
       lastRecordedBalance: lastRecordedTotalBalance,
       totalBalance: totalBalance,
-      strategyLossAccum: totalLossAccum,
+      newStrategyLossAccum: totalLossAccum,
       strategyCompleteLossEvents: strategyCompleteLossEvents,
       newStrategyYieldAccum: newPositionYieldAccum,
       positionRegistry: positionRegistry,
       positionLossRegistry: positionLossRegistry
     });
 
-    assertEq(currentBalance, totalBalance == 0 ? 0 : previousBalance);
+    assertEq(currentBalance, previousBalance);
   }
 }

@@ -70,6 +70,8 @@ library YieldMath {
       newStrategyLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
       if (strategyCompleteLossEvents != YieldMath.MAX_COMPLETE_LOSS_EVENTS) {
         newStrategyCompleteLossEvents = strategyCompleteLossEvents + 1;
+      } else {
+        newStrategyCompleteLossEvents = strategyCompleteLossEvents;
       }
     } else if (currentBalance < lastRecordedBalance) {
       newStrategyLossAccum = previousStrategyLossAccum.mulDiv(currentBalance, lastRecordedBalance, Math.Rounding.Floor);
@@ -104,7 +106,7 @@ library YieldMath {
    * @param positionId The position's id
    * @param token The token to calculate the balance for
    * @param positionShares The amount of shares owned by the position
-   * @param strategyLossAccum The total amount of loss that happened for this strategy and token
+   * @param newStrategyLossAccum The total amount of loss that happened for this strategy and token
    * @param strategyCompleteLossEvents The total amount of complete loss events that happened for this strategy and
    * token
    * @param newStrategyYieldAccum The new value for the yield accumulator
@@ -116,7 +118,7 @@ library YieldMath {
     uint256 positionShares,
     uint256 lastRecordedBalance,
     uint256 totalBalance,
-    uint256 strategyLossAccum,
+    uint256 newStrategyLossAccum,
     uint256 strategyCompleteLossEvents,
     uint256 newStrategyYieldAccum,
     mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry,
@@ -143,7 +145,7 @@ library YieldMath {
       positionYieldAccum = 0;
       positionLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
     } else {
-      positionBalance = positionBalance.mulDiv(strategyLossAccum, positionLossAccum, Math.Rounding.Floor);
+      positionBalance = positionBalance.mulDiv(newStrategyLossAccum, positionLossAccum, Math.Rounding.Floor);
     }
 
     if (totalBalance > 0 || lastRecordedBalance == 0) {
@@ -152,10 +154,8 @@ library YieldMath {
         strategyYieldAccum: newStrategyYieldAccum,
         positionShares: positionShares,
         positionLossAccum: positionLossAccum,
-        strategyLossAccum: strategyLossAccum
+        strategyLossAccum: newStrategyLossAccum
       });
-    } else {
-      positionBalance = 0;
     }
 
     return positionBalance;
