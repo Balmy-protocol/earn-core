@@ -239,6 +239,13 @@ but **it will be up to each strategy to make sure that the tokens they support w
 
 ### Yield Losses
 
+First, a few notes on losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity, as a
+form of liquidity mining. These rewards tend to be distributed based on amount of liquidity, and the amount of rewards
+tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't tend to diminish
+over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a protocol removes all
+rewards that were unclaimed after a long period of time. But we believe that generally, there shouldn't be any losses in
+reward tokens.
+
 So far, we've described how we can calculate how much each position has earned for reward tokens. The approach is
 simple, but it has its limitations. For example, it does not handle correctly a scenario where there might be a loss
 between to updates. Let's see an example:
@@ -276,40 +283,131 @@ How much is assigned to each user?
 
 We can see that it doesn't add up 😅 The problem is that earnings can be distributed to everyone based on shares, but
 losses need to be distributed according to what they had earned so far. What would we want the balances to look like?
-Ideally, we would distribute the available funds based on what each user had earned on the previous snapshot. Something
+Ideally, we would distribute the losses based on what each user had earned on the previous snapshot, to achieve this
+we'll need to apply the losses to the yieldAccum so we'll use an accumulator to keep track of this losses. Something
 like this:
 
-$$ balance(user) = \frac{available \* earned(user, last\ snapshot)} {total(last\ snapshot)} $$
+$$ balance(user) = earned(user, last\ snapshot) \* lossRatio + yield(since\ last\ snapshot) $$ with:
+
+$$
+lossRatio =
+\frac{lossAccum} {lossAccumInitial}
+$$
+
+$$ yield(since\ last\ snapshot) = shares _ (yieldAccum - yieldAccumInitial _ lossRatio) $$
+
+By doing this, we're applying the losses to the already calculated balance. And we also need to apply them to what was
+yielded after the last snapshot. Losses have been successively applied to the strategy's yieldAccum, so it's necessary
+to apply them to the yieldAccumInitial, the one who belongs to the position.
 
 So, what would it look like?
 
 ```
-- John = 50 OP * 200 OP / 400 OP = 25 OP
-- Peter = 50 OP * 200 OP / 400 OP = 25 OP
-- Alice = 50 OP * 0 OP / 500 OP
+Moment 0
+- Total rewards: 0 $OP
+- John deposits and is assigned 100 shares
+- yieldAccum = 0
+
+Moment 1
+- Total rewards: 100 OP
+- Peter deposits and is assigned 200 shares
+- yieldAccum = 0 + (100 - 0) / 100 = 1
+
+Moment 2
+- Total rewards: 400 OP
+- Alice deposits and is assigned 100 shares
+- yieldAccum = 1 + (400 - 100) / 300 = 1 + 300 / 300 = 2
+
+How much is assigned to each user?
+- John = (2 - 0) * 100 = 200 OP
+- Peter = (2 - 1) * 200 = 200 OP
+- Alice = (2 - 2) * 100 = 0
+
+Moment 3
+- Total rewards: 100 OP
+- yieldAccum = yieldAccum * 100 / 400 = 2 * 100 / 400 = 0.5
+- lossAccum = 0.25
+
+How much is assigned to each user?
+- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+       = (0.5 - 0 * 0.25) * 100 = 50
+- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.5 - 1 * 0.25) * 200 = 50
+- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.5 - 2 * 0.25) * 100 = 0
+
+Moment 4:
+- Total reward: 200 OP
+- yieldAccum = yieldAccum + yielded / total shares
+             = 0.5 + 100 OP / 400
+             = 0.75
+
+- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+       = (0.75 - 0 * 0.25) * 100 = 75
+- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.75 - 1 * 0.25) * 200 = 100
+- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.75 - 2 * 0.25) * 100 = 25
+
+Moment 5:
+- Total reward: 400 OP
+- yieldAccum = yieldAccum + yielded / total shares
+             = 0.75 + 200 OP / 400
+             = 1.25
+
+- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+       = (1.25 - 0 * 0.25) * 100 = 125
+- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (1.25 - 1 * 0.25) * 200 = 200
+- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (1.25 - 2 * 0.25) * 100 = 75
+
+Moment 6:
+- Total reward: 80 OP
+- Joseph deposits and is assigned 400 shares
+- yieldAccum = yieldAccum * 80 / 400
+             = 1.25 * 80 OP / 400
+             = 0.25
+- lossAccum = lossAccum * 80 / 400
+               = 0.05
+
+- John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
+       = (0.25 - 0 * 0.05) * 100 = 25
+- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.25 - 1 * 0.05) * 200 = 40
+- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.25 - 2 * 0.05) * 100 = 15
+
+Moment 7:
+- Total rewards: 160 OP
+- yieldAccum = yieldAccum + yielded / total shares
+             = 0.25 + 80 / 800 = 0.35
+- John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
+       = (0.35 - 0 * (0.05 / 1)) * 100 = 35
+- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.35 - 1 * (0.05 / 1)) * 200 = 60
+- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.35 - 2 * (0.05 / 1)) * 100 = 25
+- Joseph = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+        = (0.35 - 0.25 * (0.05 / 0.05)) * 400 = 40
 ```
 
-#### Storing Losses
+#### Loss accumulator precision
 
-We just described how to take losses into account when calculate a position's balance for reward tokens. The approach
-requires storing each instance where there was a loss, so that each position can iterate over them and calculate the
-position's balance after the loss has been accounted for. Now, if left unrestricted, the list of recorded losses could
-grow too big. This could be an issue, since iterating through all of them could be prohibitively expensive in terms of
-gas cost.
+Since the loss accumulator is successively multiplied, to avoid under/overflow, we had two alternatives: start it at its
+maximum value and then decrease it or take the inverse approach. We chose for the first option as it handles rounding
+better.
 
-Now, a few notes on these losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity,
-as a form of liquidity mining. These rewards tend to be distributed based on amount of liquidity, and the amount of
-rewards tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't tend to
-diminish over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a protocol
-removes all rewards that were unclaimed after a long period of time. But we believe that generally, there shouldn't be
-any losses in reward tokens.
+#### Storing Complete Losses
 
-We will leave it **up to each strategy to try to avoid losses as much as possible**. This could be achieved by only
-reporting rewards that the strategy is certain it will be able to claim at a later point in time. For example, if the
-strategy knows that unclaimed rewards expire after a few weeks, then it should always claim them with each update
-(deposit & withdrawals). The vault is prepared to support **up to 15** loss events per token, for each strategy. This
-should be enough to cover for unexpected circumstances such as hacks, but it's very important that the strategy avoids
-losses as much as possible.
+We just described how to take losses into account when calculate a position's balance for reward tokens. However, when a
+complete loss occurs, the loss accumulator multiplies down to zero and stays there. The approach requires storing a
+counter to track when there was a complete loss, so that each position can compare over them and calculate the
+position's balance after the complete loss has been accounted for.
 
-After the 15 losses limit has been reached, the vault will simply set all position balances to zero. It will be up to
-each strategy to distribute any left funds in a way they deem fit.
+We will leave it **up to each strategy to try to avoid complete losses as much as possible**. The vault is prepared to
+support **up to 15** complete loss events per token, for each strategy. This should be enough to cover for unexpected
+circumstances such as hacks, but it's very important that the strategy avoids complete losses as much as possible.
+
+After the 15 complete losses limit has been reached, the vault will simply set all position balances to zero. It will be
+up to each strategy to distribute any left funds in a way they deem fit.
