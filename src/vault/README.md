@@ -287,14 +287,16 @@ Ideally, we would distribute the losses based on what each user had earned on th
 we'll need to apply the losses to the yieldAccum so we'll use an accumulator to keep track of this losses. Something
 like this:
 
-$$ balance(user) = earned(user, last\ snapshot) \* lossRatio + yield(since\ last\ snapshot) $$ with:
+$$ balance(user) = earned(user, last\ snapshot) \ast lossRatio + yield(since\ last\ snapshot) $$
+
+with:
 
 $$
 lossRatio =
 \frac{lossAccum} {lossAccumInitial}
 $$
 
-$$ yield(since\ last\ snapshot) = shares _ (yieldAccum - yieldAccumInitial _ lossRatio) $$
+$$ yield(since\ last\ snapshot) = shares \ast (yieldAccum - yieldAccumInitial \ast lossRatio) $$
 
 By doing this, we're applying the losses to the already calculated balance. And we also need to apply them to what was
 yielded after the last snapshot. Losses have been successively applied to the strategy's yieldAccum, so it's necessary
