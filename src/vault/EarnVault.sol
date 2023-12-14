@@ -26,7 +26,9 @@ import {
   StrategyYieldDataForTokenLibrary
 } from "./types/StrategyYieldDataForToken.sol";
 import {
-  StrategyYieldLossDataKey, StrategyYieldLossDataForTokenLibrary
+  StrategyYieldLossDataKey,
+  StrategyYieldLossDataForToken,
+  StrategyYieldLossDataForTokenLibrary
 } from "./types/StrategyYieldLossDataForToken.sol";
 import {
   PositionYieldDataKey,
@@ -35,7 +37,9 @@ import {
 } from "./types/PositionYieldDataForToken.sol";
 
 import {
-  PositionYieldLossDataKey, PositionYieldLossDataForTokenLibrary
+  PositionYieldLossDataKey,
+  PositionYieldLossDataForTokenLibrary,
+  PositionYieldLossDataForToken
 } from "./types/PositionYieldLossDataForToken.sol";
 import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
 import { UpdateAction } from "./types/UpdateAction.sol";
@@ -47,9 +51,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   using Token for address;
   using PositionDataLibrary for mapping(uint256 => PositionData);
   using StrategyYieldDataForTokenLibrary for mapping(StrategyYieldDataKey => StrategyYieldDataForToken);
-  using StrategyYieldLossDataForTokenLibrary for mapping(StrategyYieldLossDataKey => uint256);
+  using StrategyYieldLossDataForTokenLibrary for mapping(StrategyYieldLossDataKey => StrategyYieldLossDataForToken);
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => uint256);
+  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
   using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
@@ -70,11 +74,13 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   // Stores relevant yield data for all positions in the strategy, in the context of a specific reward token
   mapping(StrategyYieldDataKey key => StrategyYieldDataForToken yieldData) internal _strategyYieldData;
   // Stores relevant data for all positions in the strategy, in the context of a specific reward token loss
-  mapping(StrategyYieldLossDataKey key => uint256 strategyLossAccum) internal _strategyYieldLossData;
+  mapping(StrategyYieldLossDataKey key => StrategyYieldLossDataForToken strategyLossAccum) internal
+    _strategyYieldLossData;
   // Stores relevant yield data for a given position in the strategy, in the context of a specific reward token
   mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal _positionYieldData;
   // Stores relevant data for a given position in the strategy, in the context of a specific reward token loss
-  mapping(PositionYieldLossDataKey key => uint256 positionLossAccum) internal _positionYieldLossData;
+  mapping(PositionYieldLossDataKey key => PositionYieldLossDataForToken positionLossAccum) internal
+    _positionYieldLossData;
   // slither-disable-end naming-convention
 
   constructor(
@@ -427,8 +433,11 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     view
     returns (CalculatedDataForToken memory calculatedData)
   {
-    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, uint256 strategyCompleteLossEvents) =
+    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, uint256 strategyHadLoss) =
       _strategyYieldData.read(strategyId, token);
+
+    (uint256 strategyLossAccum, uint256 strategyCompleteLossEvents) =
+      strategyHadLoss == 1 ? _strategyYieldLossData.read(strategyId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
 
     (
       calculatedData.newStrategyYieldAccum,
@@ -439,7 +448,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       currentBalance: totalBalance,
       previousStrategyYieldAccum: strategyYieldAccum,
       totalShares: totalShares,
-      previousStrategyLossAccum: _strategyYieldLossData.read(strategyId, token),
+      previousStrategyLossAccum: strategyLossAccum,
       strategyCompleteLossEvents: strategyCompleteLossEvents
     });
 
@@ -620,28 +629,33 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     _strategyYieldLossData.update({
       strategyId: strategyId,
       token: token,
-      newStrategyLossAccum: calculatedData.newStrategyLossAccum
+      newStrategyLossAccum: calculatedData.newStrategyLossAccum,
+      newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
     });
     // TODO: If strategyLossAccum wasn't updated, skip the write in the next line.
     _positionYieldLossData.update({
       positionId: positionId,
       token: token,
-      newPositionLossAccum: calculatedData.newStrategyLossAccum
+      newPositionLossAccum: calculatedData.newStrategyLossAccum,
+      newPositionCompleteLossEvents: calculatedData.strategyCompleteLossEvents
     });
+
+    uint8 strategyHadLoss = calculatedData.newStrategyLossAccum == YieldMath.LOSS_ACCUM_INITIAL ? 0 : 1;
+
     _strategyYieldData.update({
       strategyId: strategyId,
       token: token,
       newTotalBalance: newStrategyBalance,
       newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
-      newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
+      newStrategyHadLoss: strategyHadLoss
     });
     _positionYieldData.update({
       positionId: positionId,
       token: token,
       newPositionYieldAccum: calculatedData.newStrategyYieldAccum,
       newPositionBalance: calculatedData.positionBalance - withdrawn,
-      newPositionProccessedLossEvents: calculatedData.strategyCompleteLossEvents,
-      newShares: positionShares
+      newShares: positionShares,
+      newPositionHadLoss: strategyHadLoss
     });
   }
 

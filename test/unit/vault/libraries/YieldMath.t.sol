@@ -15,6 +15,7 @@ import {
 
 import {
   PositionYieldLossDataKey,
+  PositionYieldLossDataForToken,
   PositionYieldLossDataForTokenLibrary
 } from "../../../../src/vault/types/PositionYieldLossDataForToken.sol";
 
@@ -26,10 +27,10 @@ contract YieldMathTest is PRBTest, StdUtils {
   using Math for uint256;
   using Math for uint160;
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => uint256);
+  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
 
   mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal positionRegistry;
-  mapping(PositionYieldLossDataKey key => uint256 lossAmount) internal positionLossRegistry;
+  mapping(PositionYieldLossDataKey key => PositionYieldLossDataForToken lossAmount) internal positionLossRegistry;
 
   function testFuzz_calculateAccum_ZeroShares(
     uint256 currentBalance,
@@ -84,7 +85,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 0
     );
 
-    assertEq(newTotalLossAccum, YieldMath.LOSS_ACCUM_INITIAL.mulDiv(currentBalance, lastRecordedBalance));
+    assertEq(newTotalLossAccum, uint256(YieldMath.LOSS_ACCUM_INITIAL).mulDiv(currentBalance, lastRecordedBalance));
   }
 
   function testFuzz_calculateAccum_WithCompleteLoss(
@@ -124,7 +125,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       token: address(0),
       newPositionYieldAccum: initialAccum,
       newPositionBalance: previousBalance,
-      newPositionProccessedLossEvents: 0,
+      newPositionHadLoss: 0,
       newShares: positionShares
     });
 
@@ -170,7 +171,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       token: token,
       newPositionYieldAccum: newPositionYieldAccum,
       newPositionBalance: previousBalance,
-      newPositionProccessedLossEvents: 0,
+      newPositionHadLoss: 0,
       newShares: positionShares
     });
 

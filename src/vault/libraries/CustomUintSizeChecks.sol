@@ -9,20 +9,20 @@ library CustomUintSizeChecks {
   /// @notice Thrown when a value overflows
   error UintOverflowed(uint256 value, uint256 max);
 
-  uint256 private constant MAX_UINT_150 = 0x3fffffffffffffffffffffffffffffffffffff;
-  uint256 private constant MAX_UINT_102 = 0x3fffffffffffffffffffffffff;
-  uint256 private constant MAX_UINT_4 = 0xF;
+  uint256 private constant MAX_UINT_151 = 0x7fffffffffffffffffffffffffffffffffffff;
+  uint256 private constant MAX_UINT_104 = 0xffffffffffffffffffffffffff;
+  uint256 private constant MAX_UINT_1 = 0x1;
 
-  function assertFitsInUint150(uint256 value) internal pure {
-    _verifySize(value, MAX_UINT_150);
+  function assertFitsInUint151(uint256 value) internal pure {
+    _verifySize(value, MAX_UINT_151);
   }
 
-  function assertFitsInUint102(uint256 value) internal pure {
-    _verifySize(value, MAX_UINT_102);
+  function assertFitsInUint104(uint256 value) internal pure {
+    _verifySize(value, MAX_UINT_104);
   }
 
-  function assertFitsInUint4(uint256 value) internal pure {
-    _verifySize(value, MAX_UINT_4);
+  function assertFitsInUint1(uint256 value) internal pure {
+    _verifySize(value, MAX_UINT_1);
   }
 
   function _verifySize(uint256 value, uint256 max) private pure {

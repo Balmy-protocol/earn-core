@@ -10,7 +10,9 @@ import {
   PositionYieldDataForTokenLibrary
 } from "../types/PositionYieldDataForToken.sol";
 import {
-  PositionYieldLossDataKey, PositionYieldLossDataForTokenLibrary
+  PositionYieldLossDataKey,
+  PositionYieldLossDataForToken,
+  PositionYieldLossDataForTokenLibrary
 } from "../types/PositionYieldLossDataForToken.sol";
 // solhint-enable no-unused-import
 
@@ -18,7 +20,7 @@ library YieldMath {
   using SafeCast for uint256;
   using Math for uint256;
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => uint256);
+  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
 
   /**
    * @dev We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the
@@ -27,7 +29,7 @@ library YieldMath {
    */
   uint256 internal constant ACCUM_PRECISION = 1e33;
   // slither-disable-next-line unused-state
-  uint256 internal constant LOSS_ACCUM_INITIAL = type(uint256).max;
+  uint248 internal constant LOSS_ACCUM_INITIAL = type(uint248).max;
 
   /// @dev Used to represent a position being created
   uint256 internal constant POSITION_BEING_CREATED = 0;
@@ -36,7 +38,7 @@ library YieldMath {
    * @dev The maximum amount of loss events supported per strategy and token. After this threshold is met, then all
    *      balances will for that strategy and token will be reported as zero.
    */
-  uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = 15;
+  uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = 255;
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares
@@ -122,7 +124,7 @@ library YieldMath {
     uint256 strategyCompleteLossEvents,
     uint256 newStrategyYieldAccum,
     mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry,
-    mapping(PositionYieldLossDataKey => uint256) storage positionLossRegistry
+    mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken) storage positionLossRegistry
   )
     internal
     view
@@ -137,9 +139,10 @@ library YieldMath {
       return 0;
     }
 
-    (uint256 positionYieldAccum, uint256 positionBalance, uint256 positionProcessedCompleteLossEvents) =
+    (uint256 positionYieldAccum, uint256 positionBalance, uint256 positionHadLoss) =
       positionRegistry.read(positionId, token);
-    uint256 positionLossAccum = positionLossRegistry.read(positionId, token);
+    (uint256 positionLossAccum, uint256 positionProcessedCompleteLossEvents) =
+      positionHadLoss == 1 ? positionLossRegistry.read(positionId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
     if (positionProcessedCompleteLossEvents < strategyCompleteLossEvents) {
       positionBalance = 0;
       positionYieldAccum = 0;

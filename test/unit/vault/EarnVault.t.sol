@@ -764,15 +764,10 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_createPosition_CheckRewardsWithLoss_FilledMaxCompleteLosses() public {
-    uint8 positions = (YieldMath.MAX_COMPLETE_LOSS_EVENTS + 2) * 2;
     uint256 amountToDeposit1 = 100_000;
     uint256 amountToBurn = 1000;
     uint256 amountToReward = amountToBurn;
-    erc20.mint(address(this), amountToDeposit1 * positions);
-    uint256[] memory rewards = new uint256[](positions);
-    uint256[] memory shares = new uint256[](positions);
-    uint256 totalShares;
-    uint256 positionsCreated;
+    erc20.mint(address(this), type(uint256).max);
     INFTPermissions.PermissionSet[] memory permissions =
       PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.WITHDRAW_PERMISSION()));
     bytes memory misc = "1234";
@@ -783,30 +778,19 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId, EarnStrategyStateBalanceMock strategy) =
       strategyRegistry.deployStateStrategy(strategyTokens);
 
-    uint256 previousBalance;
-
     (uint256 positionId1,) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
-    positionsCreated++;
-    shares[0] = 10;
-    totalShares += shares[0];
-
+    uint256 losses;
     uint256[] memory balances1;
-    for (uint8 i = 1; i < positions - 1; i++) {
-      (,, balances1) = vault.position(positionId1);
-      previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
+    for (uint256 i = 1; losses <= uint256(YieldMath.MAX_COMPLETE_LOSS_EVENTS) + 1; i++) {
       vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
 
-      positionsCreated++;
       if (i % 2 == 0) {
         anotherErc20.burn(address(strategy), anotherErc20.balanceOf(address(strategy)));
+        losses++;
       } else {
-        assertApproxEqAbs(0, balances1[1], 1);
-
         anotherErc20.mint(address(strategy), amountToReward);
       }
-      shares[i] = 10;
-      totalShares += shares[i];
     }
 
     (,, balances1) = vault.position(positionId1);
