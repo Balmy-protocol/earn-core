@@ -626,21 +626,27 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     internal
   {
-    _strategyYieldLossData.update({
-      strategyId: strategyId,
-      token: token,
-      newStrategyLossAccum: calculatedData.newStrategyLossAccum,
-      newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
-    });
-    // TODO: If strategyLossAccum wasn't updated, skip the write in the next line.
-    _positionYieldLossData.update({
-      positionId: positionId,
-      token: token,
-      newPositionLossAccum: calculatedData.newStrategyLossAccum,
-      newPositionCompleteLossEvents: calculatedData.strategyCompleteLossEvents
-    });
+    uint8 strategyHadLoss;
 
-    uint8 strategyHadLoss = calculatedData.newStrategyLossAccum == YieldMath.LOSS_ACCUM_INITIAL ? 0 : 1;
+    if (
+      calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
+        || calculatedData.strategyCompleteLossEvents != 0
+    ) {
+      _strategyYieldLossData.update({
+        strategyId: strategyId,
+        token: token,
+        newStrategyLossAccum: calculatedData.newStrategyLossAccum,
+        newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
+      });
+      // TODO: If strategyLossAccum wasn't updated, skip the write in the next line.
+      _positionYieldLossData.update({
+        positionId: positionId,
+        token: token,
+        newPositionLossAccum: calculatedData.newStrategyLossAccum,
+        newPositionCompleteLossEvents: calculatedData.strategyCompleteLossEvents
+      });
+      strategyHadLoss = 1;
+    }
 
     _strategyYieldData.update({
       strategyId: strategyId,
