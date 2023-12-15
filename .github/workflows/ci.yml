@@ -63,8 +63,8 @@ jobs:
         with:
           version: nightly
 
-      - name: "Build the contracts and print their size"
-        run: "forge build --sizes"
+      - name: "Build the contracts"
+        run: "forge build"
 
       - name: "Add build summary"
         run: |

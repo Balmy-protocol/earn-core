@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StrategyId } from "../../types/StrategyId.sol";
 import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
 
 /**
  * @notice Stores yield data for a specific token, for all positions in a specific strategy
  * @dev Occupies 1 slot. Holds:
- *      - Yield accumulator: the yield accumulator for this specific strategy and token. Will use 150 bits
+ *      - Yield accumulator: the yield accumulator for this specific strategy and token. Will use 151 bits
  *      - Last recorded balance: the last recorded total balance reported by the strategy. This value is used to
  *        understand how much yield was generated when we ask for the total balance in the future. Will use
- *        102 bits
- *      - Complete loss events: total number of reported complete loss events. Will use 4 bits.
+ *        104 bits
+ *      - Strategy had loss: indicates if the strategy ever had a loss. Will use 1 bit
  *      To understand why we chose these variable sizes, please refer to the [README](../README.md).
  */
 type StrategyYieldDataForToken is uint256;
@@ -21,6 +22,7 @@ type StrategyYieldDataKey is bytes32;
 
 library StrategyYieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
+  using SafeCast for uint256;
 
   /**
    * @notice Reads total yield data from storage
@@ -32,7 +34,7 @@ library StrategyYieldDataForTokenLibrary {
   )
     internal
     view
-    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, uint256 strategyCompleteLossEvents)
+    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool strategyHadLoss)
   {
     return _decode(totalYieldData[_keyFrom(strategyId, token)]);
   }
@@ -46,7 +48,7 @@ library StrategyYieldDataForTokenLibrary {
     address token,
     uint256 newTotalBalance,
     uint256 newStrategyYieldAccum,
-    uint256 newStrategyCompleteLossEvents
+    bool newStrategyHadLoss
   )
     internal
   {
@@ -55,35 +57,34 @@ library StrategyYieldDataForTokenLibrary {
     totalYieldData[_keyFrom(strategyId, token)] = _encode({
       yieldAccumulator: newStrategyYieldAccum,
       recordedBalance: newTotalBalance,
-      strategyCompleteLossEvents: newStrategyCompleteLossEvents
+      strategyHadLoss: newStrategyHadLoss ? 1 : 0
     });
   }
 
   function _decode(StrategyYieldDataForToken encoded)
     private
     pure
-    returns (uint256 yieldAccumulator, uint256 recordedBalance, uint256 strategyCompleteLossEvents)
+    returns (uint256 yieldAccumulator, uint256 recordedBalance, bool strategyHadLoss)
   {
     uint256 unwrapped = StrategyYieldDataForToken.unwrap(encoded);
-    yieldAccumulator = unwrapped >> 106;
-    recordedBalance = (unwrapped >> 4) & 0x3fffffffffffffffffffffffff;
-    strategyCompleteLossEvents = unwrapped & 0xF;
+    yieldAccumulator = unwrapped >> 105;
+    recordedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
+    strategyHadLoss = unwrapped & 0x1 == 1;
   }
 
   function _encode(
     uint256 yieldAccumulator,
     uint256 recordedBalance,
-    uint256 strategyCompleteLossEvents
+    uint256 strategyHadLoss
   )
     private
     pure
     returns (StrategyYieldDataForToken)
   {
-    yieldAccumulator.assertFitsInUint150();
-    recordedBalance.assertFitsInUint102();
-    strategyCompleteLossEvents.assertFitsInUint4();
-    return
-      StrategyYieldDataForToken.wrap((yieldAccumulator << 106) | (recordedBalance << 4) | strategyCompleteLossEvents);
+    yieldAccumulator.assertFitsInUint151();
+    // slither-disable-next-line unused-return
+    recordedBalance.toUint104();
+    return StrategyYieldDataForToken.wrap((yieldAccumulator << 105) | (recordedBalance << 1) | strategyHadLoss);
   }
 
   function _keyFrom(StrategyId strategyId, address token) internal pure returns (StrategyYieldDataKey) {

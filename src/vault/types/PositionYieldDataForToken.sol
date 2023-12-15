@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
 
 /**
- * @notice Stores yield data for a specific token, for all positions in a specific strategy
+ * @notice Stores yield data for a specific token and position
  * @dev Occupies 1 slot. Holds:
- *      - Base yield accumulator: the yield accumulator when the position was last updated. Will use 150 bits
- *      - Pre-accounted balance: balance already accounted for. Will use 102 bits
- *      - Position complete loss events: number of complete loss events processed for the position. Will use 4 bits.
+ *      - Base yield accumulator: the yield accumulator when the position was last updated. Will use 151 bits
+ *      - Pre-accounted balance: balance already accounted for. Will use 104 bits
+ *      - Position had loss: indicates if the position ever had a loss. Will use 1 bit
  *      To understand why we chose these variable sizes, please refer to the [README](../README.md).
  */
 type PositionYieldDataForToken is uint256;
@@ -18,6 +19,7 @@ type PositionYieldDataKey is bytes32;
 
 library PositionYieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
+  using SafeCast for uint256;
 
   PositionYieldDataForToken private constant EMPTY_DATA = PositionYieldDataForToken.wrap(0);
 
@@ -31,7 +33,7 @@ library PositionYieldDataForTokenLibrary {
   )
     internal
     view
-    returns (uint256 baseAccumulator, uint256 preAccountedBalance, uint256 proccessedLossEvents)
+    returns (uint256 baseAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
   {
     return _decode(positionYieldData[_keyFrom(positionId, token)]);
   }
@@ -45,7 +47,7 @@ library PositionYieldDataForTokenLibrary {
     address token,
     uint256 newPositionYieldAccum,
     uint256 newPositionBalance,
-    uint256 newPositionProccessedLossEvents,
+    bool newPositionHadLoss,
     uint256 newShares
   )
     internal
@@ -59,7 +61,7 @@ library PositionYieldDataForTokenLibrary {
       positionYieldData[_keyFrom(positionId, token)] = _encode({
         baseYieldAccumulator: newPositionYieldAccum,
         preAccountedBalance: newPositionBalance,
-        positionProcessedCompleteLossEvents: newPositionProccessedLossEvents
+        newPositionHadLoss: newPositionHadLoss ? 1 : 0
       });
     }
   }
@@ -67,29 +69,28 @@ library PositionYieldDataForTokenLibrary {
   function _decode(PositionYieldDataForToken encoded)
     private
     pure
-    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, uint256 positionProcessedCompleteLossEvents)
+    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
   {
     uint256 unwrapped = PositionYieldDataForToken.unwrap(encoded);
-    baseYieldAccumulator = unwrapped >> 106;
-    preAccountedBalance = (unwrapped >> 4) & 0x3fffffffffffffffffffffffff;
-    positionProcessedCompleteLossEvents = unwrapped & 0xF;
+    baseYieldAccumulator = unwrapped >> 105;
+    preAccountedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
+    positionHadLoss = unwrapped & 0x1 == 1;
   }
 
   function _encode(
     uint256 baseYieldAccumulator,
     uint256 preAccountedBalance,
-    uint256 positionProcessedCompleteLossEvents
+    uint256 newPositionHadLoss
   )
     private
     pure
     returns (PositionYieldDataForToken)
   {
-    baseYieldAccumulator.assertFitsInUint150();
-    preAccountedBalance.assertFitsInUint102();
-    positionProcessedCompleteLossEvents.assertFitsInUint4();
-    return PositionYieldDataForToken.wrap(
-      (baseYieldAccumulator << 106) | (preAccountedBalance << 4) | positionProcessedCompleteLossEvents
-    );
+    baseYieldAccumulator.assertFitsInUint151();
+    // slither-disable-next-line unused-return
+    preAccountedBalance.toUint104();
+    return
+      PositionYieldDataForToken.wrap((baseYieldAccumulator << 105) | (preAccountedBalance << 1) | newPositionHadLoss);
   }
 
   function _keyFrom(uint256 positionId, address token) internal pure returns (PositionYieldDataKey) {
