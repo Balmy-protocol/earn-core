@@ -121,9 +121,9 @@ You can refer to [this file](./types/Storage.sol) to understand the different va
 
 #### Position Balance
 
-We believe that with 102 bits, we can store a strategy's balance. Assuming 18 decimals, we can store up to _5e11_ units
+We believe that with 104 bits, we can store a strategy's balance. Assuming 18 decimals, we can store up to _2e13_ units
 of tokens in it, which is enough to cover the entire circulating supply of ~95% of the top 1000 tokens in CoinMarketCap
-right now (Sep 20, 2023), except for mostly meme coins. At the same time, it's enough to cover up to 1.5% of _$PEPE_'s
+right now (Dec 15, 2023), except for mostly meme coins. At the same time, it's enough to cover up to 5% of _$PEPE_'s
 circulating supply, which is good enough for a single strategy. Let's remember that if a strategy is filled, then an
 exact copy can be deployed to manage more funds.
 
@@ -184,7 +184,7 @@ $$
 
 If the total amount of assets is over _1e30_, then we might start to lose some precision. With 18 decimals, that's
 _1e12_ units of tokens we can have deposited on the strategy. To put it in easier terms, a single strategy would have to
-hold more than 0.25% of _$PEPE_'s circulating supply (Sep 20, 2023) before a wei is lost due to precision 🫡
+hold more than 0.25% of _$PEPE_'s circulating supply (Dec 15, 2023) before a wei is lost due to precision 🫡
 
 ##### Worst case analysis: overflow scenario
 
@@ -200,8 +200,8 @@ scenario of one update per block, we have:
 $$
 \begin{align}
 max\_size(update) & < \frac{total\_space}{max\_amount(updates)} \notag \\
-& < \frac{2^{150}}{3.154e8} \notag \\
-& < 4.52e36 \notag \\
+& < \frac{2^{151}}{3.154e8} \notag \\
+& < 9.05e36 \notag \\
 \end{align}
 $$
 
@@ -210,8 +210,8 @@ So, we know that:
 $$
 \begin{align}
 \frac{yielded * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
-\frac{yielded * 1e33}{total(shares)} & < 4.52e36 \notag \\
-\frac{yielded}{total(shares)} & < 4520  \notag \\
+\frac{yielded * 1e33}{total(shares)} & < 9.05e36 \notag \\
+\frac{yielded}{total(shares)} & < 9050  \notag \\
 \end{align}
 $$
 
@@ -220,19 +220,18 @@ So we have `10 * 1e6 * 1e3` shares, which is _1e10_.
 
 $$
 \begin{align}
-yielded / total(shares) & < 4520  \notag \\
-yielded / 1e10 & < 4520  \notag \\
-yielded & < 4520 * 1e10  \notag \\
-yielded & < 4.52e13  \notag \\
+yielded / total(shares) & < 9050  \notag \\
+yielded / 1e10 & < 9050  \notag \\
+yielded & < 9050 * 1e10  \notag \\
+yielded & < 9.05e13  \notag \\
 \end{align}
 $$
 
-This means that if 10 USDC worth of tokens generate less than _4.52e13_ worth of tokens **per second**, then we have at
+This means that if 10 USDC worth of tokens generate less than _9.05e13_ worth of tokens **per second**, then we have at
 least 10 years before the accum overflows.
 
-To put it in _$OP_ terms (known for its use as a reward), that would be
-$0.00006 (Sep 20, 2023) usd per second, which would
-be $5.2 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
+To put it in _$OP_ terms (known for its use as a reward), that would be 0, 0002 (Dec 15, 2023) usd per second, which
+would be $17 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
 but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.

@@ -125,11 +125,11 @@ contract YieldMathTest is PRBTest, StdUtils {
       token: address(0),
       newPositionYieldAccum: initialAccum,
       newPositionBalance: previousBalance,
-      newPositionHadLoss: 0,
+      newPositionHadLoss: false,
       newShares: positionShares
     });
 
-    (, uint256 lastRecordedTotalBalance, uint256 totalLossEvents) = positionRegistry.read(1, address(0));
+    (, uint256 lastRecordedTotalBalance,) = positionRegistry.read(1, address(0));
     uint256 totalLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
 
     uint256 currentBalance = YieldMath.calculateBalance(
@@ -139,7 +139,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       lastRecordedTotalBalance,
       totalBalance,
       totalLossAccum,
-      totalLossEvents,
+      0,
       newPositionYieldAccum,
       positionRegistry,
       positionLossRegistry
@@ -171,11 +171,11 @@ contract YieldMathTest is PRBTest, StdUtils {
       token: token,
       newPositionYieldAccum: newPositionYieldAccum,
       newPositionBalance: previousBalance,
-      newPositionHadLoss: 0,
+      newPositionHadLoss: false,
       newShares: positionShares
     });
 
-    (, uint256 lastRecordedTotalBalance, uint256 strategyCompleteLossEvents) = positionRegistry.read(1, token);
+    (, uint256 lastRecordedTotalBalance,) = positionRegistry.read(1, token);
     uint256 totalLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
 
     uint256 currentBalance = YieldMath.calculateBalance({
@@ -185,7 +185,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       lastRecordedBalance: lastRecordedTotalBalance,
       totalBalance: totalBalance,
       newStrategyLossAccum: totalLossAccum,
-      strategyCompleteLossEvents: strategyCompleteLossEvents,
+      strategyCompleteLossEvents: 0,
       newStrategyYieldAccum: newPositionYieldAccum,
       positionRegistry: positionRegistry,
       positionLossRegistry: positionLossRegistry

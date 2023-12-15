@@ -38,7 +38,7 @@ library YieldMath {
    * @dev The maximum amount of loss events supported per strategy and token. After this threshold is met, then all
    *      balances will for that strategy and token will be reported as zero.
    */
-  uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = 255;
+  uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = type(uint8).max;
 
   /**
    * @notice Calculates the new yield accum based on the yielded amount and amount of shares
@@ -139,10 +139,10 @@ library YieldMath {
       return 0;
     }
 
-    (uint256 positionYieldAccum, uint256 positionBalance, uint256 positionHadLoss) =
+    (uint256 positionYieldAccum, uint256 positionBalance, bool positionHadLoss) =
       positionRegistry.read(positionId, token);
     (uint256 positionLossAccum, uint256 positionProcessedCompleteLossEvents) =
-      positionHadLoss == 1 ? positionLossRegistry.read(positionId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
+      positionHadLoss ? positionLossRegistry.read(positionId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
     if (positionProcessedCompleteLossEvents < strategyCompleteLossEvents) {
       positionBalance = 0;
       positionYieldAccum = 0;

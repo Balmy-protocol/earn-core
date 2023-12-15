@@ -37,7 +37,7 @@ library PositionYieldLossDataForTokenLibrary {
     PositionYieldLossDataForToken memory positionYieldLossDataForToken =
       positionYieldLossData[_keyFrom(positionId, token)];
     if (positionYieldLossDataForToken.positionLossAccum == 0) {
-      positionYieldLossDataForToken.positionLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
+      return (YieldMath.LOSS_ACCUM_INITIAL, positionYieldLossDataForToken.positionCompleteLossEvents);
     }
     return (positionYieldLossDataForToken.positionLossAccum, positionYieldLossDataForToken.positionCompleteLossEvents);
   }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
 
 /**
@@ -18,6 +19,7 @@ type PositionYieldDataKey is bytes32;
 
 library PositionYieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
+  using SafeCast for uint256;
 
   PositionYieldDataForToken private constant EMPTY_DATA = PositionYieldDataForToken.wrap(0);
 
@@ -31,7 +33,7 @@ library PositionYieldDataForTokenLibrary {
   )
     internal
     view
-    returns (uint256 baseAccumulator, uint256 preAccountedBalance, uint256 processedLossEvents)
+    returns (uint256 baseAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
   {
     return _decode(positionYieldData[_keyFrom(positionId, token)]);
   }
@@ -45,7 +47,7 @@ library PositionYieldDataForTokenLibrary {
     address token,
     uint256 newPositionYieldAccum,
     uint256 newPositionBalance,
-    uint256 newPositionHadLoss,
+    bool newPositionHadLoss,
     uint256 newShares
   )
     internal
@@ -59,7 +61,7 @@ library PositionYieldDataForTokenLibrary {
       positionYieldData[_keyFrom(positionId, token)] = _encode({
         baseYieldAccumulator: newPositionYieldAccum,
         preAccountedBalance: newPositionBalance,
-        newPositionHadLoss: newPositionHadLoss
+        newPositionHadLoss: newPositionHadLoss ? 1 : 0
       });
     }
   }
@@ -67,12 +69,12 @@ library PositionYieldDataForTokenLibrary {
   function _decode(PositionYieldDataForToken encoded)
     private
     pure
-    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, uint256 positionHadLoss)
+    returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
   {
     uint256 unwrapped = PositionYieldDataForToken.unwrap(encoded);
     baseYieldAccumulator = unwrapped >> 105;
     preAccountedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
-    positionHadLoss = unwrapped & 0x1;
+    positionHadLoss = unwrapped & 0x1 == 1;
   }
 
   function _encode(
@@ -85,8 +87,7 @@ library PositionYieldDataForTokenLibrary {
     returns (PositionYieldDataForToken)
   {
     baseYieldAccumulator.assertFitsInUint151();
-    preAccountedBalance.assertFitsInUint104();
-    newPositionHadLoss.assertFitsInUint1();
+    preAccountedBalance.toUint104();
     return
       PositionYieldDataForToken.wrap((baseYieldAccumulator << 105) | (preAccountedBalance << 1) | newPositionHadLoss);
   }

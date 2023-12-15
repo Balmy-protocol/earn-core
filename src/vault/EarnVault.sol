@@ -433,11 +433,11 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     view
     returns (CalculatedDataForToken memory calculatedData)
   {
-    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, uint256 strategyHadLoss) =
+    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, bool strategyHadLoss) =
       _strategyYieldData.read(strategyId, token);
 
     (uint256 strategyLossAccum, uint256 strategyCompleteLossEvents) =
-      strategyHadLoss == 1 ? _strategyYieldLossData.read(strategyId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
+      strategyHadLoss ? _strategyYieldLossData.read(strategyId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
 
     (
       calculatedData.newStrategyYieldAccum,
@@ -626,7 +626,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     internal
   {
-    uint8 strategyHadLoss;
+    bool strategyHadLoss;
 
     if (
       calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
@@ -645,7 +645,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         newPositionLossAccum: calculatedData.newStrategyLossAccum,
         newPositionCompleteLossEvents: calculatedData.strategyCompleteLossEvents
       });
-      strategyHadLoss = 1;
+      strategyHadLoss = true;
     }
 
     _strategyYieldData.update({

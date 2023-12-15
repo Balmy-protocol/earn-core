@@ -37,7 +37,7 @@ library StrategyYieldLossDataForTokenLibrary {
     StrategyYieldLossDataForToken memory strategyYieldLossDataForToken =
       strategyYieldLossData[_keyFrom(strategyId, token)];
     if (strategyYieldLossDataForToken.strategyLossAccum == 0) {
-      strategyYieldLossDataForToken.strategyLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
+      return (YieldMath.LOSS_ACCUM_INITIAL, strategyYieldLossDataForToken.strategyCompleteLossEvents);
     }
     return (strategyYieldLossDataForToken.strategyLossAccum, strategyYieldLossDataForToken.strategyCompleteLossEvents);
   }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.0;
 
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StrategyId } from "../../types/StrategyId.sol";
 import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
 
@@ -21,6 +22,7 @@ type StrategyYieldDataKey is bytes32;
 
 library StrategyYieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
+  using SafeCast for uint256;
 
   /**
    * @notice Reads total yield data from storage
@@ -32,7 +34,7 @@ library StrategyYieldDataForTokenLibrary {
   )
     internal
     view
-    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, uint256 strategyHadLoss)
+    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool strategyHadLoss)
   {
     return _decode(totalYieldData[_keyFrom(strategyId, token)]);
   }
@@ -46,7 +48,7 @@ library StrategyYieldDataForTokenLibrary {
     address token,
     uint256 newTotalBalance,
     uint256 newStrategyYieldAccum,
-    uint256 newStrategyHadLoss
+    bool newStrategyHadLoss
   )
     internal
   {
@@ -55,19 +57,19 @@ library StrategyYieldDataForTokenLibrary {
     totalYieldData[_keyFrom(strategyId, token)] = _encode({
       yieldAccumulator: newStrategyYieldAccum,
       recordedBalance: newTotalBalance,
-      strategyHadLoss: newStrategyHadLoss
+      strategyHadLoss: newStrategyHadLoss ? 1 : 0
     });
   }
 
   function _decode(StrategyYieldDataForToken encoded)
     private
     pure
-    returns (uint256 yieldAccumulator, uint256 recordedBalance, uint256 strategyHadLoss)
+    returns (uint256 yieldAccumulator, uint256 recordedBalance, bool strategyHadLoss)
   {
     uint256 unwrapped = StrategyYieldDataForToken.unwrap(encoded);
     yieldAccumulator = unwrapped >> 105;
     recordedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
-    strategyHadLoss = unwrapped & 0x1;
+    strategyHadLoss = unwrapped & 0x1 == 1;
   }
 
   function _encode(
@@ -80,8 +82,7 @@ library StrategyYieldDataForTokenLibrary {
     returns (StrategyYieldDataForToken)
   {
     yieldAccumulator.assertFitsInUint151();
-    recordedBalance.assertFitsInUint104();
-    strategyHadLoss.assertFitsInUint1();
+    recordedBalance.toUint104();
     return StrategyYieldDataForToken.wrap((yieldAccumulator << 105) | (recordedBalance << 1) | strategyHadLoss);
   }
 
