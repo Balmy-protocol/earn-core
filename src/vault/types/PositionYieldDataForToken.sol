@@ -87,6 +87,7 @@ library PositionYieldDataForTokenLibrary {
     returns (PositionYieldDataForToken)
   {
     baseYieldAccumulator.assertFitsInUint151();
+    // slither-disable-next-line unused-return
     preAccountedBalance.toUint104();
     return
       PositionYieldDataForToken.wrap((baseYieldAccumulator << 105) | (preAccountedBalance << 1) | newPositionHadLoss);

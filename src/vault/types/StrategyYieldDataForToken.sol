@@ -82,6 +82,7 @@ library StrategyYieldDataForTokenLibrary {
     returns (StrategyYieldDataForToken)
   {
     yieldAccumulator.assertFitsInUint151();
+    // slither-disable-next-line unused-return
     recordedBalance.toUint104();
     return StrategyYieldDataForToken.wrap((yieldAccumulator << 105) | (recordedBalance << 1) | strategyHadLoss);
   }

@@ -626,8 +626,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     internal
   {
-    bool strategyHadLoss;
-
+    bool strategyHadLoss = false;
     if (
       calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
         || calculatedData.strategyCompleteLossEvents != 0
