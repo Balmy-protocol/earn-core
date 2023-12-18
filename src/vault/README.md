@@ -331,11 +331,11 @@ Moment 3
 - lossAccum = 0.25
 
 How much is assigned to each user?
-- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
        = (0.5 - 0 * 0.25) * 100 = 50
-- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.5 - 1 * 0.25) * 200 = 50
-- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.5 - 2 * 0.25) * 100 = 0
 
 Moment 4:
@@ -344,11 +344,11 @@ Moment 4:
              = 0.5 + 100 OP / 400
              = 0.75
 
-- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
        = (0.75 - 0 * 0.25) * 100 = 75
-- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.75 - 1 * 0.25) * 200 = 100
-- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.75 - 2 * 0.25) * 100 = 25
 
 Moment 5:
@@ -357,11 +357,11 @@ Moment 5:
              = 0.75 + 200 OP / 400
              = 1.25
 
-- John = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
        = (1.25 - 0 * 0.25) * 100 = 125
-- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (1.25 - 1 * 0.25) * 200 = 200
-- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (1.25 - 2 * 0.25) * 100 = 75
 
 Moment 6:
@@ -375,9 +375,9 @@ Moment 6:
 
 - John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
        = (0.25 - 0 * 0.05) * 100 = 25
-- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.25 - 1 * 0.05) * 200 = 40
-- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.25 - 2 * 0.05) * 100 = 15
 
 Moment 7:
@@ -386,11 +386,11 @@ Moment 7:
              = 0.25 + 80 / 800 = 0.35
 - John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
        = (0.35 - 0 * (0.05 / 1)) * 100 = 35
-- Peter = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.35 - 1 * (0.05 / 1)) * 200 = 60
-- Alice = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.35 - 2 * (0.05 / 1)) * 100 = 25
-- Joseph = (yieldAccum - yieldAccumInitial * lossAccum) * shares
+- Joseph = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
         = (0.35 - 0.25 * (0.05 / 0.05)) * 400 = 40
 ```
 
@@ -403,13 +403,14 @@ better.
 #### Storing Complete Losses
 
 We just described how to take losses into account when calculate a position's balance for reward tokens. However, when a
-complete loss occurs, the loss accumulator multiplies down to zero and stays there. The approach requires storing a
-counter to track when there was a complete loss, so that each position can compare over them and calculate the
-position's balance after the complete loss has been accounted for.
+complete loss occurs, the loss accumulator multiplies down to zero and stays there. Our solution requires storing a
+counter to track when there was a complete loss, so that each position can compare their own counter against the
+strategy's counter. Then, after the complete loss has been accounted for, we can calculate the position's balance
+normally.
 
-We will leave it **up to each strategy to try to avoid complete losses as much as possible**. The vault is prepared to
-support **up to 15** complete loss events per token, for each strategy. This should be enough to cover for unexpected
-circumstances such as hacks, but it's very important that the strategy avoids complete losses as much as possible.
+The vault is prepared to support **up to 255** complete loss events per token, for each strategy. This should be enough
+to cover for unexpected circumstances such as hacks, but it's very important that the strategy avoids complete losses as
+much as possible.
 
-After the 15 complete losses limit has been reached, the vault will simply set all position balances to zero. It will be
-up to each strategy to distribute any left funds in a way they deem fit.
+After the 255 complete losses limit has been reached, the vault will simply set all position balances to zero. It will
+be up to each strategy to distribute any left funds in a way they deem fit.
