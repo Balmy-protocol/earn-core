@@ -599,10 +599,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     if (shares == 0) {
       // solhint-disable-next-line no-empty-blocks
       if (action == UpdateAction.DEPOSIT) {
-        // If we get to this point, then the user deposited a non-zero amount of assets and is getting zero shares in
-        // return. We don't want this to happen, so we'll revert
-        // TODO: implement and add test for this scenario
-        // revert ZeroSharesDeposit();
+        revert ZeroSharesDeposit();
       } else {
         return positionShares;
       }

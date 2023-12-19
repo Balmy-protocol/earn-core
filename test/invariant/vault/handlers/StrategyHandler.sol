@@ -30,7 +30,8 @@ contract StrategyHandler is StdUtils {
   function increaseBalance(uint256 tokenIndex, uint48 toIncrease) external {
     address token = _findTokenWithIndex(tokenIndex);
     uint104 previousBalance = _strategy.tokenBalance(token);
-    toIncrease = uint48(bound(toIncrease, 0, Math.min(type(uint104).max - previousBalance, MAX_BALANCE_DIFF)));
+    // We need to limit balance increments to prevent a zero share deposit.
+    toIncrease = uint48(bound(toIncrease, 0, Math.min(previousBalance, MAX_BALANCE_DIFF)));
     _updateBalance(token, previousBalance + toIncrease);
   }
 
