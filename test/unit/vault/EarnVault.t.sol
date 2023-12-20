@@ -129,6 +129,28 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
   }
 
+  function test_createPosition_RevertWhen_ZeroSharesDeposit() public {
+    uint256 amountToDeposit1 = 1720;
+    uint256 amountToReward = type(uint152).max;
+    uint256 amountToDeposit2 = 1;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(address(vault), amountToDeposit1 + amountToDeposit2);
+
+    (StrategyId strategyId, IEarnStrategy strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit1 + amountToDeposit2);
+    vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc);
+
+    erc20.mint(address(strategy), amountToReward);
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector));
+    vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc);
+  }
+
   function test_createPosition_RevertWhen_UsingFullDepositWithNative() public {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
@@ -1266,6 +1288,31 @@ contract EarnVaultTest is PRBTest, StdUtils {
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
 
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroAmountDeposit.selector));
+    vm.prank(operator);
+    vault.increasePosition(positionId, address(erc20), amountToIncrease);
+  }
+
+  function test_increasePosition_RevertWhen_ZeroSharesDeposit() public {
+    uint256 amountToDeposit = 1720;
+    uint256 amountToReward = type(uint152).max;
+    uint256 amountToIncrease = 1;
+    INFTPermissions.PermissionSet[] memory permissions =
+      PermissionUtils.buildPermissionSet(operator, PermissionUtils.permissions(vault.INCREASE_PERMISSION()));
+    bytes memory misc = "1234";
+
+    vm.prank(address(operator));
+    erc20.approve(address(vault), amountToDeposit + amountToIncrease);
+
+    (StrategyId strategyId, IEarnStrategy strategy) =
+      strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+
+    erc20.mint(address(this), amountToDeposit);
+    (uint256 positionId,) =
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc);
+
+    erc20.mint(address(strategy), amountToReward);
+    erc20.mint(address(operator), amountToIncrease);
+    vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector));
     vm.prank(operator);
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
   }
