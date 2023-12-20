@@ -56,8 +56,6 @@ library PositionYieldDataForTokenLibrary {
       // This is a small optimization that allows us to clear the slot for gas savings
       positionYieldData[_keyFrom(positionId, token)] = EMPTY_DATA;
     } else {
-      // TODO: make some gas tests to understand gas savings if we remember the previous value and compare it before
-      // writing
       positionYieldData[_keyFrom(positionId, token)] = _encode({
         baseYieldAccumulator: newPositionYieldAccum,
         preAccountedBalance: newPositionBalance,

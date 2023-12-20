@@ -52,8 +52,6 @@ library StrategyYieldDataForTokenLibrary {
   )
     internal
   {
-    // TODO: make some gas tests to understand gas savings if we remember the previous value and compare it before
-    // writing
     totalYieldData[_keyFrom(strategyId, token)] = _encode({
       yieldAccumulator: newStrategyYieldAccum,
       recordedBalance: newTotalBalance,
