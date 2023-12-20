@@ -256,7 +256,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     // slither-disable-next-line unused-return
     (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
 
-    // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
     _updateAccounting({
       positionId: positionId,
       strategyId: strategyId,
@@ -312,7 +311,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     // slither-disable-next-line unused-return
     (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();
 
-    // TODO: balancesAfterUpdate won't be needed if we support unlimited losses
     _updateAccounting({
       positionId: positionId,
       strategyId: strategyId,
@@ -637,7 +635,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         newStrategyLossAccum: calculatedData.newStrategyLossAccum,
         newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
       });
-      // TODO: If strategyLossAccum wasn't updated, skip the write in the next line.
       _positionYieldLossData.update({
         positionId: positionId,
         token: token,
