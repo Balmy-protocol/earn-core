@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { AccessControlDefaultAdminRules } from
   "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
@@ -38,11 +38,8 @@ contract GlobalEarnConfig is IGlobalEarnConfig, AccessControlDefaultAdminRules {
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
-    for (uint256 i; i < accounts.length;) {
+    for (uint256 i; i < accounts.length; ++i) {
       _grantRole(role, accounts[i]);
-      unchecked {
-        ++i;
-      }
     }
   }
 }

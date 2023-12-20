@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { IDelayedWithdrawalAdapter } from "../../interfaces/IDelayedWithdrawalAdapter.sol";
 
@@ -84,11 +84,8 @@ library RegisteredAdaptersLibrary {
   )
     internal
   {
-    for (uint256 i = start; i < end;) {
+    for (uint256 i = start; i < end; ++i) {
       delete registeredAdapters[i];
-      unchecked {
-        ++i;
-      }
     }
   }
 }

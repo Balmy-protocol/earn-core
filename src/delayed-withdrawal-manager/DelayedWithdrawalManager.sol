@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { IDelayedWithdrawalManager, IEarnVault } from "../interfaces/IDelayedWithdrawalManager.sol";
 import { IDelayedWithdrawalAdapter } from "../interfaces/IDelayedWithdrawalAdapter.sol";
@@ -72,7 +72,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     estimatedPending = new uint256[](tokensQuantity);
     withdrawable = new uint256[](tokensQuantity);
     // slither-disable-start calls-loop
-    for (uint256 i; i < tokensQuantity;) {
+    for (uint256 i; i < tokensQuantity; ++i) {
       address token = tokens[i];
       mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
         _registeredAdapters.get(positionId, token);
@@ -88,9 +88,6 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
           }
         }
         shouldContinue = adapter.isNextFilled;
-      }
-      unchecked {
-        ++i;
       }
       // slither-disable-end calls-loop
     }

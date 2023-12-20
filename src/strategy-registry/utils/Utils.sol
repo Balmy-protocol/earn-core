@@ -1,5 +1,5 @@
   // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 library Utils {
   /**
@@ -11,22 +11,16 @@ library Utils {
   function isSupersetOf(address[] memory superset, address[] memory subset) public pure returns (bool) {
     if (superset.length < subset.length) return false;
 
-    for (uint256 i = 0; i < subset.length;) {
+    for (uint256 i = 0; i < subset.length; ++i) {
       address token1 = subset[i];
       bool exists = false;
-      for (uint256 j = 0; j < superset.length;) {
+      for (uint256 j = 0; j < superset.length; ++j) {
         if (token1 == superset[j]) {
           exists = true;
           break;
         }
-        unchecked {
-          ++j;
-        }
       }
       if (!exists) return false;
-      unchecked {
-        ++i;
-      }
     }
 
     return true;
