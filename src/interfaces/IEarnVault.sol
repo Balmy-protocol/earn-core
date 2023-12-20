@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.22;
+pragma solidity >=0.8.8;
 
 import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { IEarnStrategyRegistry } from "../interfaces/IEarnStrategyRegistry.sol";
