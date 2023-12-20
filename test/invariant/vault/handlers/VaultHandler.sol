@@ -9,6 +9,8 @@ import { IEarnVault, StrategyId } from "../../../../src/vault/EarnVault.sol";
 import { SpecialWithdrawalCode } from "../../../../src/types/SpecialWithdrawals.sol";
 
 import { EarnStrategyCustomBalanceMock } from "../../../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
+// solhint-disable no-empty-blocks
+// solhint-disable reason-string
 
 contract VaultHandler is StdUtils {
   using SafeCast for uint256;
@@ -35,9 +37,13 @@ contract VaultHandler is StdUtils {
 
     address depositToken = _findTokenWithIndex(depositTokenIndex);
 
-    _vault.createPosition(
+    try _vault.createPosition(
       _strategyId, depositToken, depositAmount, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
-    );
+    ) returns (uint256, uint256) { } catch (bytes memory err) {
+      if (keccak256(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector)) != keccak256(err)) {
+        revert();
+      }
+    }
   }
 
   function withdraw(uint256 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
@@ -90,7 +96,12 @@ contract VaultHandler is StdUtils {
         // available
 
       address depositToken = _findTokenWithIndex(depositTokenIndex);
-      _vault.increasePosition({ positionId: positionId, depositToken: depositToken, depositAmount: depositAmount });
+      try _vault.increasePosition({ positionId: positionId, depositToken: depositToken, depositAmount: depositAmount })
+      returns (uint256) { } catch (bytes memory err) {
+        if (keccak256(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector)) != keccak256(err)) {
+          revert();
+        }
+      }
     }
   }
 
