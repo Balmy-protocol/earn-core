@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 /// @notice Calculated data in the context of a position and token
 struct CalculatedDataForToken {
@@ -27,11 +27,8 @@ library CalculatedDataLibrary {
     returns (uint256[] memory balances)
   {
     balances = new uint256[](calculatedData.length);
-    for (uint256 i = 0; i < calculatedData.length;) {
+    for (uint256 i = 0; i < calculatedData.length; ++i) {
       balances[i] = calculatedData[i].positionBalance;
-      unchecked {
-        ++i;
-      }
     }
   }
 }

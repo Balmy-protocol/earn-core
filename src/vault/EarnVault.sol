@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -404,7 +404,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       totalShares: totalShares,
       rounding: Math.Rounding.Floor
     });
-    for (uint256 i = 1; i < tokens.length;) {
+    for (uint256 i = 1; i < tokens.length; ++i) {
       calculatedData[i] = _calculateAllDataForRewardToken({
         positionId: positionId,
         strategyId: strategyId,
@@ -413,9 +413,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         token: tokens[i],
         totalBalance: totalBalances[i]
       });
-      unchecked {
-        ++i;
-      }
     }
   }
 
@@ -475,7 +472,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (uint256[] memory withdrawn)
   {
     withdrawn = new uint256[](intendedWithdraw.length);
-    for (uint256 i = 0; i < tokensToWithdraw.length;) {
+    for (uint256 i = 0; i < tokensToWithdraw.length; ++i) {
       if (tokensToWithdraw[i] != tokens[i]) {
         revert InvalidWithdrawInput();
       }
@@ -484,9 +481,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         revert InsufficientFunds();
       }
       withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
-      unchecked {
-        ++i;
-      }
     }
   }
 
@@ -560,7 +554,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       action: action
     });
 
-    for (uint256 i = 1; i < calculatedData.length;) {
+    for (uint256 i = 1; i < calculatedData.length; ++i) {
       _updateAccountingForRewardToken({
         positionId: positionId,
         strategyId: strategyId,
@@ -570,9 +564,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
         withdrawn: updateAmounts[i],
         newStrategyBalance: balancesAfterUpdate[i]
       });
-      unchecked {
-        ++i;
-      }
     }
   }
 
@@ -659,11 +650,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
-    for (uint256 i; i < accounts.length;) {
+    for (uint256 i; i < accounts.length; ++i) {
       _grantRole(role, accounts[i]);
-      unchecked {
-        ++i;
-      }
     }
   }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { IEarnStrategyRegistry, IEarnStrategy, StrategyId } from "../../../src/interfaces/IEarnStrategyRegistry.sol";
 
