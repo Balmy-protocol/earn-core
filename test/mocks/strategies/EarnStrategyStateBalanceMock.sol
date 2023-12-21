@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
@@ -23,11 +23,8 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     require(tokens_.length == withdrawalTypes_.length, "Invalid");
     tokens = tokens_;
     withdrawalTypes = withdrawalTypes_;
-    for (uint256 i; i < tokens_.length;) {
+    for (uint256 i; i < tokens_.length; ++i) {
       delayedWithdrawalAdapter[tokens_[i]] = new DelayedWithdrawalAdapterMock();
-      unchecked {
-        ++i;
-      }
     }
   }
 

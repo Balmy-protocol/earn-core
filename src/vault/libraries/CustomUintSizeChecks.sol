@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: TBD
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 /**
  * @title Custom Uint Size Checks

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 import { IEarnVault } from "../../../src/interfaces/IEarnVault.sol";
 import { IDelayedWithdrawalManager } from "../../../src/interfaces/IDelayedWithdrawalManager.sol";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.22;
 
 // solhint-disable-next-line no-unused-import
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
