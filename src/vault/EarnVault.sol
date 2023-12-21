@@ -12,6 +12,7 @@ import { NFTPermissions, ERC721 } from "@mean-finance/nft-permissions/NFTPermiss
 
 import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol";
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
+import { IEarnNFTDescriptor } from "../interfaces/IEarnNFTDescriptor.sol";
 
 import { Token } from "../libraries/Token.sol";
 import { SharesMath } from "./libraries/SharesMath.sol";
@@ -66,6 +67,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
+  /// @inheritdoc IEarnVault
+  // solhint-disable-next-line var-name-mixedcase
+  IEarnNFTDescriptor public immutable NFT_DESCRIPTOR;
 
   // Stores total amount of shares per strategy
   mapping(StrategyId strategyId => uint256 totalShares) internal _totalSharesInStrategy;
@@ -86,13 +90,14 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   constructor(
     IEarnStrategyRegistry strategyRegistry,
     address superAdmin,
-    address[] memory initialPauseAdmins
+    address[] memory initialPauseAdmins,
+    IEarnNFTDescriptor nftDescriptor
   )
     AccessControlDefaultAdminRules(3 days, superAdmin)
     NFTPermissions("Balmy Earn NFT Position", "EARN", "1.0")
   {
     STRATEGY_REGISTRY = strategyRegistry;
-
+    NFT_DESCRIPTOR = nftDescriptor;
     _assignRoles(PAUSE_ROLE, initialPauseAdmins);
   }
 
@@ -647,6 +652,12 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       newShares: positionShares,
       newPositionHadLoss: strategyHadLoss
     });
+  }
+
+  /// @inheritdoc ERC721
+  // slither-disable-next-line naming-convention
+  function tokenURI(uint256 _positionId) public view override returns (string memory) {
+    return NFT_DESCRIPTOR.tokenURI(this, _positionId);
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
