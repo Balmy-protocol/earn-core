@@ -44,7 +44,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     owner[strategyId] = firstOwner;
     _nextStrategyId = strategyId.increment();
     emit StrategyRegistered(firstOwner, strategyId, strategy);
-    strategy.strategyRegistered(strategyId, IEarnStrategy(address(0)), new bytes(0));
+    strategy.strategyRegistered(strategyId, IEarnStrategy(address(0)), "");
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -105,10 +105,14 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
+    // slither-disable-start unused-return
+    (, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
     // slither-disable-next-line reentrancy-no-eth
     bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
-    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategy, proposedStrategyUpdate.newStrategy);
-    oldStrategy.strategyRegistered(strategyId, proposedStrategyUpdate.newStrategy, migrationData);
+    (, uint256[] memory newStrategyBalances) = proposedStrategyUpdate.newStrategy.totalBalances();
+    // slither-disable-end unused-return
+    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategyBalances, newStrategyBalances);
+    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationData);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
@@ -136,16 +140,12 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   function _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
-    IEarnStrategy oldStrategy,
-    IEarnStrategy newStrategy
+    uint256[] memory oldStrategyBalances,
+    uint256[] memory newStrategyBalances
   )
     internal
     view
   {
-    // slither-disable-start unused-return
-    (, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
-    (, uint256[] memory newStrategyBalances) = newStrategy.totalBalances();
-    // slither-disable-end unused-return
     for (uint256 i; i < newStrategyBalances.length; ++i) {
       if (oldStrategyBalances[i] > newStrategyBalances[i]) {
         revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
