@@ -65,6 +65,9 @@ interface IEarnStrategyRegistry {
   // @notice Thrown when trying to cancel a proposed strategy ownership transfer without a pending proposal
   error StrategyOwnershipTransferWithoutPendingProposal();
 
+  // @notice  Thrown when trying to confirm the proposed update with lower balances than the current one
+  error ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+
   /**
    * @notice Emitted when a new strategy is registered
    * @param owner The strategy's owner

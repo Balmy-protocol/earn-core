@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 // solhint-disable-next-line no-unused-import
-import { EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
+import { StrategyId, EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 // solhint-disable-next-line no-unused-import
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token, IERC20, Address } from "../../../src/libraries/Token.sol";
@@ -98,5 +98,20 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     }
     withdrawn = new uint256[](tokens.length);
     withdrawn[tokenIndex] = toWithdraw;
+  }
+
+  function migrateToNewStrategy(IEarnStrategy newStrategy) external virtual override returns (bytes memory) {
+    (, uint256[] memory balances) = this.totalBalances();
+    for (uint256 i; i < tokens.length; ++i) {
+      if (tokens[i] == Token.NATIVE_TOKEN) {
+        Address.sendValue(payable(address(newStrategy)), balances[i]);
+      } else {
+        IERC20(tokens[i]).transfer(address(newStrategy), balances[i]);
+      }
+    }
+  }
+
+  function strategyRegistered(StrategyId, IEarnStrategy, bytes calldata) external override {
+    return;
   }
 }

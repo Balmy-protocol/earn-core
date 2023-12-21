@@ -44,7 +44,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     owner[strategyId] = firstOwner;
     _nextStrategyId = strategyId.increment();
     emit StrategyRegistered(firstOwner, strategyId, strategy);
-    // TODO: call strategy.strategyRegistered
+    strategy.strategyRegistered(strategyId, IEarnStrategy(address(0)), new bytes(0));
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -100,10 +100,13 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt > block.timestamp) revert StrategyUpdateBeforeDelay(strategyId);
 
     IEarnStrategy oldStrategy = getStrategy[strategyId];
+    bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
+    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategy, proposedStrategyUpdate.newStrategy);
     getStrategy[strategyId] = proposedStrategyUpdate.newStrategy;
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
+    oldStrategy.strategyRegistered(strategyId, proposedStrategyUpdate.newStrategy, migrationData);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
@@ -128,6 +131,24 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     // slither-disable-end unused-return
     bool sameOrMoreTokensSupported = newTokens.isSupersetOf(currentTokens);
     if (!sameOrMoreTokensSupported) revert TokensSupportedMismatch();
+  }
+
+  function _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
+    IEarnStrategy oldStrategy,
+    IEarnStrategy newStrategy
+  )
+    internal
+    view
+  {
+    // slither-disable-start unused-return
+    (, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
+    (, uint256[] memory newStrategyBalances) = newStrategy.totalBalances();
+    // slither-disable-end unused-return
+    for (uint256 i; i < newStrategyBalances.length; ++i) {
+      if (oldStrategyBalances[i] > newStrategyBalances[i]) {
+        revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+      }
+    }
   }
 
   modifier onlyOwner(StrategyId strategyId) {
