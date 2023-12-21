@@ -22,6 +22,7 @@ import {
   IEarnNFTDescriptor
 } from "../../../src/vault/EarnVault.sol";
 import { Token } from "../../../src/libraries/Token.sol";
+import { EarnNFTDescriptor } from "../../../src/nft-descriptor/EarnNFTDescriptor.sol";
 import { YieldMath } from "../../../src/vault/libraries/YieldMath.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
@@ -59,14 +60,14 @@ contract EarnVaultTest is PRBTest, StdUtils {
   ERC20MintableBurnableMock private erc20;
   ERC20MintableBurnableMock private anotherErc20;
   EarnVault private vault;
+  IEarnNFTDescriptor private nftDescriptor;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistryMock();
     erc20 = new ERC20MintableBurnableMock();
     anotherErc20 = new ERC20MintableBurnableMock();
-    IEarnNFTDescriptor nftDescriptor;
+    nftDescriptor = new EarnNFTDescriptor();
     vault = new EarnVault(strategyRegistry, superAdmin, CommonUtils.arrayOf(pauseAdmin), nftDescriptor);
-
     erc20.approve(address(vault), type(uint256).max);
 
     vm.label(address(strategyRegistry), "Strategy Registry");
@@ -100,6 +101,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     // Immutables
     assertEq(address(vault.STRATEGY_REGISTRY()), address(strategyRegistry));
+    assertEq(address(vault.NFT_DESCRIPTOR()), address(nftDescriptor));
   }
 
   function test_supportsInterface() public {
@@ -245,6 +247,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // Funds
     assertEq(erc20.balanceOf(address(this)), 0);
     assertEq(erc20.balanceOf(address(strategy)), amountToDeposit);
+    assertEq(
+      keccak256(bytes(vault.NFT_DESCRIPTOR().tokenURI(vault, positionId))), keccak256(bytes(vault.tokenURI(positionId)))
+    );
   }
 
   function testFuzz_createPosition_WithERC20Max(uint104 amountToDeposit) public {

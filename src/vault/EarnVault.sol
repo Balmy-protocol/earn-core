@@ -656,8 +656,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
 
   /// @inheritdoc ERC721
   // slither-disable-next-line naming-convention
-  function tokenURI(uint256 _positionId) public view override returns (string memory) {
-    return NFT_DESCRIPTOR.tokenURI(this, _positionId);
+  function tokenURI(uint256 positionId) public view override returns (string memory) {
+    return NFT_DESCRIPTOR.tokenURI(this, positionId);
   }
 
   function _assignRoles(bytes32 role, address[] memory accounts) internal {
