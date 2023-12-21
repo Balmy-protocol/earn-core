@@ -3,7 +3,7 @@ pragma solidity >=0.8.22;
 
 // solhint-disable no-unused-import
 import { PRBTest } from "@prb/test/PRBTest.sol";
-import { EarnVault, IEarnVault, StrategyId } from "../../../src/vault/EarnVault.sol";
+import { EarnVault, IEarnVault, StrategyId, IEarnNFTDescriptor } from "../../../src/vault/EarnVault.sol";
 import { EarnStrategyRegistry, IEarnStrategyRegistry } from "../../../src/strategy-registry/EarnStrategyRegistry.sol";
 import { IEarnStrategy } from "../../../src/interfaces/IEarnStrategy.sol";
 import {
@@ -34,7 +34,8 @@ contract BaseDelayedWithdrawalGasTest is PRBTest {
   function setUp() public virtual {
     tokens = new address[](2);
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
-    EarnVault vault = new EarnVault(strategyRegistry, address(1), CommonUtils.arrayOf(address(2)));
+    IEarnNFTDescriptor nftDescriptor;
+    EarnVault vault = new EarnVault(strategyRegistry, address(1), CommonUtils.arrayOf(address(2)), nftDescriptor);
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
     erc20.approve(address(vault), type(uint256).max);
 

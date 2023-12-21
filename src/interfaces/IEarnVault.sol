@@ -4,6 +4,7 @@ pragma solidity >=0.8.8;
 import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { IEarnStrategyRegistry } from "../interfaces/IEarnStrategyRegistry.sol";
 import { IEarnStrategy } from "./IEarnStrategy.sol";
+import { IEarnNFTDescriptor } from "./IEarnNFTDescriptor.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
@@ -64,11 +65,18 @@ interface IEarnVault is INFTPermissions {
   function WITHDRAW_PERMISSION() external pure returns (Permission);
 
   /**
-   * @notice Returns the address of the strategy registrt
-   * @return The address of the strategy registrt
+   * @notice Returns the address of the strategy registry
+   * @return The address of the strategy registry
    */
   // slither-disable-next-line naming-convention
   function STRATEGY_REGISTRY() external view returns (IEarnStrategyRegistry);
+
+  /**
+   * @notice Returns the NFT descriptor contract
+   * @return The contract for the NFT descriptor
+   */
+  // slither-disable-next-line naming-convention
+  function NFT_DESCRIPTOR() external view returns (IEarnNFTDescriptor);
 
   /**
    * @notice Returns the strategy chosen by the given position

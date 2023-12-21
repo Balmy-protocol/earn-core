@@ -4,7 +4,7 @@ pragma solidity >=0.8.22;
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { StdInvariant } from "forge-std/StdInvariant.sol";
 import { StdAssertions } from "forge-std/StdAssertions.sol";
-import { EarnVault, StrategyId } from "../../../src/vault/EarnVault.sol";
+import { EarnVault, StrategyId, IEarnNFTDescriptor } from "../../../src/vault/EarnVault.sol";
 import { EarnStrategyCustomBalanceMock } from "../../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
@@ -29,9 +29,10 @@ contract EarnVaultInvariantTest is StdInvariant, StdUtils, StdAssertions {
   function setUp() public virtual {
     tokenManager = new TokenManager({ tokensToDeploy: 50 });
     strategyRegistry = new EarnStrategyRegistryMock();
+    IEarnNFTDescriptor nftDescriptor;
     StrategyId strategyId;
     (strategyId, strategy) = strategyRegistry.deployCustomStrategy(tokenManager.getRandomToken());
-    vault = new EarnVault(strategyRegistry, address(1), new address[](0));
+    vault = new EarnVault(strategyRegistry, address(1), new address[](0), nftDescriptor);
 
     vaultHandler = new VaultHandler(strategy, strategyId, vault);
 
