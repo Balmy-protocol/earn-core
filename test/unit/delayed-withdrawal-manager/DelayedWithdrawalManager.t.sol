@@ -187,7 +187,6 @@ contract DelayedWithdrawalManagerTest is PRBTest {
      * withdrawableFunds(old strategy adapter) +
      * withdrawableFunds(new strategy adapter)
      */
-
     assertEq(
       adapter1.estimatedPendingFunds(positionId, token) + adapter2.estimatedPendingFunds(positionId, token),
       delayedWithdrawalManager.estimatedPendingFunds(positionId, token)

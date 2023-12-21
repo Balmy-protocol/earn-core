@@ -10,7 +10,6 @@ import { YieldMath } from "../libraries/YieldMath.sol";
  *      - Loss accumulator: the yield loss accumulator when the position was last updated. Will use 248 bits
  *      - Position complete loss events: number of complete loss events processed for the position. Will use 8 bits.
  */
-
 struct PositionYieldLossDataForToken {
   uint248 positionLossAccum;
   uint8 positionCompleteLossEvents;
