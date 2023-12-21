@@ -100,12 +100,14 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt > block.timestamp) revert StrategyUpdateBeforeDelay(strategyId);
 
     IEarnStrategy oldStrategy = getStrategy[strategyId];
-    bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
-    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategy, proposedStrategyUpdate.newStrategy);
+
     getStrategy[strategyId] = proposedStrategyUpdate.newStrategy;
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
+    // slither-disable-next-line reentrancy-no-eth
+    bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
+    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategy, proposedStrategyUpdate.newStrategy);
     oldStrategy.strategyRegistered(strategyId, proposedStrategyUpdate.newStrategy, migrationData);
   }
 
