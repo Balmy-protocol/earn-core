@@ -150,8 +150,10 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     pure
   {
     for (uint256 i; i < oldStrategyTokens.length; ++i) {
+      bool exists = false;
       for (uint256 j; j < newStrategyTokens.length; ++j) {
         if (oldStrategyTokens[i] == newStrategyTokens[j]) {
+          exists = true;
           if (oldStrategyBalances[i] > newStrategyBalances[j]) {
             revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
           } else {
@@ -159,6 +161,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
           }
         }
       }
+      if (!exists) revert TokensSupportedMismatch();
     }
   }
 

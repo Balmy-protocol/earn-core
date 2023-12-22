@@ -337,6 +337,26 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.stopPrank();
   }
 
+  function test_updateStrategy_RevertWhen_TokensSupportedMismatch() public {
+    ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
+    ERC20MintableBurnableMock anotherErc20 = new ERC20MintableBurnableMock();
+    ERC20MintableBurnableMock thirdErc20 = new ERC20MintableBurnableMock();
+    (, StrategyId aRegisteredStrategyId) = StrategyUtils.deployStateStrategy(
+      strategyRegistry, CommonUtils.arrayOf(address(erc20), address(anotherErc20)), owner
+    );
+    IEarnStrategy newStrategy = StrategyUtils.deployBadTokensStrategy(
+      CommonUtils.arrayOf(address(erc20), address(thirdErc20), address(anotherErc20))
+    );
+
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.TokensSupportedMismatch.selector));
+    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    vm.stopPrank();
+  }
+
   function test_updateStrategy_RevertWhen_WrongOwner() public {
     (, StrategyId aRegisteredStrategyId) =
       StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);

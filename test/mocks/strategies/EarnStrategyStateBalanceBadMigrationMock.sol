@@ -12,7 +12,7 @@ contract EarnStrategyStateBalanceBadMigrationMock is EarnStrategyStateBalanceMoc
     EarnStrategyStateBalanceMock(tokens_, withdrawalTypes_)
   { }
 
-  function migrateToNewStrategy(IEarnStrategy) external override returns (bytes memory) {
-    return new bytes(0);
+  function migrateToNewStrategy(IEarnStrategy) external pure override returns (bytes memory) {
+    return "";
   }
 }

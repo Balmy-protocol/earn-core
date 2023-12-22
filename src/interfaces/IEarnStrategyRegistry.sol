@@ -62,10 +62,10 @@ interface IEarnStrategyRegistry {
   /// @notice Thrown when trying to propose a strategy ownership transfer that has a pending proposal
   error StrategyOwnershipTransferAlreadyProposed();
 
-  // @notice Thrown when trying to cancel a proposed strategy ownership transfer without a pending proposal
+  /// @notice Thrown when trying to cancel a proposed strategy ownership transfer without a pending proposal
   error StrategyOwnershipTransferWithoutPendingProposal();
 
-  // @notice  Thrown when trying to confirm the proposed update with lower balances than the current one
+  /// @notice Thrown when trying to confirm the proposed update with lower balances than the current one
   error ProposedStrategyBalancesAreLowerThanCurrentStrategy();
 
   /**
