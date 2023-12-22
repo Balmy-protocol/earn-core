@@ -44,7 +44,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     owner[strategyId] = firstOwner;
     _nextStrategyId = strategyId.increment();
     emit StrategyRegistered(firstOwner, strategyId, strategy);
-    // TODO: call strategy.strategyRegistered
+    strategy.strategyRegistered(strategyId, IEarnStrategy(address(0)), "");
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -100,10 +100,20 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt > block.timestamp) revert StrategyUpdateBeforeDelay(strategyId);
 
     IEarnStrategy oldStrategy = getStrategy[strategyId];
+
     getStrategy[strategyId] = proposedStrategyUpdate.newStrategy;
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
+    (address[] memory oldStrategyTokens, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
+    // slither-disable-next-line reentrancy-no-eth
+    bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
+    (address[] memory newStrategyTokens, uint256[] memory newStrategyBalances) =
+      proposedStrategyUpdate.newStrategy.totalBalances();
+    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
+      oldStrategyTokens, oldStrategyBalances, newStrategyTokens, newStrategyBalances
+    );
+    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationData);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
@@ -128,6 +138,32 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     // slither-disable-end unused-return
     bool sameOrMoreTokensSupported = newTokens.isSupersetOf(currentTokens);
     if (!sameOrMoreTokensSupported) revert TokensSupportedMismatch();
+  }
+
+  function _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
+    address[] memory oldStrategyTokens,
+    uint256[] memory oldStrategyBalances,
+    address[] memory newStrategyTokens,
+    uint256[] memory newStrategyBalances
+  )
+    internal
+    pure
+  {
+    for (uint256 i; i < oldStrategyTokens.length; ++i) {
+      uint256 j;
+      while (j < newStrategyTokens.length && oldStrategyTokens[i] != newStrategyTokens[j]) {
+        unchecked {
+          ++j;
+        }
+      }
+      if (j == newStrategyTokens.length) {
+        // Token wasn't found
+        revert TokensSupportedMismatch();
+      } else if (oldStrategyBalances[i] > newStrategyBalances[j]) {
+        // Token was there, but it seems balance was lost somehow
+        revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+      }
+    }
   }
 
   modifier onlyOwner(StrategyId strategyId) {

@@ -5,6 +5,9 @@ import { IEarnStrategy, StrategyId } from "../../src/vault/EarnVault.sol";
 import { IEarnStrategyRegistry } from "../../src/interfaces/IEarnStrategyRegistry.sol";
 import { EarnStrategyStateBalanceMock } from "../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 import { EarnStrategyCustomBalanceMock } from "../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
+import { EarnStrategyStateBalanceBadMigrationMock } from
+  "../mocks/strategies/EarnStrategyStateBalanceBadMigrationMock.sol";
+import { EarnStrategyStateBalanceBadTokensMock } from "../mocks/strategies/EarnStrategyStateBalanceBadTokensMock.sol";
 
 library StrategyUtils {
   function deployStateStrategy(
@@ -20,9 +23,27 @@ library StrategyUtils {
     strategyId = registry.registerStrategy(owner, strategy);
   }
 
+  function deployBadMigrationStrategy(
+    IEarnStrategyRegistry registry,
+    address[] memory tokens,
+    address owner
+  )
+    internal
+    returns (EarnStrategyStateBalanceBadMigrationMock strategy, StrategyId strategyId)
+  {
+    IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
+    strategy = new EarnStrategyStateBalanceBadMigrationMock(tokens, withdrawalTypes);
+    strategyId = registry.registerStrategy(owner, strategy);
+  }
+
   function deployStateStrategy(address[] memory tokens) internal returns (EarnStrategyStateBalanceMock strategy) {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
     return strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
+  }
+
+  function deployBadTokensStrategy(address[] memory tokens) internal returns (EarnStrategyStateBalanceMock strategy) {
+    IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
+    return strategy = new EarnStrategyStateBalanceBadTokensMock(tokens, withdrawalTypes);
   }
 
   function deployStateStrategy(
