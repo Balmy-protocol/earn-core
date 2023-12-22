@@ -105,13 +105,14 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     assignedId[oldStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
-    // slither-disable-start unused-return
-    (, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
+    (address[] memory oldStrategyTokens, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
     // slither-disable-next-line reentrancy-no-eth
     bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
-    (, uint256[] memory newStrategyBalances) = proposedStrategyUpdate.newStrategy.totalBalances();
-    // slither-disable-end unused-return
-    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(oldStrategyBalances, newStrategyBalances);
+    (address[] memory newStrategyTokens, uint256[] memory newStrategyBalances) =
+      proposedStrategyUpdate.newStrategy.totalBalances();
+    _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
+      oldStrategyTokens, oldStrategyBalances, newStrategyTokens, newStrategyBalances
+    );
     proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationData);
   }
 
@@ -140,15 +141,23 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   function _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
+    address[] memory oldStrategyTokens,
     uint256[] memory oldStrategyBalances,
+    address[] memory newStrategyTokens,
     uint256[] memory newStrategyBalances
   )
     internal
-    view
+    pure
   {
-    for (uint256 i; i < newStrategyBalances.length; ++i) {
-      if (oldStrategyBalances[i] > newStrategyBalances[i]) {
-        revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+    for (uint256 i; i < oldStrategyTokens.length; ++i) {
+      for (uint256 j; j < newStrategyTokens.length; ++j) {
+        if (oldStrategyTokens[i] == newStrategyTokens[j]) {
+          if (oldStrategyBalances[i] > newStrategyBalances[j]) {
+            revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+          } else {
+            break;
+          }
+        }
       }
     }
   }

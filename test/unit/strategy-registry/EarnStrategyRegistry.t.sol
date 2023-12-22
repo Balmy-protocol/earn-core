@@ -318,9 +318,12 @@ contract EarnStrategyRegistryTest is PRBTest {
 
   function test_updateStrategy_RevertWhen_ProposedStrategyBalancesAreLowerThanCurrentStrategy() public {
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
-    (EarnStrategyStateBalanceMock oldStrategy, StrategyId aRegisteredStrategyId) =
-      StrategyUtils.deployBadMigrationStrategy(strategyRegistry, CommonUtils.arrayOf(address(erc20)), owner);
-    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
+    ERC20MintableBurnableMock anotherErc20 = new ERC20MintableBurnableMock();
+    ERC20MintableBurnableMock thirdErc20 = new ERC20MintableBurnableMock();
+    (EarnStrategyStateBalanceMock oldStrategy, StrategyId aRegisteredStrategyId) = StrategyUtils
+      .deployBadMigrationStrategy(strategyRegistry, CommonUtils.arrayOf(address(erc20), address(anotherErc20)), owner);
+    IEarnStrategy newStrategy =
+      StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(thirdErc20), address(anotherErc20)));
 
     vm.startPrank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
