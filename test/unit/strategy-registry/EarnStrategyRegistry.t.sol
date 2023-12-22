@@ -322,6 +322,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     ERC20MintableBurnableMock thirdErc20 = new ERC20MintableBurnableMock();
     (EarnStrategyStateBalanceMock oldStrategy, StrategyId aRegisteredStrategyId) = StrategyUtils
       .deployBadMigrationStrategy(strategyRegistry, CommonUtils.arrayOf(address(erc20), address(anotherErc20)), owner);
+    erc20.mint(address(oldStrategy), 1);
     IEarnStrategy newStrategy =
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(thirdErc20), address(anotherErc20)));
 
@@ -329,7 +330,6 @@ contract EarnStrategyRegistryTest is PRBTest {
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
-    erc20.mint(address(oldStrategy), 1);
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.ProposedStrategyBalancesAreLowerThanCurrentStrategy.selector)
     );

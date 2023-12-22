@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import { Token, IERC20, Address } from "../../../src/libraries/Token.sol";
+import { Token, Address } from "../../../src/libraries/Token.sol";
 
 import { EarnStrategyStateBalanceMock, IEarnStrategy } from "./EarnStrategyStateBalanceMock.sol";
 
 /// @notice An implementation of IEarnStrategy, without token migration
-contract EarnStrategyStateBalanceBadTokens is EarnStrategyStateBalanceMock {
+contract EarnStrategyStateBalanceBadTokensMock is EarnStrategyStateBalanceMock {
   using Token for address;
 
   constructor(

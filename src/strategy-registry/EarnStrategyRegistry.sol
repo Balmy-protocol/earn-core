@@ -150,18 +150,19 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     pure
   {
     for (uint256 i; i < oldStrategyTokens.length; ++i) {
-      bool exists = false;
-      for (uint256 j; j < newStrategyTokens.length; ++j) {
-        if (oldStrategyTokens[i] == newStrategyTokens[j]) {
-          exists = true;
-          if (oldStrategyBalances[i] > newStrategyBalances[j]) {
-            revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
-          } else {
-            break;
-          }
+      uint256 j;
+      while (j < newStrategyTokens.length && oldStrategyTokens[i] != newStrategyTokens[j]) {
+        unchecked {
+          ++j;
         }
       }
-      if (!exists) revert TokensSupportedMismatch();
+      if (j == newStrategyTokens.length) {
+        // Token wasn't found
+        revert TokensSupportedMismatch();
+      } else if (oldStrategyBalances[i] > newStrategyBalances[j]) {
+        // Token was there, but it seems balance was lost somehow
+        revert ProposedStrategyBalancesAreLowerThanCurrentStrategy();
+      }
     }
   }
 
