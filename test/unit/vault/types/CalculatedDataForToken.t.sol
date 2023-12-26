@@ -12,11 +12,12 @@ contract CalculatedDataForTokenTest is PRBTest, StdUtils {
     calculated[1] = _calculatedWithBalance(2);
     calculated[2] = _calculatedWithBalance(999);
 
-    uint256[] memory balances = CalculatedDataLibrary.extractBalances(calculated);
-    assertEq(balances.length, calculated.length);
-    assertEq(balances[0], 0);
-    assertEq(balances[1], 2);
-    assertEq(balances[2], 999);
+    uint256[] memory balances = CalculatedDataLibrary.extractBalances(calculated, 13);
+    assertEq(balances.length, calculated.length + 1);
+    assertEq(balances[0], 13);
+    assertEq(balances[1], 0);
+    assertEq(balances[2], 2);
+    assertEq(balances[3], 999);
   }
 
   function _calculatedWithBalance(uint256 balance) internal pure returns (CalculatedDataForToken memory _calculated) {

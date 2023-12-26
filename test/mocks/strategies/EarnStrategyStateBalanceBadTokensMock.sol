@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import { Token, Address } from "../../../src/libraries/Token.sol";
+import { Token } from "../../../src/libraries/Token.sol";
 
-import { EarnStrategyStateBalanceMock, IEarnStrategy } from "./EarnStrategyStateBalanceMock.sol";
+import { EarnStrategyStateBalanceMock } from "./EarnStrategyStateBalanceMock.sol";
 
 /// @notice An implementation of IEarnStrategy, without token migration
 contract EarnStrategyStateBalanceBadTokensMock is EarnStrategyStateBalanceMock {

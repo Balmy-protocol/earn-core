@@ -44,7 +44,6 @@ import {
 } from "./types/PositionYieldLossDataForToken.sol";
 import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/CalculatedDataForToken.sol";
 import { UpdateAction } from "./types/UpdateAction.sol";
-
 // solhint-enable no-unused-import
 
 contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
@@ -117,9 +116,16 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     view
     returns (address[] memory, IEarnStrategy.WithdrawalType[] memory, uint256[] memory)
   {
-    (CalculatedDataForToken[] memory calculatedData,, IEarnStrategy strategy,,, address[] memory tokens,) =
-      _loadCurrentState(positionId);
-    uint256[] memory balances = calculatedData.extractBalances();
+    (
+      uint256 positionAssetBalance,
+      CalculatedDataForToken[] memory calculatedData,
+      ,
+      IEarnStrategy strategy,
+      ,
+      ,
+      address[] memory tokens,
+    ) = _loadCurrentState(positionId);
+    uint256[] memory balances = calculatedData.extractBalances(positionAssetBalance);
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
     return (tokens, withdrawalTypes, balances);
   }
@@ -156,6 +162,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (uint256 positionId, uint256 assetsDeposited)
   {
     (
+      ,
       CalculatedDataForToken[] memory calculatedData,
       IEarnStrategy strategy,
       uint256 totalShares,
@@ -195,6 +202,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (uint256 assetsDeposited)
   {
     (
+      ,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -235,6 +243,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes)
   {
     (
+      uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -248,7 +257,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       revert InvalidWithdrawInput();
     }
 
-    withdrawn = _calculateWithdrawnAmount(calculatedData, tokens, tokensToWithdraw, intendedWithdraw);
+    withdrawn =
+      _calculateWithdrawnAmount(positionAssetBalance, calculatedData, tokens, tokensToWithdraw, intendedWithdraw);
 
     // slither-disable-next-line reentrancy-no-eth
     withdrawalTypes = strategy.withdraw({
@@ -297,6 +307,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     )
   {
     (
+      ,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -348,6 +359,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     internal
     view
     returns (
+      uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -358,7 +370,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     )
   {
     (strategyId, positionShares) = _positions.read(positionId);
-    (calculatedData, strategy, totalShares, tokens, totalBalances) =
+    (positionAssetBalance, calculatedData, strategy, totalShares, tokens, totalBalances) =
       _loadCurrentState(positionId, strategyId, positionShares);
   }
 
@@ -370,6 +382,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     internal
     view
     returns (
+      uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
       IEarnStrategy strategy,
       uint256 totalShares,
@@ -379,7 +392,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   {
     totalShares = _totalSharesInStrategy[strategyId];
     strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
-    (calculatedData, tokens, totalBalances) = _calculateAllData({
+    (positionAssetBalance, calculatedData, tokens, totalBalances) = _calculateAllData({
       positionId: positionId,
       strategyId: strategyId,
       strategy: strategy,
@@ -397,20 +410,24 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   )
     internal
     view
-    returns (CalculatedDataForToken[] memory calculatedData, address[] memory tokens, uint256[] memory totalBalances)
+    returns (
+      uint256 positionAssetBalance,
+      CalculatedDataForToken[] memory calculatedData,
+      address[] memory tokens,
+      uint256[] memory totalBalances
+    )
   {
     (tokens, totalBalances) = strategy.totalBalances();
 
-    calculatedData = new CalculatedDataForToken[](tokens.length);
-    // TODO: test if it's cheaper to avoid using the entire `CalculatedDataForToken` for the asset
-    calculatedData[0].positionBalance = SharesMath.convertToAssets({
+    positionAssetBalance = SharesMath.convertToAssets({
       shares: positionShares,
       totalAssets: totalBalances[0],
       totalShares: totalShares,
       rounding: Math.Rounding.Floor
     });
+    calculatedData = new CalculatedDataForToken[](tokens.length - 1);
     for (uint256 i = 1; i < tokens.length; ++i) {
-      calculatedData[i] = _calculateAllDataForRewardToken({
+      calculatedData[i - 1] = _calculateAllDataForRewardToken({
         positionId: positionId,
         strategyId: strategyId,
         totalShares: totalShares,
@@ -467,6 +484,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 
   function _calculateWithdrawnAmount(
+    uint256 positionAssetBalance,
     CalculatedDataForToken[] memory calculatedData,
     address[] memory tokens,
     address[] memory tokensToWithdraw,
@@ -481,7 +499,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       if (tokensToWithdraw[i] != tokens[i]) {
         revert InvalidWithdrawInput();
       }
-      uint256 balance = calculatedData[i].positionBalance;
+      uint256 balance = i == 0 ? positionAssetBalance : calculatedData[i - 1].positionBalance;
       if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
         revert InsufficientFunds();
       }
@@ -516,7 +534,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositAmount });
     assetsDeposited = strategy.deposited(depositToken, depositAmount);
 
-    uint256[] memory deposits = new uint256[](calculatedData.length);
+    uint256[] memory deposits = new uint256[](calculatedData.length + 1);
     deposits[0] = assetsDeposited;
 
     _updateAccounting({
@@ -559,13 +577,13 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       action: action
     });
 
-    for (uint256 i = 1; i < calculatedData.length; ++i) {
+    for (uint256 i = 1; i <= calculatedData.length; ++i) {
       _updateAccountingForRewardToken({
         positionId: positionId,
         strategyId: strategyId,
         positionShares: newPositionShares,
         token: tokens[i],
-        calculatedData: calculatedData[i],
+        calculatedData: calculatedData[i - 1],
         withdrawn: updateAmounts[i],
         newStrategyBalance: balancesAfterUpdate[i]
       });

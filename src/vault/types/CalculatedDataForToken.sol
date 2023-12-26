@@ -21,14 +21,18 @@ library CalculatedDataLibrary {
    * @param calculatedData The data calculated for this position
    * @return balances A position's balance
    */
-  function extractBalances(CalculatedDataForToken[] memory calculatedData)
+  function extractBalances(
+    CalculatedDataForToken[] memory calculatedData,
+    uint256 positionAssetBalance
+  )
     internal
     pure
     returns (uint256[] memory balances)
   {
-    balances = new uint256[](calculatedData.length);
+    balances = new uint256[](calculatedData.length + 1);
+    balances[0] = positionAssetBalance;
     for (uint256 i = 0; i < calculatedData.length; ++i) {
-      balances[i] = calculatedData[i].positionBalance;
+      balances[i + 1] = calculatedData[i].positionBalance;
     }
   }
 }
