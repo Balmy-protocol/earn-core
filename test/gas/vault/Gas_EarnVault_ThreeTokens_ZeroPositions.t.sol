@@ -23,7 +23,7 @@ contract GasEarnVaultThreeTokensZeroPositions is BaseEarnVaultGasTest {
 
   function test_Gas_createPosition() public {
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
   }
 }

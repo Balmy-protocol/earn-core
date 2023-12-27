@@ -27,7 +27,7 @@ contract GasEarnVaultTwoTokensOnePositionWithLoss is BaseEarnVaultGasTest {
       vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(anotherErc20)));
 
     (positionId,) = vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     anotherErc20.mint(address(strategy), amountToReward);
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
@@ -47,7 +47,7 @@ contract GasEarnVaultTwoTokensOnePositionWithLoss is BaseEarnVaultGasTest {
 
   function test_Gas_createPosition() public {
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
   }
 

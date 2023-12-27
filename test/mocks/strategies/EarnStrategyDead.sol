@@ -142,4 +142,8 @@ contract EarnStrategyDead is IEarnStrategy {
   function supportsInterface(bytes4) external pure virtual returns (bool) {
     revert NotImplemented();
   }
+
+  function checkSignature(address, bytes32) external virtual returns (bool) {
+    revert NotImplemented();
+  }
 }

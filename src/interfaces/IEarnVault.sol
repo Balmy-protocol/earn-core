@@ -27,6 +27,9 @@ interface IEarnVault is INFTPermissions {
   /// @notice Thrown when trying to withdraw amount exceeds balance
   error InsufficientFunds();
 
+  /// @notice Thrown when trying to create a position with an invalid signature
+  error BadSignature();
+
   /// @notice Emitted when a new position is created
   event PositionCreated(
     uint256 positionId,
@@ -112,6 +115,7 @@ interface IEarnVault is INFTPermissions {
    * @param owner The owner to set for the position
    * @param permissions The permissions to set for the position
    * @param misc Miscellaneous bytes to emit, can work for referrals and more
+   * @param signature Hash of the terms and conditions signed by the sender
    * @return positionId The id of the created position
    * @return assetsDeposited How much was actually deposited in terms of the asset
    */
@@ -121,7 +125,8 @@ interface IEarnVault is INFTPermissions {
     uint256 depositAmount,
     address owner,
     INFTPermissions.PermissionSet[] calldata permissions,
-    bytes calldata misc
+    bytes calldata misc,
+    bytes32 signature
   )
     external
     payable

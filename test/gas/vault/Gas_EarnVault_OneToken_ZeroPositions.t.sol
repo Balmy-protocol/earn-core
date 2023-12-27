@@ -30,13 +30,14 @@ contract GasEarnVaultOneTokenZeroPositions is BaseEarnVaultGasTest {
       amountToDeposit,
       address(this),
       PermissionUtils.buildEmptyPermissionSet(),
+      "",
       ""
     );
   }
 
   function test_Gas_createPosition_WithERC20() public {
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
   }
 }

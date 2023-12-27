@@ -29,7 +29,7 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
     (strategyIdNative,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     (strategyId,) = vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
     (positionId,) = vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
 
     (tokens,,) = vault.position(positionId);
@@ -43,13 +43,14 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
       amountToDeposit,
       address(this),
       PermissionUtils.buildEmptyPermissionSet(),
+      "",
       ""
     );
   }
 
   function test_Gas_createPosition_WithERC20() public {
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
   }
 

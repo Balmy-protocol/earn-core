@@ -38,7 +38,7 @@ contract VaultHandler is StdUtils {
     address depositToken = _findTokenWithIndex(depositTokenIndex);
 
     try _vault.createPosition(
-      _strategyId, depositToken, depositAmount, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      _strategyId, depositToken, depositAmount, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     ) returns (uint256, uint256) { } catch (bytes memory err) {
       if (keccak256(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector)) != keccak256(err)) {
         revert();
