@@ -61,7 +61,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   ERC20MintableBurnableMock private anotherErc20;
   EarnVault private vault;
   IEarnNFTDescriptor private nftDescriptor;
-  bytes32 private signature;
+  bytes private creationData;
 
   function setUp() public virtual {
     strategyRegistry = new EarnStrategyRegistryMock();
@@ -121,7 +121,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.expectRevert(abi.encodeWithSelector(Pausable.EnforcedPause.selector));
     vault.createPosition(
-      strategyId, Token.NATIVE_TOKEN, 1 ether, positionOwner, PermissionUtils.buildEmptyPermissionSet(), "", signature
+      strategyId,
+      Token.NATIVE_TOKEN,
+      1 ether,
+      positionOwner,
+      PermissionUtils.buildEmptyPermissionSet(),
+      "",
+      creationData
     );
   }
 
@@ -139,7 +145,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroAmountDeposit.selector));
     vault.createPosition(
-      strategyId, Token.NATIVE_TOKEN, 0 ether, positionOwner, PermissionUtils.buildEmptyPermissionSet(), "", signature
+      strategyId,
+      Token.NATIVE_TOKEN,
+      0 ether,
+      positionOwner,
+      PermissionUtils.buildEmptyPermissionSet(),
+      creationData,
+      ""
     );
   }
 
@@ -158,11 +170,11 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     erc20.mint(address(this), amountToDeposit1 + amountToDeposit2);
-    vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+    vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
 
     erc20.mint(address(strategy), amountToReward);
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroSharesDeposit.selector));
-    vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+    vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
   }
 
   function test_createPosition_RevertWhen_UsingFullDepositWithNative() public {
@@ -175,8 +187,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       type(uint256).max,
       positionOwner,
       PermissionUtils.buildEmptyPermissionSet(),
-      "",
-      signature
+      creationData,
+      ""
     );
   }
 
@@ -198,7 +210,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.expectEmit();
     emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) = vault.createPosition{ value: amountToDeposit }(
-      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc, signature
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
 
     // Return values
@@ -240,7 +252,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.expectEmit();
     emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     // Return values
     assertEq(positionId, 1);
@@ -283,8 +295,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
     vm.expectEmit();
     emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
-    (uint256 positionId, uint256 assetsDeposited) =
-      vault.createPosition(strategyId, address(erc20), type(uint256).max, positionOwner, permissions, misc, signature);
+    (uint256 positionId, uint256 assetsDeposited) = vault.createPosition(
+      strategyId, address(erc20), type(uint256).max, positionOwner, permissions, creationData, misc
+    );
 
     // Return values
     assertEq(positionId, 1);
@@ -323,8 +336,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       amountToDeposit1,
       positionOwner,
       PermissionUtils.buildEmptyPermissionSet(),
-      "",
-      signature
+      creationData,
+      ""
     );
     (uint256 positionId2, uint256 assetsDeposited2) = vault.createPosition{ value: amountToDeposit2 }(
       strategyId,
@@ -332,8 +345,8 @@ contract EarnVaultTest is PRBTest, StdUtils {
       amountToDeposit2,
       positionOwner,
       PermissionUtils.buildEmptyPermissionSet(),
-      "",
-      signature
+      creationData,
+      ""
     );
 
     // Return values
@@ -435,7 +448,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -449,7 +462,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -473,7 +486,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
     //Shares: 20
@@ -492,7 +505,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[2], balances3[1], 1);
 
     (uint256 positionId4,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
     // Shares: 20
@@ -537,7 +550,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -551,7 +564,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward * 3);
 
@@ -575,7 +588,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.burn(address(strategy), 350_000);
     //Shares: 50
@@ -596,7 +609,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // FINAL SNAPSHOT
 
     (uint256 positionId4,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     shares[3] = 50;
     totalShares += shares[3];
@@ -636,7 +649,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -650,7 +663,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward * 3);
 
@@ -674,7 +687,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.burn(address(strategy), amountToReward);
     //Shares: 50
@@ -695,7 +708,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // FINAL SNAPSHOT
 
     (uint256 positionId4,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     shares[3] = 50;
     totalShares += shares[3];
@@ -757,7 +770,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // SNAPSHOT
 
     (positionIds[0],) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward1);
     shares[0] = amountToDeposit1;
@@ -770,7 +783,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // SNAPSHOT
 
     (positionIds[1],) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward1);
 
@@ -784,7 +797,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // SNAPSHOT
 
     (positionIds[2],) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.burn(address(strategy), amountToLose);
     shares[2] = amountToDeposit3;
@@ -797,7 +810,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // SNAPSHOT
 
     (positionIds[3],) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit4, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     shares[3] = amountToDeposit4;
     totalShares += shares[3];
@@ -810,7 +823,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     // FINAL SNAPSHOT
 
     (positionIds[4],) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit5, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit5, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     shares[4] = amountToDeposit5;
     totalShares += shares[4];
@@ -836,11 +849,11 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(strategyTokens);
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     uint256 losses;
     uint256[] memory balances1;
     for (uint256 i = 1; losses <= uint256(YieldMath.MAX_COMPLETE_LOSS_EVENTS) + 1; i++) {
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
 
       if (i % 2 == 0) {
         anotherErc20.burn(address(strategy), anotherErc20.balanceOf(address(strategy)));
@@ -870,7 +883,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     // Funds before withdraw
     (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
@@ -913,7 +926,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
-      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc, signature
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
 
     // Funds before withdraw
@@ -951,7 +964,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     (address[] memory tokens,,) = vault.position(positionId);
 
@@ -972,7 +985,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     (address[] memory tokens,,) = vault.position(positionId);
 
@@ -998,7 +1011,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     vm.prank(operator);
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.InvalidWithdrawInput.selector));
@@ -1020,7 +1033,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
     (address[] memory tokens,,) = vault.position(positionId);
 
     uint256[] memory intendendWithdraw = CommonUtils.arrayOf(amountToWithdraw, amountToWithdraw);
@@ -1051,7 +1064,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1065,7 +1078,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1089,7 +1102,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
     //Shares: 20
@@ -1164,7 +1177,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     erc20.mint(address(this), amountToDeposit);
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     // Funds before increase
     (,, uint256[] memory balances) = vault.position(positionId);
@@ -1212,7 +1225,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.deal(address(this), amountToDeposit);
     (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
-      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc, signature
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
 
     // Funds before increase
@@ -1247,7 +1260,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.deal(address(this), amountToDeposit);
     (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
-      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc, signature
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
 
     vm.deal(operator, amountToIncrease);
@@ -1270,7 +1283,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     erc20.mint(address(this), amountToDeposit);
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -1295,7 +1308,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     erc20.mint(address(this), amountToDeposit);
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     // Pause deposits
     vm.prank(pauseAdmin);
@@ -1320,7 +1333,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     erc20.mint(address(this), amountToDeposit);
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     vm.expectRevert(abi.encodeWithSelector(IEarnVault.ZeroAmountDeposit.selector));
     vm.prank(operator);
@@ -1343,7 +1356,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     erc20.mint(address(this), amountToDeposit);
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     erc20.mint(address(strategy), amountToReward);
     erc20.mint(address(operator), amountToIncrease);
@@ -1374,7 +1387,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1387,7 +1400,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1402,7 +1415,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     previousBalance = takeSnapshot(strategy, previousBalance, totalShares, rewards, shares, positionsCreated);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
     //Shares: 20
@@ -1453,7 +1466,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     // Funds before withdraw
     (address[] memory tokens,, uint256[] memory balances) = vault.position(positionId);
@@ -1486,7 +1499,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     (uint256 positionId,) = vault.createPosition{ value: amountToDeposit }(
-      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, misc, signature
+      strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
 
     // Funds before withdraw
@@ -1518,7 +1531,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     (uint256 positionId,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
     vault.position(positionId);
 
@@ -1552,7 +1565,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousBalance;
 
     (uint256 positionId1,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit1, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1566,7 +1579,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0], balances1[1], 1);
 
     (uint256 positionId2,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit2, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
 
@@ -1590,7 +1603,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[1], balances2[1], 1);
 
     (uint256 positionId3,) =
-      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, misc, signature);
+      vault.createPosition(strategyId, address(erc20), amountToDeposit3, positionOwner, permissions, creationData, misc);
     positionsCreated++;
     anotherErc20.mint(address(strategy), amountToReward);
     //Shares: 20

@@ -143,7 +143,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function checkSignature(address, bytes32) external virtual returns (bool) {
+  function validatePosition(address, bytes calldata) external virtual returns (bool) {
     revert NotImplemented();
   }
 }

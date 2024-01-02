@@ -114,8 +114,8 @@ interface IEarnVault is INFTPermissions {
    *                      Using max(uint256) and the native token will end up in revert
    * @param owner The owner to set for the position
    * @param permissions The permissions to set for the position
+   * @param strategyValidationData Hash signed by the sender to be validated by the strategy
    * @param misc Miscellaneous bytes to emit, can work for referrals and more
-   * @param signature Hash of the terms and conditions signed by the sender
    * @return positionId The id of the created position
    * @return assetsDeposited How much was actually deposited in terms of the asset
    */
@@ -125,8 +125,8 @@ interface IEarnVault is INFTPermissions {
     uint256 depositAmount,
     address owner,
     INFTPermissions.PermissionSet[] calldata permissions,
-    bytes calldata misc,
-    bytes32 signature
+    bytes calldata strategyValidationData,
+    bytes calldata misc
   )
     external
     payable

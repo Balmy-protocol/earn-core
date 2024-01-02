@@ -12,7 +12,7 @@ contract EarnStrategyStateBalanceBadSignatureMock is EarnStrategyStateBalanceMoc
     EarnStrategyStateBalanceMock(tokens_, withdrawalTypes_)
   { }
 
-  function checkSignature(address, bytes32) external pure override returns (bool) {
+  function validatePosition(address, bytes calldata) external pure override returns (bool) {
     return false;
   }
 }

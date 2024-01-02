@@ -247,8 +247,8 @@ interface IEarnStrategy is IERC165 {
   /**
    * @notice Checks if the address is whitelisted and if the signature matches with the T&C stored hash
    * @param sender The address to be checked
-   * @param signature The hash to check with the sender
+   * @param creationData The hash to check with the sender
    * @return A boolean indicating if the sender is whitelisted and the signature matches with the T&C stored hash.
    */
-  function checkSignature(address sender, bytes32 signature) external returns (bool);
+  function validatePosition(address sender, bytes calldata creationData) external returns (bool);
 }

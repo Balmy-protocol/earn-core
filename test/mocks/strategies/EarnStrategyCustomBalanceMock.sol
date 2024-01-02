@@ -88,7 +88,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     tokenBalance[token] = balance;
   }
 
-  function checkSignature(address, bytes32) external pure override returns (bool) {
+  function validatePosition(address, bytes calldata) external pure override returns (bool) {
     return true;
   }
 }

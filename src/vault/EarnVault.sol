@@ -147,8 +147,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     uint256 depositAmount,
     address owner,
     PermissionSet[] calldata permissions,
-    bytes calldata misc,
-    bytes32 signature
+    bytes calldata strategyValidationData,
+    bytes calldata misc
   )
     external
     payable
@@ -164,7 +164,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       uint256[] memory totalBalances
     ) = _loadCurrentState({ positionId: YieldMath.POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
 
-    if (!strategy.checkSignature(msg.sender, signature)) {
+    if (!strategy.validatePosition(msg.sender, strategyValidationData)) {
       revert BadSignature();
     }
 
