@@ -534,7 +534,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositAmount });
     assetsDeposited = strategy.deposited(depositToken, depositAmount);
 
-    uint256[] memory deposits = new uint256[](calculatedData.length + 1);
+    uint256[] memory deposits = new uint256[](tokens.length);
     deposits[0] = assetsDeposited;
 
     _updateAccounting({
