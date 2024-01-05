@@ -88,7 +88,6 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     tokenBalance[token] = balance;
   }
 
-  function validatePosition(address, bytes calldata) external pure override returns (bool) {
-    return true;
-  }
+  // solhint-disable-next-line no-empty-blocks
+  function validatePositionCreation(address, bytes calldata) external pure override { }
 }

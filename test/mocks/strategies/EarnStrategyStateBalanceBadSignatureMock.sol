@@ -5,6 +5,8 @@ import { EarnStrategyStateBalanceMock } from "./EarnStrategyStateBalanceMock.sol
 
 /// @notice An implementation of IEarnStrategy, without token migration
 contract EarnStrategyStateBalanceBadSignatureMock is EarnStrategyStateBalanceMock {
+  error InvalidTermsAndConditions();
+
   constructor(
     address[] memory tokens_,
     WithdrawalType[] memory withdrawalTypes_
@@ -12,7 +14,7 @@ contract EarnStrategyStateBalanceBadSignatureMock is EarnStrategyStateBalanceMoc
     EarnStrategyStateBalanceMock(tokens_, withdrawalTypes_)
   { }
 
-  function validatePosition(address, bytes calldata) external pure override returns (bool) {
-    return false;
+  function validatePositionCreation(address, bytes calldata) external pure override {
+    revert InvalidTermsAndConditions();
   }
 }

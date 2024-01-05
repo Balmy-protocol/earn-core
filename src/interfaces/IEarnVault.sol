@@ -27,9 +27,6 @@ interface IEarnVault is INFTPermissions {
   /// @notice Thrown when trying to withdraw amount exceeds balance
   error InsufficientFunds();
 
-  /// @notice Thrown when trying to create a position with an invalid signature
-  error BadSignature();
-
   /// @notice Emitted when a new position is created
   event PositionCreated(
     uint256 positionId,

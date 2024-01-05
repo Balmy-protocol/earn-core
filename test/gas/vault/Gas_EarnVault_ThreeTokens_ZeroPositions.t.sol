@@ -2,6 +2,7 @@
 pragma solidity >=0.8.22;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
+// solhint-disable-next-line no-unused-import
 import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";

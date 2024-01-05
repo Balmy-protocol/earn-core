@@ -164,9 +164,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       uint256[] memory totalBalances
     ) = _loadCurrentState({ positionId: YieldMath.POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
 
-    if (!strategy.validatePosition(msg.sender, strategyValidationData)) {
-      revert BadSignature();
-    }
+    strategy.validatePositionCreation(msg.sender, strategyValidationData);
 
     positionId = _mintWithPermissions(owner, permissions);
 
