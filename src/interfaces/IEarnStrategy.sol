@@ -243,4 +243,11 @@ interface IEarnStrategy is IERC165 {
    * @dev Can only be called by owner or an admin. It's up to each strategy to implement access control in some way
    */
   function unpause() external;
+
+  /**
+   * @notice Validates if the position can be created for this strategy, and fails it it can't
+   * @param sender The address to be checked
+   * @param creationData The hash to check with the sender
+   */
+  function validatePositionCreation(address sender, bytes calldata creationData) external;
 }

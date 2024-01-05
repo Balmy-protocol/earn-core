@@ -3,6 +3,7 @@ pragma solidity >=0.8.22;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
 import { StrategyId } from "../../../src/vault/EarnVault.sol";
+// solhint-disable-next-line no-unused-import
 import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { Token } from "../../../src/libraries/Token.sol";
@@ -30,13 +31,14 @@ contract GasEarnVaultOneTokenZeroPositions is BaseEarnVaultGasTest {
       amountToDeposit,
       address(this),
       PermissionUtils.buildEmptyPermissionSet(),
+      "",
       ""
     );
   }
 
   function test_Gas_createPosition_WithERC20() public {
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
   }
 }

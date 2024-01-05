@@ -9,6 +9,9 @@ import { EarnStrategyStateBalanceBadMigrationMock } from
   "../mocks/strategies/EarnStrategyStateBalanceBadMigrationMock.sol";
 import { EarnStrategyStateBalanceBadTokensMock } from "../mocks/strategies/EarnStrategyStateBalanceBadTokensMock.sol";
 
+import { EarnStrategyStateBalanceBadPositionValidationMock } from
+  "../mocks/strategies/EarnStrategyStateBalanceBadPositionValidationMock.sol";
+
 library StrategyUtils {
   function deployStateStrategy(
     IEarnStrategyRegistry registry,
@@ -34,6 +37,18 @@ library StrategyUtils {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
     strategy = new EarnStrategyStateBalanceBadMigrationMock(tokens, withdrawalTypes);
     strategyId = registry.registerStrategy(owner, strategy);
+  }
+
+  function deployBadPositionValidationStrategy(
+    IEarnStrategyRegistry registry,
+    address[] memory tokens
+  )
+    internal
+    returns (EarnStrategyStateBalanceBadPositionValidationMock strategy, StrategyId strategyId)
+  {
+    IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
+    strategy = new EarnStrategyStateBalanceBadPositionValidationMock(tokens, withdrawalTypes);
+    strategyId = registry.registerStrategy(address(this), strategy);
   }
 
   function deployStateStrategy(address[] memory tokens) internal returns (EarnStrategyStateBalanceMock strategy) {

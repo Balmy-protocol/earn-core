@@ -50,19 +50,19 @@ contract BaseDelayedWithdrawalGasTest is PRBTest {
     (strategyId, strategy) = strategyRegistry.deployStateStrategy(tokens);
 
     (position,) = vault.createPosition{ value: amountToDeposit1 }(
-      strategyId, tokens[0], amountToDeposit1, owner, PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[0], amountToDeposit1, owner, PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[0];
 
     (position,) = vault.createPosition{ value: amountToDeposit2 }(
-      strategyId, tokens[0], amountToDeposit2, owner, PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[0], amountToDeposit2, owner, PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[0];
 
     (position,) = vault.createPosition(
-      strategyId, tokens[1], amountToDeposit3, owner, PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, tokens[1], amountToDeposit3, owner, PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     positions.push(position);
     tokenByPosition[position] = tokens[1];

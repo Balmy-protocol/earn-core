@@ -2,6 +2,7 @@
 pragma solidity >=0.8.22;
 
 import { BaseEarnVaultGasTest } from "./BaseEarnVaultGasTest.sol";
+// solhint-disable-next-line no-unused-import
 import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
@@ -23,12 +24,12 @@ contract GasEarnVaultTwoTokensTwoPositionsWithLoss is BaseEarnVaultGasTest {
     (strategyId, strategy) =
       vault.STRATEGY_REGISTRY().deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(anotherErc20)));
     (positionId,) = vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     anotherErc20.mint(address(strategy), amountToReward);
 
     vault.createPosition(
-      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), ""
+      strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     anotherErc20.burn(address(strategy), amountToLose);
   }
