@@ -7,8 +7,27 @@
     "url": "https://github.com/balmy-protocol"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.1",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "chai": "4.3.8",
+    "hardhat": "^2.19.4",
+    "mocha": "^10.2.0",
     "prettier": "^2.8.7",
-    "solhint-community": "^3.5.0"
+    "solhint-community": "^3.5.0",
+    "ts-node": "10.9.1",
+    "typescript": "5.2.2",
+    "@typechain/ethers-v5": "10.2.1",
+    "@typechain/hardhat": "6.1.6",
+    "@nomicfoundation/hardhat-network-helpers": "1.0.8",
+    "@nomicfoundation/hardhat-toolbox": "2.0.2",
+    "@nomiclabs/hardhat-etherscan": "3.1.7",
+    "solidity-coverage": "0.8.4",
+    "typechain": "8.3.1",
+    "hardhat-gas-reporter": "1.0.9",
+    "@nomicfoundation/hardhat-chai-matchers": "1.0.6"
+
   },
   "files": [
     "contracts"
@@ -29,7 +48,8 @@
     "prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
     "prettier:write": "prettier --write \"**/*.{json,md,yml}\"",
     "prepublishOnly": "cp -r ./src ./contracts",
-    "postpublish": "rm -r ./contracts"
+    "postpublish": "rm -r ./contracts",
+    "test-hardhat": "npx hardhat compile --no-typechain --show-stack-traces && npx hardhat test"
   },
   "publishConfig": {
     "access": "public"

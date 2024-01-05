@@ -111,7 +111,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
   // solhint-disable-next-line no-empty-blocks
   function strategyRegistered(StrategyId, IEarnStrategy, bytes calldata) external override { }
 
-  function validatePosition(address, bytes calldata) external pure virtual override returns (bool) {
+  function validatePosition(address, bytes calldata) external virtual override returns (bool) {
     return true;
   }
 }

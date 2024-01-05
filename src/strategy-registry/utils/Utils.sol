@@ -8,7 +8,7 @@ library Utils {
    * @param subset The array to be checked as a potential subset.
    * @return if `superset` is a superset of `subset`
    */
-  function isSupersetOf(address[] memory superset, address[] memory subset) public pure returns (bool) {
+  function isSupersetOf(address[] memory superset, address[] memory subset) internal pure returns (bool) {
     if (superset.length < subset.length) return false;
 
     for (uint256 i = 0; i < subset.length; ++i) {
