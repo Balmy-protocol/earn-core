@@ -26,8 +26,8 @@ import { EarnNFTDescriptor } from "../../../src/nft-descriptor/EarnNFTDescriptor
 import { YieldMath } from "../../../src/vault/libraries/YieldMath.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 import { EarnStrategyRegistryMock } from "../../mocks/strategies/EarnStrategyRegistryMock.sol";
-import { EarnStrategyStateBalanceBadSignatureMock } from
-  "../../mocks/strategies/EarnStrategyStateBalanceBadSignatureMock.sol";
+import { EarnStrategyStateBalanceBadPositionValidationMock } from
+  "../../mocks/strategies/EarnStrategyStateBalanceBadPositionValidationMock.sol";
 import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnableMock.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
@@ -133,10 +133,13 @@ contract EarnVaultTest is PRBTest, StdUtils {
     );
   }
 
-  function test_createPosition_RevertWhen_BadSignature() public {
-    (, StrategyId strategyId) = strategyRegistry.deployBadSignatureStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+  function test_createPosition_RevertWhen_InvalidPositionCreation() public {
+    (, StrategyId strategyId) =
+      strategyRegistry.deployBadPositionValidationStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
-    vm.expectRevert(abi.encodeWithSelector(EarnStrategyStateBalanceBadSignatureMock.InvalidTermsAndConditions.selector));
+    vm.expectRevert(
+      abi.encodeWithSelector(EarnStrategyStateBalanceBadPositionValidationMock.InvalidPositionCreation.selector)
+    );
     vault.createPosition(
       strategyId, Token.NATIVE_TOKEN, 1 ether, positionOwner, PermissionUtils.buildEmptyPermissionSet(), "", "BAD"
     );

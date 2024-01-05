@@ -3,9 +3,9 @@ pragma solidity >=0.8.22;
 
 import { EarnStrategyStateBalanceMock } from "./EarnStrategyStateBalanceMock.sol";
 
-/// @notice An implementation of IEarnStrategy, without token migration
-contract EarnStrategyStateBalanceBadSignatureMock is EarnStrategyStateBalanceMock {
-  error InvalidTermsAndConditions();
+/// @notice An implementation of IEarnStrategy, that doesn't accept new positions
+contract EarnStrategyStateBalanceBadPositionValidationMock is EarnStrategyStateBalanceMock {
+  error InvalidPositionCreation();
 
   constructor(
     address[] memory tokens_,
@@ -15,6 +15,6 @@ contract EarnStrategyStateBalanceBadSignatureMock is EarnStrategyStateBalanceMoc
   { }
 
   function validatePositionCreation(address, bytes calldata) external pure override {
-    revert InvalidTermsAndConditions();
+    revert InvalidPositionCreation();
   }
 }
