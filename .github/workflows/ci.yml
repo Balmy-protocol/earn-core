@@ -161,36 +161,3 @@ jobs:
         run: |
           echo "## Tests result" >> $GITHUB_STEP_SUMMARY
           echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
-          test-hardhat:
-            needs: ["lint", "build"]
-            runs-on: "ubuntu-latest"
-            steps:
-              - name: "Check out the repo"
-                uses: "actions/checkout@v3"
-                with:
-                  submodules: "recursive"
-        
-              - name: "Install Pnpm"
-                uses: "pnpm/action-setup@v2"
-                with:
-                  version: "8"
-        
-              - name: "Install Node.js"
-                uses: "actions/setup-node@v3"
-                with:
-                  cache: "pnpm"
-                  node-version: "lts/*"
-        
-              - name: Install dependencies
-                run: pnpm i --frozen-lockfile
-        
-              - name: "Install Foundry"
-                uses: "foundry-rs/foundry-toolchain@v1"
-        
-              - name: Run unit tests
-                run: pnpm test-hardhat
-        
-              - name: "Add test summary"
-                run: |
-                  echo "## Tests result" >> $GITHUB_STEP_SUMMARY
-                  echo "✅ Passed" >> $GITHUB_STEP_SUMMARY
