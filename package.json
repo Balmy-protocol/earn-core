@@ -7,6 +7,11 @@
     "url": "https://github.com/balmy-protocol"
   },
   "devDependencies": {
+    "ds-test": "github:dapphub/ds-test",
+    "forge-std": "github:foundry-rs/forge-std#1d9650e951204a0ddce9ff89c32f1997984cef4d",
+    "@prb/test": "github:PaulRBerg/prb-test#8d76ad63d1bfa0b16bb880cfe4620a9e7e6aaa19",
+    "@openzeppelin": "github:OpenZeppelin/openzeppelin-contracts#9ef69c03d13230aeff24d91cb54c9d24c4de7c8b",
+    "@mean-finance/nft-permissions": "github:mean-finance/nft-permissions#1e75f88d0da6e93f2afbd1069a8c37553f448638",
     "prettier": "^2.8.7",
     "solhint-community": "^3.5.0"
   },
