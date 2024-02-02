@@ -2,10 +2,7 @@
 pragma solidity >=0.8.22;
 
 // solhint-disable no-unused-import
-import {
-  IAccessControlDefaultAdminRules,
-  IAccessControl
-} from "@openzeppelin/contracts/access/extensions/IAccessControlDefaultAdminRules.sol";
+import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
 import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
@@ -106,7 +103,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
   }
 
   function test_supportsInterface() public {
-    assertTrue(vault.supportsInterface(type(IAccessControlDefaultAdminRules).interfaceId));
+    assertTrue(vault.supportsInterface(type(IAccessControl).interfaceId));
     assertTrue(vault.supportsInterface(type(IERC721).interfaceId));
     assertTrue(vault.supportsInterface(type(IEarnVault).interfaceId));
     assertFalse(vault.supportsInterface(bytes4(0)));
