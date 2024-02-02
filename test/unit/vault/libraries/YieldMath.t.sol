@@ -185,7 +185,7 @@ contract YieldMathTest is PRBTest, StdUtils {
       lastRecordedBalance: lastRecordedTotalBalance,
       totalBalance: totalBalance,
       newStrategyLossAccum: totalLossAccum,
-      strategyCompleteLossEvents: 0,
+      newStrategyCompleteLossEvents: 0,
       newStrategyYieldAccum: newPositionYieldAccum,
       positionRegistry: positionRegistry,
       positionLossRegistry: positionLossRegistry

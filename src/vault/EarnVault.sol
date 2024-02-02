@@ -3,8 +3,7 @@ pragma solidity >=0.8.22;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { AccessControlDefaultAdminRules } from
-  "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -46,7 +45,7 @@ import { CalculatedDataForToken, CalculatedDataLibrary } from "./types/Calculate
 import { UpdateAction } from "./types/UpdateAction.sol";
 // solhint-enable no-unused-import
 
-contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
+contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using Math for uint256;
   using Token for address;
   using PositionDataLibrary for mapping(uint256 => PositionData);
@@ -92,11 +91,11 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     address[] memory initialPauseAdmins,
     IEarnNFTDescriptor nftDescriptor
   )
-    AccessControlDefaultAdminRules(3 days, superAdmin)
     NFTPermissions("Balmy Earn NFT Position", "EARN", "1.0")
   {
     STRATEGY_REGISTRY = strategyRegistry;
     NFT_DESCRIPTOR = nftDescriptor;
+    _grantRole(DEFAULT_ADMIN_ROLE, superAdmin);
     _assignRoles(PAUSE_ROLE, initialPauseAdmins);
   }
 
@@ -126,6 +125,9 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       address[] memory tokens,
     ) = _loadCurrentState(positionId);
     uint256[] memory balances = calculatedData.extractBalances(positionAssetBalance);
+    // TODO: avoid returing withdawal types and return the strategy instead. If the caller wants to know
+    //       the withdrawal types, they can ask the strategy themselves. If they don't, then we'll save
+    //       some gas
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
     return (tokens, withdrawalTypes, balances);
   }
@@ -136,13 +138,8 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
   }
 
   /// @inheritdoc IERC165
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(AccessControlDefaultAdminRules, ERC721, IERC165)
-    returns (bool)
-  {
-    return AccessControlDefaultAdminRules.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
+  function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
+    return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
       || interfaceId == type(IEarnVault).interfaceId;
   }
 
@@ -290,7 +287,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     emit PositionWithdrawn(positionId, tokensToWithdraw, withdrawn, recipient);
   }
 
-  // TODO: Add nonReentrant
   /// @inheritdoc IEarnVault
   function specialWithdraw(
     uint256 positionId,
@@ -462,14 +458,14 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     (
       calculatedData.newStrategyYieldAccum,
       calculatedData.newStrategyLossAccum,
-      calculatedData.strategyCompleteLossEvents
+      calculatedData.newStrategyCompleteLossEvents
     ) = YieldMath.calculateAccum({
       lastRecordedBalance: lastRecordedBalance,
       currentBalance: totalBalance,
       previousStrategyYieldAccum: strategyYieldAccum,
       totalShares: totalShares,
       previousStrategyLossAccum: strategyLossAccum,
-      strategyCompleteLossEvents: strategyCompleteLossEvents
+      previousStrategyCompleteLossEvents: strategyCompleteLossEvents
     });
 
     calculatedData.positionBalance = YieldMath.calculateBalance({
@@ -477,7 +473,7 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       token: token,
       totalBalance: totalBalance,
       newStrategyLossAccum: calculatedData.newStrategyLossAccum,
-      strategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents,
+      newStrategyCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents,
       lastRecordedBalance: lastRecordedBalance,
       newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
       positionShares: positionShares,
@@ -612,7 +608,6 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
       rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
     });
     if (shares == 0) {
-      // solhint-disable-next-line no-empty-blocks
       if (action == UpdateAction.DEPOSIT) {
         revert ZeroSharesDeposit();
       } else {
@@ -641,19 +636,19 @@ contract EarnVault is AccessControlDefaultAdminRules, NFTPermissions, Pausable, 
     bool strategyHadLoss = false;
     if (
       calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
-        || calculatedData.strategyCompleteLossEvents != 0
+        || calculatedData.newStrategyCompleteLossEvents != 0
     ) {
       _strategyYieldLossData.update({
         strategyId: strategyId,
         token: token,
         newStrategyLossAccum: calculatedData.newStrategyLossAccum,
-        newStrategyCompleteLossEvents: calculatedData.strategyCompleteLossEvents
+        newStrategyCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents
       });
       _positionYieldLossData.update({
         positionId: positionId,
         token: token,
         newPositionLossAccum: calculatedData.newStrategyLossAccum,
-        newPositionCompleteLossEvents: calculatedData.strategyCompleteLossEvents
+        newPositionCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents
       });
       strategyHadLoss = true;
     }

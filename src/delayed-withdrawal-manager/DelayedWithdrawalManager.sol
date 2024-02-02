@@ -117,6 +117,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     external
     returns (uint256 withdrawn, uint256 stillPending)
   {
+    // TODO: We could store the withdraw permission on the constructor, and save a little gas here
     if (!vault.hasPermission(positionId, msg.sender, vault.WITHDRAW_PERMISSION())) revert UnauthorizedWithdrawal();
 
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
@@ -154,6 +155,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   function _revertIfNotCurrentStrategyAdapter(uint256 positionId, address token) internal view {
     StrategyId strategyId = vault.positionsStrategy(positionId);
     if (strategyId == StrategyIdConstants.NO_STRATEGY) revert AdapterMismatch();
+    // TODO: We could store the strategy registry on the constructor, and save a little gas here
     IDelayedWithdrawalAdapter adapter =
       vault.STRATEGY_REGISTRY().getStrategy(strategyId).delayedWithdrawalAdapter(token);
     if (address(adapter) != msg.sender) revert AdapterMismatch();

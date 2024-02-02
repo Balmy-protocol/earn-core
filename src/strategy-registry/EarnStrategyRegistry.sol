@@ -64,6 +64,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   /// @inheritdoc IEarnStrategyRegistry
   function acceptOwnershipTransfer(StrategyId strategyId) external onlyReceiver(strategyId) {
+    // TODO: Avoid using modifier and simply do the inline assertion, to avoid reading storage twice
     address newOwner = proposedOwnershipTransfer[strategyId];
     owner[strategyId] = newOwner;
     delete proposedOwnershipTransfer[strategyId];
@@ -88,6 +89,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
     assignedId[proposedStrategyUpdate.newStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
+    // TODO: include proposed strategy in event. For consistency with transfership cancel
     emit StrategyUpdateCanceled(strategyId);
   }
 
