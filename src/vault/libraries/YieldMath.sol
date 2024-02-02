@@ -130,7 +130,9 @@ library YieldMath {
   {
     if (
       positionId == POSITION_BEING_CREATED || newStrategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS
-        || (totalBalance == 0 && lastRecordedBalance != 0 && newStrategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS - 1)
+        || (
+          totalBalance == 0 && lastRecordedBalance != 0 && newStrategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS - 1
+        )
     ) {
       // We've reached the max amount of loss events or the position is being created. We'll simply report all balances
       // as 0

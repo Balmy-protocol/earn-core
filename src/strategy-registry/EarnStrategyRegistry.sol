@@ -89,7 +89,6 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
     assignedId[proposedStrategyUpdate.newStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
-
     // TODO: include proposed strategy in event. For consistency with transfership cancel
     emit StrategyUpdateCanceled(strategyId);
   }

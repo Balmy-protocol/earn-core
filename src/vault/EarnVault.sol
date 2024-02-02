@@ -126,7 +126,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     ) = _loadCurrentState(positionId);
     uint256[] memory balances = calculatedData.extractBalances(positionAssetBalance);
     // TODO: avoid returing withdawal types and return the strategy instead. If the caller wants to know
-    //       the withdrawal types, they can ask the strategy themselves. If they don't, then we'll save 
+    //       the withdrawal types, they can ask the strategy themselves. If they don't, then we'll save
     //       some gas
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
     return (tokens, withdrawalTypes, balances);
@@ -138,12 +138,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   }
 
   /// @inheritdoc IERC165
-  function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(AccessControl, ERC721, IERC165)
-    returns (bool)
-  {
+  function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
     return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
       || interfaceId == type(IEarnVault).interfaceId;
   }
