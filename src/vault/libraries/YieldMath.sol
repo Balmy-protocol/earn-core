@@ -36,7 +36,7 @@ library YieldMath {
 
   /**
    * @dev The maximum amount of loss events supported per strategy and token. After this threshold is met, then all
-   *      balances will for that strategy and token will be reported as zero.
+   *      balances will be reported as zero for that strategy and token.
    */
   uint8 internal constant MAX_COMPLETE_LOSS_EVENTS = type(uint8).max;
 
@@ -56,7 +56,7 @@ library YieldMath {
     uint256 previousStrategyYieldAccum,
     uint256 totalShares,
     uint256 previousStrategyLossAccum,
-    uint256 strategyCompleteLossEvents
+    uint256 previousStrategyCompleteLossEvents
   )
     internal
     pure
@@ -64,17 +64,15 @@ library YieldMath {
   {
     if (
       (currentBalance == 0 && lastRecordedBalance != 0)
-        || strategyCompleteLossEvents == YieldMath.MAX_COMPLETE_LOSS_EVENTS
+        || previousStrategyCompleteLossEvents == YieldMath.MAX_COMPLETE_LOSS_EVENTS
     ) {
       // If we have just produced a complete loss, or we already reached the max allowed complete losses, then we reset
       // the accumulators
       newStrategyYieldAccum = 0;
       newStrategyLossAccum = YieldMath.LOSS_ACCUM_INITIAL;
-      if (strategyCompleteLossEvents != YieldMath.MAX_COMPLETE_LOSS_EVENTS) {
-        newStrategyCompleteLossEvents = strategyCompleteLossEvents + 1;
-      } else {
-        newStrategyCompleteLossEvents = strategyCompleteLossEvents;
-      }
+      newStrategyCompleteLossEvents = previousStrategyCompleteLossEvents == YieldMath.MAX_COMPLETE_LOSS_EVENTS
+        ? previousStrategyCompleteLossEvents
+        : previousStrategyCompleteLossEvents + 1;
     } else if (currentBalance < lastRecordedBalance) {
       newStrategyLossAccum = previousStrategyLossAccum.mulDiv(currentBalance, lastRecordedBalance, Math.Rounding.Floor);
 
@@ -93,13 +91,13 @@ library YieldMath {
       newStrategyYieldAccum =
         previousStrategyYieldAccum.mulDiv(newStrategyLossAccum, previousStrategyLossAccum, Math.Rounding.Floor);
     } else if (totalShares == 0) {
-      return (previousStrategyYieldAccum, previousStrategyLossAccum, strategyCompleteLossEvents);
+      return (previousStrategyYieldAccum, previousStrategyLossAccum, previousStrategyCompleteLossEvents);
     } else {
       uint256 yieldPerShare =
         ACCUM_PRECISION.mulDiv(currentBalance - lastRecordedBalance, totalShares, Math.Rounding.Floor);
       newStrategyYieldAccum = previousStrategyYieldAccum + yieldPerShare;
       newStrategyLossAccum = previousStrategyLossAccum;
-      newStrategyCompleteLossEvents = strategyCompleteLossEvents;
+      newStrategyCompleteLossEvents = previousStrategyCompleteLossEvents;
     }
   }
 
@@ -109,7 +107,7 @@ library YieldMath {
    * @param token The token to calculate the balance for
    * @param positionShares The amount of shares owned by the position
    * @param newStrategyLossAccum The total amount of loss that happened for this strategy and token
-   * @param strategyCompleteLossEvents The total amount of complete loss events that happened for this strategy and
+   * @param newStrategyCompleteLossEvents The total amount of complete loss events that happened for this strategy and
    * token
    * @param newStrategyYieldAccum The new value for the yield accumulator
    * @param positionRegistry A registry for yield data for each position
@@ -121,7 +119,7 @@ library YieldMath {
     uint256 lastRecordedBalance,
     uint256 totalBalance,
     uint256 newStrategyLossAccum,
-    uint256 strategyCompleteLossEvents,
+    uint256 newStrategyCompleteLossEvents,
     uint256 newStrategyYieldAccum,
     mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry,
     mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken) storage positionLossRegistry
@@ -131,8 +129,8 @@ library YieldMath {
     returns (uint256)
   {
     if (
-      positionId == POSITION_BEING_CREATED || strategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS
-        || (totalBalance == 0 && lastRecordedBalance != 0 && strategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS - 1)
+      positionId == POSITION_BEING_CREATED || newStrategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS
+        || (totalBalance == 0 && lastRecordedBalance != 0 && newStrategyCompleteLossEvents == MAX_COMPLETE_LOSS_EVENTS - 1)
     ) {
       // We've reached the max amount of loss events or the position is being created. We'll simply report all balances
       // as 0
@@ -143,7 +141,7 @@ library YieldMath {
       positionRegistry.read(positionId, token);
     (uint256 positionLossAccum, uint256 positionProcessedCompleteLossEvents) =
       positionHadLoss ? positionLossRegistry.read(positionId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
-    if (positionProcessedCompleteLossEvents < strategyCompleteLossEvents) {
+    if (positionProcessedCompleteLossEvents < newStrategyCompleteLossEvents) {
       positionBalance = 0;
       positionYieldAccum = 0;
       positionLossAccum = YieldMath.LOSS_ACCUM_INITIAL;

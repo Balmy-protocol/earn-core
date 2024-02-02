@@ -54,6 +54,7 @@ library RegisteredAdaptersLibrary {
     return (false, length);
   }
 
+  // TODO: remove this function and use `set` instead, since they are the same
   /// @notice Registers an adapter for a position and token
   function register(
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
@@ -84,6 +85,7 @@ library RegisteredAdaptersLibrary {
   )
     internal
   {
+    // TODO: reevaluate, I think it needs to be i <= end
     for (uint256 i = start; i < end; ++i) {
       delete registeredAdapters[i];
     }

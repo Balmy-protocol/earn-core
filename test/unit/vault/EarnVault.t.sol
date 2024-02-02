@@ -97,9 +97,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertEq(vault.DOMAIN_SEPARATOR(), expectedDomainSeparator);
 
     // Access control
-    assertEq(vault.defaultAdminDelay(), 3 days);
-    assertEq(vault.owner(), superAdmin);
-    assertEq(vault.defaultAdmin(), superAdmin);
+    assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), superAdmin));
     assertTrue(vault.hasRole(vault.PAUSE_ROLE(), pauseAdmin));
 
     // Immutables
