@@ -72,7 +72,6 @@ library RegisteredAdaptersLibrary {
   )
     internal
   {
-    // TODO: reevaluate, I think it needs to be i <= end
     for (uint256 i = start; i < end; ++i) {
       delete registeredAdapters[i];
     }

@@ -59,7 +59,7 @@ Pretty good increase from the original deposit! 🤑
 ### Other owned tokens
 
 Let's remember that when a user deposits assets into Earn, they'll start earning yield in one or more tokens. One of
-these tokens could be the asset, but they could be other tokens also.
+these tokens could be the asset, but they also earn yield in other tokens.
 
 Calculating who owns what in these others tokens is a little harder than the asset. Let's go over it with an example.
 Let's say that when John last deposited into the strategy, there were 50 _$OP_ rewards already collected. Then, after a
@@ -79,11 +79,11 @@ how much John owns by doing the same as before:
 
 $$
 \begin{align}
-owned(John, OP) & = \frac{yielded_{t1 - t0}(OP) * shares(John)}{totalShares_{t1}} \notag \\
-& \quad+ \frac{yielded_{t2 - t1}(OP) * shares(John)}{totalShares_{t2}}  \notag \\
-& \quad+ \frac{yielded_{t3 - t2}(OP) * shares(John)}{totalShares_{t3}}  \notag \\
+owned(John, OP) & = \frac{yielded_{t_1 - t_0}(OP) * shares(John)}{totalShares_{t_1}} \notag \\
+& \quad+ \frac{yielded_{t_2 - t_1}(OP) * shares(John)}{totalShares_{t_2}}  \notag \\
+& \quad+ \frac{yielded_{t_3 - t_2}(OP) * shares(John)}{totalShares_{t_3}}  \notag \\
 & \quad+ ... \notag \\
-& = shares(John) * \sum_{n=1}^{\infty} \frac{yielded_{tn-t(n-1)}}{totalShares_{tn}}  \notag \\
+& = shares(John) * \sum_{n=1}^{\infty} \frac{yielded_{t_n-t_{n-1}}}{totalShares_{t_n}}  \notag \\
 \end{align}
 $$
 
@@ -116,8 +116,6 @@ because:
 
 When working with tricky math like we explained before, it's very important that we don't lose precision. At the same
 time, we'd like to use the least amount of storage possible, so that all interactions continue to be cheap to execute.
-
-You can refer to [this file](./types/Storage.sol) to understand the different variable sized we chose.
 
 #### Position Balance
 
@@ -191,7 +189,7 @@ hold more than 0.25% of _$PEPE_'s circulating supply (Dec 15, 2023) before a wei
 This would happen when we have big precision on yield, small precision on shares.
 
 Assuming we are on a blockchain that has one-second blocks, how much space do we have in the accum before it overflows?
-Let' assume that we want to make sure this contract works for at least the next 10 years (because in 10 years we'll
+Let's assume that we want to make sure this contract works for at least the next 10 years (because in 10 years we'll
 probably be using Solana anyways, right? 😂).
 
 There are _3.154e8_ seconds in 10 years, which means there will be _3.154e8_ blocks. Assuming a **really** worst case
@@ -230,7 +228,7 @@ $$
 This means that if 10 USDC worth of tokens generate less than _9.05e13_ worth of tokens **per second**, then we have at
 least 10 years before the accum overflows.
 
-To put it in _$OP_ terms (known for its use as a reward), that would be 0, 0002 (Dec 15, 2023) usd per second, which
+To put it in _$OP_ terms (known for its use as a reward), that would be 0,0002 (Dec 15, 2023) usd per second, which
 would be $17 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
@@ -239,11 +237,11 @@ but **it will be up to each strategy to make sure that the tokens they support w
 ### Yield Losses
 
 First, a few notes on losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity, as a
-form of liquidity mining. These rewards tend to be distributed based on amount of liquidity, and the amount of rewards
-tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't tend to diminish
-over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a protocol removes all
-rewards that were unclaimed after a long period of time. But we believe that generally, there shouldn't be any losses in
-reward tokens.
+form of liquidity mining. These rewards tend to be distributed based on amount of deposited liquidity, and the amount of
+earned rewards tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't
+tend to diminish over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a
+protocol removes all rewards that were unclaimed after a long period of time. But we believe that generally, there
+shouldn't be any losses in reward tokens.
 
 So far, we've described how we can calculate how much each position has earned for reward tokens. The approach is
 simple, but it has its limitations. For example, it does not handle correctly a scenario where there might be a loss
@@ -412,4 +410,4 @@ to cover for unexpected circumstances such as hacks, but it's very important tha
 much as possible.
 
 After the 255 complete losses limit has been reached, the vault will simply set all position balances to zero. It will
-be up to each strategy to distribute any left funds in a way they deem fit.
+then be up to each strategy to distribute any left funds in a way they deem fit.

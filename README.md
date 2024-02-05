@@ -45,7 +45,7 @@ generating yield
 ### Reward Token
 
 Like we said before, a position will deposit an asset, and generate yield in one or more tokens. We'll use the term
-"reward tokens" to refer to the tokens that are being generated, but are not the asset.
+"reward tokens" to refer to the tokens that are generating yield, but are not the asset.
 
 ### Strategies
 
@@ -118,7 +118,7 @@ interpret these withdrawals correctly
 
 ### Global Earn Config
 
-A way to read and store a default fee
+A singleton contract that holds global configuration for the Earn ecosystem.
 
 ## Architecture Summary
 
