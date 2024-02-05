@@ -93,8 +93,9 @@ interface IEarnStrategyRegistry {
   /**
    * @notice Emitted when a proposed update is canceled
    * @param strategyId The strategy id
+   * @param strategy The strategy we were going to update the id to
    */
-  event StrategyUpdateCanceled(StrategyId strategyId);
+  event StrategyUpdateCanceled(StrategyId strategyId, IEarnStrategy strategy);
 
   /**
    * @notice Emitted when a proposed strategy ownership transfer is proposed

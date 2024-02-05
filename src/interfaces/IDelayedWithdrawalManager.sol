@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.8;
 
-import { IEarnVault } from "./IEarnVault.sol";
+import { IEarnVault, IEarnStrategyRegistry } from "./IEarnVault.sol";
 
 /**
  * @title Delayed Withdrawal Manager Interface
@@ -44,7 +44,15 @@ interface IDelayedWithdrawalManager {
    * @notice Returns the address to Earn's vault
    * @return Earn's vault address
    */
-  function vault() external view returns (IEarnVault);
+  // slither-disable-next-line naming-convention
+  function VAULT() external view returns (IEarnVault);
+
+  /**
+   * @notice Returns the address of the strategy registry
+   * @return The address of the strategy registry
+   */
+  // slither-disable-next-line naming-convention
+  function STRATEGY_REGISTRY() external view returns (IEarnStrategyRegistry);
 
   /**
    * @notice Returns the estimated amount of funds that are pending for withdrawal. Note that this amount is estimated

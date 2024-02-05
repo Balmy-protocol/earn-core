@@ -54,19 +54,6 @@ library RegisteredAdaptersLibrary {
     return (false, length);
   }
 
-  // TODO: remove this function and use `set` instead, since they are the same
-  /// @notice Registers an adapter for a position and token
-  function register(
-    mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
-    IDelayedWithdrawalAdapter adapter,
-    uint256 length
-  )
-    internal
-  {
-    if (length > 0) registeredAdapters[length - 1].isNextFilled = true;
-    registeredAdapters[length] = RegisteredAdapter({ adapter: adapter, isNextFilled: false });
-  }
-
   function set(
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters,
     uint256 index,

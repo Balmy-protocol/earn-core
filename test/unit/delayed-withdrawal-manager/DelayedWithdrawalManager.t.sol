@@ -33,11 +33,12 @@ contract DelayedWithdrawalManagerTest is PRBTest {
   StrategyId private strategyId;
   address[] private tokens = new address[](2);
   address private owner = address(3);
+  EarnVault private vault;
 
   function setUp() public virtual {
     IEarnStrategyRegistry strategyRegistry = new EarnStrategyRegistry();
     IEarnNFTDescriptor nftDescriptor;
-    EarnVault vault = new EarnVault(strategyRegistry, address(1), CommonUtils.arrayOf(address(2)), nftDescriptor);
+    vault = new EarnVault(strategyRegistry, address(1), CommonUtils.arrayOf(address(2)), nftDescriptor);
     ERC20MintableBurnableMock erc20 = new ERC20MintableBurnableMock();
     erc20.approve(address(vault), type(uint256).max);
 
@@ -71,6 +72,11 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     positions.push(position);
     tokenByPosition[position] = tokens[1];
     delayedWithdrawalManager = new DelayedWithdrawalManager(vault);
+  }
+
+  function test_constructor() public {
+    assertEq(address(delayedWithdrawalManager.VAULT()), address(vault));
+    assertEq(address(delayedWithdrawalManager.STRATEGY_REGISTRY()), address(vault.STRATEGY_REGISTRY()));
   }
 
   function test_registerDelayedWithdraw() public {
@@ -147,7 +153,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
       (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
         delayedWithdrawalManager.allPositionFunds(positions[i]);
-      (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positions[i]);
+      (address[] memory vaultTokens,,) = delayedWithdrawalManager.VAULT().position(positions[i]);
 
       assertEq(positionTokens, vaultTokens);
       for (uint256 j; j < positionTokens.length; j++) {
@@ -167,7 +173,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     vm.stopPrank();
 
     // Update strategy to register a new adapter
-    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.vault().STRATEGY_REGISTRY();
+    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.STRATEGY_REGISTRY();
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
     strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
@@ -200,7 +206,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
 
     (address[] memory positionTokens, uint256[] memory estimatedPending, uint256[] memory withdrawable) =
       delayedWithdrawalManager.allPositionFunds(positionId);
-    (address[] memory vaultTokens,,) = delayedWithdrawalManager.vault().position(positionId);
+    (address[] memory vaultTokens,,) = delayedWithdrawalManager.VAULT().position(positionId);
 
     assertEq(positionTokens, vaultTokens);
     for (uint256 i; i < positionTokens.length; i++) {
@@ -243,7 +249,7 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     vm.stopPrank();
 
     // Update strategy to register a new adapter
-    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.vault().STRATEGY_REGISTRY();
+    IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.VAULT().STRATEGY_REGISTRY();
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
     strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...

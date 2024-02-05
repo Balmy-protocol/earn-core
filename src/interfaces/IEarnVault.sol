@@ -89,13 +89,13 @@ interface IEarnVault is INFTPermissions {
    * @notice Returns a summary of the position's balances
    * @param positionId The position to check the balances for
    * @return tokens All of the position's tokens
-   * @return withdrawalTypes The type of withdrawal for each token
    * @return balances Total balance of each token
+   * @return strategy The position's strategy
    */
   function position(uint256 positionId)
     external
     view
-    returns (address[] memory tokens, IEarnStrategy.WithdrawalType[] memory withdrawalTypes, uint256[] memory balances);
+    returns (address[] memory tokens, uint256[] memory balances, IEarnStrategy strategy);
 
   /**
    * @notice Returns if deposits and paused
