@@ -110,11 +110,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   }
 
   /// @inheritdoc IEarnVault
-  function position(uint256 positionId)
-    external
-    view
-    returns (address[] memory, IEarnStrategy.WithdrawalType[] memory, uint256[] memory)
-  {
+  function position(uint256 positionId) external view returns (address[] memory, uint256[] memory, IEarnStrategy) {
     (
       uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
@@ -125,11 +121,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       address[] memory tokens,
     ) = _loadCurrentState(positionId);
     uint256[] memory balances = calculatedData.extractBalances(positionAssetBalance);
-    // TODO: avoid returing withdawal types and return the strategy instead. If the caller wants to know
-    //       the withdrawal types, they can ask the strategy themselves. If they don't, then we'll save
-    //       some gas
-    IEarnStrategy.WithdrawalType[] memory withdrawalTypes = strategy.supportedWithdrawals();
-    return (tokens, withdrawalTypes, balances);
+    return (tokens, balances, strategy);
   }
 
   /// @inheritdoc IEarnVault

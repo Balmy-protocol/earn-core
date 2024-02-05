@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.22;
 
-import { IDelayedWithdrawalManager, IEarnVault } from "../interfaces/IDelayedWithdrawalManager.sol";
+import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
+import {
+  IDelayedWithdrawalManager, IEarnVault, IEarnStrategyRegistry
+} from "../interfaces/IDelayedWithdrawalManager.sol";
 import { IDelayedWithdrawalAdapter } from "../interfaces/IDelayedWithdrawalAdapter.sol";
 import { StrategyId, StrategyIdConstants } from "../types/StrategyId.sol";
 // solhint-disable-next-line no-unused-import
@@ -11,14 +14,24 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   using RegisteredAdaptersLibrary for mapping(uint256 => mapping(address => mapping(uint256 => RegisteredAdapter)));
   using RegisteredAdaptersLibrary for mapping(uint256 => RegisteredAdapter);
 
-  // slither-disable-next-line naming-convention
+  // slither-disable-start naming-convention
   mapping(uint256 position => mapping(address token => mapping(uint256 index => RegisteredAdapter registeredAdapter)))
     internal _registeredAdapters;
   /// @inheritdoc IDelayedWithdrawalManager
-  IEarnVault public immutable vault;
+  // solhint-disable-next-line var-name-mixedcase
+  IEarnVault public immutable VAULT;
+  /// @inheritdoc IDelayedWithdrawalManager
+  // solhint-disable-next-line var-name-mixedcase
+  IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
+  // solhint-disable-next-line var-name-mixedcase
+  INFTPermissions.Permission private immutable WITHDRAW_PERMISSION;
 
-  constructor(IEarnVault _vault) {
-    vault = _vault;
+  // slither-disable-end naming-convention
+
+  constructor(IEarnVault vault) {
+    VAULT = vault;
+    STRATEGY_REGISTRY = vault.STRATEGY_REGISTRY();
+    WITHDRAW_PERMISSION = vault.WITHDRAW_PERMISSION();
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
@@ -67,7 +80,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     returns (address[] memory tokens, uint256[] memory estimatedPending, uint256[] memory withdrawable)
   {
     // slither-disable-next-line unused-return
-    (tokens,,) = vault.position(positionId);
+    (tokens,,) = VAULT.position(positionId);
     uint256 tokensQuantity = tokens.length;
     estimatedPending = new uint256[](tokensQuantity);
     withdrawable = new uint256[](tokensQuantity);
@@ -105,7 +118,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     if (isRepeated) {
       revert AdapterDuplicated();
     }
-    registeredAdapters.register(IDelayedWithdrawalAdapter(msg.sender), length);
+    registeredAdapters.set(length, IDelayedWithdrawalAdapter(msg.sender));
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
@@ -117,8 +130,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
     external
     returns (uint256 withdrawn, uint256 stillPending)
   {
-    // TODO: We could store the withdraw permission on the constructor, and save a little gas here
-    if (!vault.hasPermission(positionId, msg.sender, vault.WITHDRAW_PERMISSION())) revert UnauthorizedWithdrawal();
+    if (!VAULT.hasPermission(positionId, msg.sender, WITHDRAW_PERMISSION)) revert UnauthorizedWithdrawal();
 
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
       _registeredAdapters.get(positionId, token);
@@ -153,11 +165,9 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   }
 
   function _revertIfNotCurrentStrategyAdapter(uint256 positionId, address token) internal view {
-    StrategyId strategyId = vault.positionsStrategy(positionId);
+    StrategyId strategyId = VAULT.positionsStrategy(positionId);
     if (strategyId == StrategyIdConstants.NO_STRATEGY) revert AdapterMismatch();
-    // TODO: We could store the strategy registry on the constructor, and save a little gas here
-    IDelayedWithdrawalAdapter adapter =
-      vault.STRATEGY_REGISTRY().getStrategy(strategyId).delayedWithdrawalAdapter(token);
+    IDelayedWithdrawalAdapter adapter = STRATEGY_REGISTRY.getStrategy(strategyId).delayedWithdrawalAdapter(token);
     if (address(adapter) != msg.sender) revert AdapterMismatch();
   }
 }

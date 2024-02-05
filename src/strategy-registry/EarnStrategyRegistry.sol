@@ -63,9 +63,9 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function acceptOwnershipTransfer(StrategyId strategyId) external onlyReceiver(strategyId) {
-    // TODO: Avoid using modifier and simply do the inline assertion, to avoid reading storage twice
+  function acceptOwnershipTransfer(StrategyId strategyId) external {
     address newOwner = proposedOwnershipTransfer[strategyId];
+    if (newOwner != msg.sender) revert UnauthorizedOwnershipReceiver();
     owner[strategyId] = newOwner;
     delete proposedOwnershipTransfer[strategyId];
     emit StrategyOwnershipTransferred(strategyId, newOwner);
@@ -89,8 +89,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
     assignedId[proposedStrategyUpdate.newStrategy] = StrategyIdConstants.NO_STRATEGY;
     delete proposedUpdate[strategyId];
-    // TODO: include proposed strategy in event. For consistency with transfership cancel
-    emit StrategyUpdateCanceled(strategyId);
+    emit StrategyUpdateCanceled(strategyId, proposedStrategyUpdate.newStrategy);
   }
 
   /// @inheritdoc IEarnStrategyRegistry
@@ -170,11 +169,6 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   modifier onlyOwner(StrategyId strategyId) {
     if (owner[strategyId] != msg.sender) revert UnauthorizedStrategyOwner();
-    _;
-  }
-
-  modifier onlyReceiver(StrategyId strategyId) {
-    if (proposedOwnershipTransfer[strategyId] != msg.sender) revert UnauthorizedOwnershipReceiver();
     _;
   }
 }

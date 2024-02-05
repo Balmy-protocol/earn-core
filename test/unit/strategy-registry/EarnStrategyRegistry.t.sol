@@ -17,7 +17,7 @@ import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnab
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
-  event StrategyUpdateCanceled(StrategyId strategyId);
+  event StrategyUpdateCanceled(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdated(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyOwnershipTransferProposed(StrategyId strategyId, address newOwner);
   event StrategyOwnershipTransferCanceled(StrategyId strategyId, address receiver);
@@ -236,7 +236,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.startPrank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
     vm.expectEmit();
-    emit StrategyUpdateCanceled(aRegisteredStrategyId);
+    emit StrategyUpdateCanceled(aRegisteredStrategyId, anotherStrategy);
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
 
     // and can propose same strategy update again
@@ -279,7 +279,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.startPrank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
     vm.expectEmit();
-    emit StrategyUpdateCanceled(aRegisteredStrategyId);
+    emit StrategyUpdateCanceled(aRegisteredStrategyId, anotherStrategy);
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
 
     vm.expectRevert(
