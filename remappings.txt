@@ -1,6 +1,7 @@
-@prb/test/=lib/prb-test/src/
-forge-std/=lib/forge-std/src/
+@prb/test/=node_modules/@prb/test/src
+ds-test/=node_modules/ds-test/src
+forge-std/=node_modules/forge-std/src
 src/=src/
-@openzeppelin/=lib/openzeppelin-contracts/
-@mean-finance/nft-permissions/=lib/nft-permissions/src/
-@mean-finance/nft-permissions-test/=lib/nft-permissions/test/
+@openzeppelin/=node_modules/@openzeppelin/
+@mean-finance/nft-permissions/=node_modules/@mean-finance/nft-permissions/src/
+@mean-finance/nft-permissions-test/=node_modules/@mean-finance/nft-permissions/test/
