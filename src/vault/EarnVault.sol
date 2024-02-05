@@ -110,11 +110,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   }
 
   /// @inheritdoc IEarnVault
-  function position(uint256 positionId)
-    external
-    view
-    returns (address[] memory, uint256[] memory, IEarnStrategy)
-  {
+  function position(uint256 positionId) external view returns (address[] memory, uint256[] memory, IEarnStrategy) {
     (
       uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,

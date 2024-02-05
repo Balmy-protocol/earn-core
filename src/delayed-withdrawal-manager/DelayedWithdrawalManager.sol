@@ -25,7 +25,7 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
   // solhint-disable-next-line var-name-mixedcase
   INFTPermissions.Permission private immutable WITHDRAW_PERMISSION;
-  
+
   // slither-disable-end naming-convention
 
   constructor(IEarnVault vault) {
