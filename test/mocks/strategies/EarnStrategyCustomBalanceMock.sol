@@ -77,7 +77,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     withdrawn = new uint256[](_tokens.length());
     withdrawn[tokenIndex] = toWithdraw;
     types = new WithdrawalType[](_tokens.length());
-    data = '0x';
+    data = "0x";
   }
 
   function addToken(address token, uint104 balance) external returns (uint256) {
