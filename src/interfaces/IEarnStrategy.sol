@@ -10,9 +10,9 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
 /**
  * @title Earn Strategy Interface
- * @notice In Earn, a strategy will take an asset (could be ERC20 or native) and generate yield with it by depositing
- *         into one or more "farms". The generated yield could be in the same asset, or in other tokens. One strategy
- *         could generate yield on multiple tokens at the same time
+ * @notice In Earn, a strategy will take an asset (could be ERC20 or native) and generate yield with it. The generated 
+ *         yield could be in the same asset, or in other tokens. One strategy could generate yield on multiple tokens 
+ *         at the same time
  * @dev For the proper functioning of the platform, there are some restrictions that strategy devs must consider:
  *      - The asset cannot change over time, it must always be the same
  *      - The strategy must report the asset as the first token
@@ -21,13 +21,12 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *        in the same order too
  *      - Tokens with very high supplies or a high amount of decimals might not fit correctly into the Vault's
  *        accounting system. For more information about this, please refer to the [README](../vault/README.md).
- *      Take into account some strategies might not support an immediate withdraw of all tokens, since the farm
+ *      Take into account some strategies might not support an immediate withdraw of all tokens, since they
  *      might implement a lock up period. If that's the case, then executing a withdraw will start what we call a
- *      "delayed withdrawal". This is a process where the funds are taken from the farm, and sent to a
- *      "delayed withdrawal" adapter, which is in charge of handling this process. Users will be able to monitor
- *      their funds through the "delayed withdrawal" manager, who aggregates all available adapters. Finally, once
- *      the withdrawal can be executed, only those with withdraw permissions over the position will be able to
- *      retrieve the funds
+ *      "delayed withdrawal". This is a process where the funds are sent to a "delayed withdrawal" adapter, 
+ *      which is in charge of handling this process. Users will be able to monitor their funds through the 
+ *      "delayed withdrawal" manager, who aggregates all available adapters. Finally, once the withdrawal can be 
+ *      executed, only those with withdraw permissions over the position will be able to retrieve the funds
  *
  */
 interface IEarnStrategy is IERC165 {
@@ -105,17 +104,7 @@ interface IEarnStrategy is IERC165 {
   function maxDeposit(address depositToken) external view returns (uint256);
 
   /**
-   * @notice Returns how much is currently held by the strategy, for each token
-   */
-  function balancesInStrategy() external view returns (address[] memory tokens, uint256[] memory balances);
-
-  /**
-   * @notice Returns how much is currently held by the farms, for each token
-   */
-  function balancesInFarms() external view returns (address[] memory tokens, uint256[] memory balances);
-
-  /**
-   * @notice Returns how much is currently held by the strategy or farm, for each token
+   * @notice Returns how many tokens are currently under the strategy's control
    */
   function totalBalances() external view returns (address[] memory tokens, uint256[] memory balances);
 
@@ -145,11 +134,6 @@ interface IEarnStrategy is IERC165 {
    * @return The address of the "delayed withdrawal" adapter, or the zero address if none is configured
    */
   function delayedWithdrawalAdapter(address token) external view returns (IDelayedWithdrawalAdapter);
-
-  /**
-   * @notice Returns whether deposits are paused or not
-   */
-  function paused() external view returns (bool);
 
   /**
    * @notice Returns how much is charged in terms of fees, for each token
@@ -225,24 +209,6 @@ interface IEarnStrategy is IERC165 {
    *                      first strategy registered to the id
    */
   function strategyRegistered(StrategyId strategyId, IEarnStrategy oldStrategy, bytes calldata migrationData) external;
-
-  /**
-   * @notice Withdraws all funds from the farms and keeps them on the strategy. This could be useful in emergencies
-   * @dev Can only be called by owner or an admin. It's up to each strategy to implement access control in some way
-   */
-  function withdrawAllFromFarms() external;
-
-  /**
-   * @notice Pauses all deposits into the contract
-   * @dev Can only be called by owner or an admin. It's up to each strategy to implement access control in some way
-   */
-  function pause() external;
-
-  /**
-   * @notice Unpauses all deposits
-   * @dev Can only be called by owner or an admin. It's up to each strategy to implement access control in some way
-   */
-  function unpause() external;
 
   /**
    * @notice Validates if the position can be created for this strategy, and fails it it can't

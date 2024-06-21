@@ -41,10 +41,6 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function paused() external view virtual returns (bool) {
-    revert NotImplemented();
-  }
-
   function vault() external view virtual returns (IEarnVault) {
     revert NotImplemented();
   }
@@ -66,14 +62,6 @@ contract EarnStrategyDead is IEarnStrategy {
   }
 
   function maxDeposit(address) external view virtual returns (uint256) {
-    revert NotImplemented();
-  }
-
-  function balancesInStrategy() external view virtual returns (address[] memory, uint256[] memory) {
-    revert NotImplemented();
-  }
-
-  function balancesInFarms() external view virtual returns (address[] memory, uint256[] memory) {
     revert NotImplemented();
   }
 
@@ -124,18 +112,6 @@ contract EarnStrategyDead is IEarnStrategy {
   }
 
   function strategyRegistered(StrategyId, IEarnStrategy, bytes calldata) external virtual {
-    revert NotImplemented();
-  }
-
-  function withdrawAllFromFarms() external virtual {
-    revert NotImplemented();
-  }
-
-  function pause() external virtual {
-    revert NotImplemented();
-  }
-
-  function unpause() external virtual {
     revert NotImplemented();
   }
 
