@@ -58,6 +58,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     for (uint256 i; i < tokens.length; i++) {
       tokenBalance[tokens[i]] -= toWithdraw[i].toUint104();
     }
+    return new WithdrawalType[](tokens.length);
   }
 
   function specialWithdraw(
@@ -68,13 +69,15 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
   )
     external
     override
-    returns (uint256[] memory withdrawn, WithdrawalType[] memory, bytes memory)
+    returns (uint256[] memory withdrawn, WithdrawalType[] memory types, bytes memory data)
   {
     // Withdraw specific token
     (uint256 tokenIndex, uint256 toWithdraw) = abi.decode(withdrawData, (uint256, uint256));
     tokenBalance[_tokens.values()[tokenIndex]] -= toWithdraw.toUint104();
     withdrawn = new uint256[](_tokens.length());
     withdrawn[tokenIndex] = toWithdraw;
+    types = new WithdrawalType[](_tokens.length());
+    data = "0x";
   }
 
   function addToken(address token, uint104 balance) external returns (uint256) {

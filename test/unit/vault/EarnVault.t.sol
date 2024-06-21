@@ -3,8 +3,8 @@ pragma solidity >=0.8.22;
 
 // solhint-disable no-unused-import
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
-import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { INFTPermissions, IERC721 } from "@balmy/nft-permissions/interfaces/INFTPermissions.sol";
+import { PermissionUtils } from "@balmy/nft-permissions-test/PermissionUtils.sol";
 import { PRBTest } from "@prb/test/PRBTest.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { stdMath } from "forge-std/StdMath.sol";

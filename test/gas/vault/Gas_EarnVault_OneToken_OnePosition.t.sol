@@ -8,7 +8,7 @@ import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
 import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { PermissionUtils } from "@balmy/nft-permissions-test/PermissionUtils.sol";
 import { StrategyId } from "../../../src/vault/EarnVault.sol";
 
 contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {

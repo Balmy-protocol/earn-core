@@ -26,22 +26,18 @@ jobs:
         with:
           version: nightly
 
-      - name: "Install Pnpm"
-        uses: "pnpm/action-setup@v2"
+      - name: Install node
+        uses: actions/setup-node@v3
         with:
-          version: "8"
+          node-version: "20.12.2"
+          cache: yarn
+          cache-dependency-path: "**/yarn.lock"
 
-      - name: "Install Node.js"
-        uses: "actions/setup-node@v3"
-        with:
-          cache: "pnpm"
-          node-version: "lts/*"
-
-      - name: "Install the Node.js dependencies"
-        run: "pnpm install"
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
 
       - name: "Lint the contracts"
-        run: "pnpm lint"
+        run: "yarn lint"
 
       - name: "Add lint summary"
         run: |
@@ -59,19 +55,15 @@ jobs:
         with:
           version: nightly
 
-      - name: "Install Pnpm"
-        uses: "pnpm/action-setup@v2"
+      - name: Install node
+        uses: actions/setup-node@v3
         with:
-          version: "8"
+          node-version: "20.12.2"
+          cache: yarn
+          cache-dependency-path: "**/yarn.lock"
 
-      - name: "Install Node.js"
-        uses: "actions/setup-node@v3"
-        with:
-          cache: "pnpm"
-          node-version: "lts/*"
-
-      - name: "Install the Node.js dependencies"
-        run: "pnpm install"
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
 
       - name: "Build the contracts"
         run: "forge build --sizes"
@@ -93,7 +85,7 @@ jobs:
         with:
           node-version: 16
           fail-on: none
-          slither-version: 0.9.6
+          slither-version: 0.10.3
           slither-args:
             --checklist --markdown-root ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/
 
@@ -117,19 +109,15 @@ jobs:
       - name: "Check out the repo"
         uses: "actions/checkout@v3"
 
-      - name: "Install Pnpm"
-        uses: "pnpm/action-setup@v2"
+      - name: Install node
+        uses: actions/setup-node@v3
         with:
-          version: "8"
+          node-version: "20.12.2"
+          cache: yarn
+          cache-dependency-path: "**/yarn.lock"
 
-      - name: "Install Node.js"
-        uses: "actions/setup-node@v3"
-        with:
-          cache: "pnpm"
-          node-version: "lts/*"
-
-      - name: "Install the Node.js dependencies"
-        run: "pnpm install"
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
 
       - name: "Install Foundry"
         uses: "foundry-rs/foundry-toolchain@v1"

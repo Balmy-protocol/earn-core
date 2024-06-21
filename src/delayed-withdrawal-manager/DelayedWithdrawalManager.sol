@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: TBD
 pragma solidity >=0.8.22;
 
-import { INFTPermissions } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
+import { INFTPermissions } from "@balmy/nft-permissions/interfaces/INFTPermissions.sol";
 import {
   IDelayedWithdrawalManager, IEarnVault, IEarnStrategyRegistry
 } from "../interfaces/IDelayedWithdrawalManager.sol";

@@ -12,8 +12,8 @@ import {
   IDelayedWithdrawalAdapter
 } from "../../../src/delayed-withdrawal-manager/DelayedWithdrawalManager.sol";
 import { CommonUtils } from "../../utils/CommonUtils.sol";
-import { INFTPermissions, IERC721 } from "@mean-finance/nft-permissions/interfaces/INFTPermissions.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { INFTPermissions, IERC721 } from "@balmy/nft-permissions/interfaces/INFTPermissions.sol";
+import { PermissionUtils } from "@balmy/nft-permissions-test/PermissionUtils.sol";
 import { EarnStrategyStateBalanceMock } from "../../mocks/strategies/EarnStrategyStateBalanceMock.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";

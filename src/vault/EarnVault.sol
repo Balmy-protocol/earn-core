@@ -7,7 +7,7 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { NFTPermissions, ERC721 } from "@mean-finance/nft-permissions/NFTPermissions.sol";
+import { NFTPermissions, ERC721 } from "@balmy/nft-permissions/NFTPermissions.sol";
 
 import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol";
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
@@ -58,8 +58,10 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   /// @inheritdoc IEarnVault
   bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
   /// @inheritdoc IEarnVault
+  // slither-disable-next-line uninitialized-state
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
+  // slither-disable-next-line uninitialized-state
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
   // slither-disable-start naming-convention
   /// @inheritdoc IEarnVault

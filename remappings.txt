@@ -3,5 +3,5 @@ ds-test/=node_modules/ds-test/src
 forge-std/=node_modules/forge-std/src
 src/=src/
 @openzeppelin/=node_modules/@openzeppelin/
-@mean-finance/nft-permissions/=node_modules/@mean-finance/nft-permissions/src/
-@mean-finance/nft-permissions-test/=node_modules/@mean-finance/nft-permissions/test/
+@balmy/nft-permissions/=node_modules/@balmy/nft-permissions/src/
+@balmy/nft-permissions-test/=node_modules/@balmy/nft-permissions/test/
