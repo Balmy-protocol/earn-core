@@ -225,7 +225,7 @@ $ forge test --gas-report
 Lint the contracts:
 
 ```sh
-$ pnpm lint
+$ yarn lint
 ```
 
 ### Test

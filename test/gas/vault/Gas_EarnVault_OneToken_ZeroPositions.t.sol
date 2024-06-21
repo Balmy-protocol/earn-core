@@ -8,7 +8,7 @@ import { IEarnStrategyRegistry } from "../../mocks/strategies/EarnStrategyRegist
 import { CommonUtils } from "../../utils/CommonUtils.sol";
 import { Token } from "../../../src/libraries/Token.sol";
 import { StrategyUtils } from "../../utils/StrategyUtils.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { PermissionUtils } from "@balmy/nft-permissions-test/PermissionUtils.sol";
 
 contract GasEarnVaultOneTokenZeroPositions is BaseEarnVaultGasTest {
   using StrategyUtils for IEarnStrategyRegistry;

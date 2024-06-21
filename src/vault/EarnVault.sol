@@ -7,7 +7,7 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 // solhint-disable-next-line no-unused-import
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import { NFTPermissions, ERC721 } from "@mean-finance/nft-permissions/NFTPermissions.sol";
+import { NFTPermissions, ERC721 } from "@balmy/nft-permissions/NFTPermissions.sol";
 
 import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol";
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";

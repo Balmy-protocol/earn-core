@@ -3,7 +3,7 @@ pragma solidity >=0.8.22;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import { PermissionUtils } from "@mean-finance/nft-permissions-test/PermissionUtils.sol";
+import { PermissionUtils } from "@balmy/nft-permissions-test/PermissionUtils.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 import { IEarnVault, StrategyId } from "../../../../src/vault/EarnVault.sol";
 import { SpecialWithdrawalCode } from "../../../../src/types/SpecialWithdrawals.sol";

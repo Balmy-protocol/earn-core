@@ -84,7 +84,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
   )
     external
     override
-    returns (uint256[] memory withdrawn, WithdrawalType[] memory, bytes memory)
+    returns (uint256[] memory withdrawn, WithdrawalType[] memory types, bytes memory data)
   {
     // Withdraw specific token
     (uint256 tokenIndex, uint256 toWithdraw) = abi.decode(withdrawData, (uint256, uint256));
@@ -95,6 +95,8 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     }
     withdrawn = new uint256[](tokens.length);
     withdrawn[tokenIndex] = toWithdraw;
+    types = new WithdrawalType[](tokens.length);
+    data = '0x';
   }
 
   function migrateToNewStrategy(IEarnStrategy newStrategy) external virtual override returns (bytes memory) {
@@ -106,6 +108,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
         IERC20(tokens[i]).transfer(address(newStrategy), balances[i]);
       }
     }
+    return '0x';
   }
 
   // solhint-disable-next-line no-empty-blocks
