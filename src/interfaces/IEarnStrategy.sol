@@ -10,8 +10,8 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 
 /**
  * @title Earn Strategy Interface
- * @notice In Earn, a strategy will take an asset (could be ERC20 or native) and generate yield with it. The generated 
- *         yield could be in the same asset, or in other tokens. One strategy could generate yield on multiple tokens 
+ * @notice In Earn, a strategy will take an asset (could be ERC20 or native) and generate yield with it. The generated
+ *         yield could be in the same asset, or in other tokens. One strategy could generate yield on multiple tokens
  *         at the same time
  * @dev For the proper functioning of the platform, there are some restrictions that strategy devs must consider:
  *      - The asset cannot change over time, it must always be the same
@@ -23,9 +23,9 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *        accounting system. For more information about this, please refer to the [README](../vault/README.md).
  *      Take into account some strategies might not support an immediate withdraw of all tokens, since they
  *      might implement a lock up period. If that's the case, then executing a withdraw will start what we call a
- *      "delayed withdrawal". This is a process where the funds are sent to a "delayed withdrawal" adapter, 
- *      which is in charge of handling this process. Users will be able to monitor their funds through the 
- *      "delayed withdrawal" manager, who aggregates all available adapters. Finally, once the withdrawal can be 
+ *      "delayed withdrawal". This is a process where the funds are sent to a "delayed withdrawal" adapter,
+ *      which is in charge of handling this process. Users will be able to monitor their funds through the
+ *      "delayed withdrawal" manager, who aggregates all available adapters. Finally, once the withdrawal can be
  *      executed, only those with withdraw permissions over the position will be able to retrieve the funds
  *
  */
