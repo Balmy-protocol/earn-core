@@ -58,8 +58,10 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   /// @inheritdoc IEarnVault
   bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
   /// @inheritdoc IEarnVault
+  // slither-disable-next-line uninitialized-state
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
+  // slither-disable-next-line uninitialized-state
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
   // slither-disable-start naming-convention
   /// @inheritdoc IEarnVault

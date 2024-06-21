@@ -85,7 +85,7 @@ jobs:
         with:
           node-version: 16
           fail-on: none
-          slither-version: 0.9.6
+          slither-version: 0.10.3
           slither-args:
             --checklist --markdown-root ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/
 
