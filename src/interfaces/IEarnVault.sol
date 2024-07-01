@@ -29,19 +29,19 @@ interface IEarnVault is INFTPermissions {
 
   /// @notice Emitted when a new position is created
   event PositionCreated(
-    uint256 positionId,
+    uint256 indexed positionId,
+    address indexed owner,
     StrategyId strategyId,
     uint256 assetsDeposited,
-    address owner,
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
 
   /// @notice Emitted when a new position is increased
-  event PositionIncreased(uint256 positionId, uint256 assetsDeposited);
+  event PositionIncreased(uint256 indexed positionId, uint256 assetsDeposited);
 
   /// @notice Emitted when a new position is withdrawn
-  event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
+  event PositionWithdrawn(uint256 indexed positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   /**
    * @notice Returns the role in charge of pausing/unpausing deposits

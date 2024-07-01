@@ -179,7 +179,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       depositAmount: depositAmount
     });
 
-    emit PositionCreated(positionId, strategyId, assetsDeposited, owner, permissions, misc);
+    emit PositionCreated(positionId, owner, strategyId, assetsDeposited, permissions, misc);
   }
 
   /// @inheritdoc IEarnVault
