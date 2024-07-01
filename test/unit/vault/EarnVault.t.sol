@@ -36,17 +36,17 @@ contract EarnVaultTest is PRBTest, StdUtils {
   using Math for uint104;
 
   event PositionCreated(
-    uint256 positionId,
+    uint256 indexed positionId,
+    address indexed owner,
     StrategyId strategyId,
     uint256 assetsDeposited,
-    address owner,
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
 
-  event PositionIncreased(uint256 positionId, uint256 assetsDeposited);
+  event PositionIncreased(uint256 indexed positionId, uint256 assetsDeposited);
 
-  event PositionWithdrawn(uint256 positionId, address[] tokens, uint256[] withdrawn, address recipient);
+  event PositionWithdrawn(uint256 indexed positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
   using StrategyUtils for EarnStrategyRegistryMock;
   using InternalUtils for INFTPermissions.Permission[];
@@ -208,7 +208,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       1
     );
     vm.expectEmit();
-    emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
+    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) = vault.createPosition{ value: amountToDeposit }(
       strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
@@ -248,7 +248,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
-    emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
+    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
@@ -290,7 +290,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
-    emit PositionCreated(1, strategyId, amountToDeposit, positionOwner, permissions, misc);
+    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
     (uint256 positionId, uint256 assetsDeposited) = vault.createPosition(
       strategyId, address(erc20), type(uint256).max, positionOwner, permissions, creationData, misc
     );
