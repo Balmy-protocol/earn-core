@@ -21,6 +21,7 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
 // solhint-disable no-unused-import
 import { PositionData, PositionDataLibrary } from "./types/PositionData.sol";
 import {
+  EncodedStrategyYieldDataForToken,
   StrategyYieldDataKey,
   StrategyYieldDataForToken,
   StrategyYieldDataForTokenLibrary
@@ -49,7 +50,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   using Math for uint256;
   using Token for address;
   using PositionDataLibrary for mapping(uint256 => PositionData);
-  using StrategyYieldDataForTokenLibrary for mapping(StrategyYieldDataKey => StrategyYieldDataForToken);
+  using StrategyYieldDataForTokenLibrary for mapping(StrategyYieldDataKey => EncodedStrategyYieldDataForToken);
   using StrategyYieldLossDataForTokenLibrary for mapping(StrategyYieldLossDataKey => StrategyYieldLossDataForToken);
   using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
   using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
@@ -76,7 +77,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   // Stores shares and strategy id per position
   mapping(uint256 positionId => PositionData positionData) internal _positions;
   // Stores relevant yield data for all positions in the strategy, in the context of a specific reward token
-  mapping(StrategyYieldDataKey key => StrategyYieldDataForToken yieldData) internal _strategyYieldData;
+  mapping(StrategyYieldDataKey key => EncodedStrategyYieldDataForToken yieldData) internal _strategyYieldData;
   // Stores relevant data for all positions in the strategy, in the context of a specific reward token loss
   mapping(StrategyYieldLossDataKey key => StrategyYieldLossDataForToken strategyLossAccum) internal
     _strategyYieldLossData;
@@ -135,6 +136,26 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
     return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
       || interfaceId == type(IEarnVault).interfaceId;
+  }
+
+  function mimamamemima(StrategyId strategyId)
+    external
+    view
+    returns (
+      uint256 totalShares,
+      address[] memory tokens,
+      StrategyYieldDataForToken[] memory yieldData,
+      StrategyYieldLossDataForToken[] memory yieldLossData
+    )
+  {
+    totalShares = _totalSharesInStrategy[strategyId];
+    (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
+    yieldData = new StrategyYieldDataForToken[](tokens.length - 1);
+    // yieldLossData = new StrategyYieldLossDataForToken[](tokens.length - 1);
+    for (uint256 i = 1; i < tokens.length; ++i) {
+      yieldData[i - 1] = _strategyYieldData.read(strategyId, tokens[i]);
+    //   yieldLossData[i - 1] = _strategyYieldLossData.readEncoded(strategyId, tokens[i]);
+    }
   }
 
   /// @inheritdoc IEarnVault
@@ -443,20 +464,19 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     view
     returns (CalculatedDataForToken memory calculatedData)
   {
-    (uint256 strategyYieldAccum, uint256 lastRecordedBalance, bool strategyHadLoss) =
-      _strategyYieldData.read(strategyId, token);
+    StrategyYieldDataForToken memory strategyYieldData = _strategyYieldData.read(strategyId, token);
 
     (uint256 strategyLossAccum, uint256 strategyCompleteLossEvents) =
-      strategyHadLoss ? _strategyYieldLossData.read(strategyId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
+      strategyYieldData.strategyHadLoss ? _strategyYieldLossData.read(strategyId, token) : (YieldMath.LOSS_ACCUM_INITIAL, 0);
 
     (
       calculatedData.newStrategyYieldAccum,
       calculatedData.newStrategyLossAccum,
       calculatedData.newStrategyCompleteLossEvents
     ) = YieldMath.calculateAccum({
-      lastRecordedBalance: lastRecordedBalance,
+      lastRecordedBalance: strategyYieldData.lastRecordedBalance,
       currentBalance: totalBalance,
-      previousStrategyYieldAccum: strategyYieldAccum,
+      previousStrategyYieldAccum: strategyYieldData.yieldAccumulator,
       totalShares: totalShares,
       previousStrategyLossAccum: strategyLossAccum,
       previousStrategyCompleteLossEvents: strategyCompleteLossEvents
@@ -468,7 +488,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       totalBalance: totalBalance,
       newStrategyLossAccum: calculatedData.newStrategyLossAccum,
       newStrategyCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents,
-      lastRecordedBalance: lastRecordedBalance,
+      lastRecordedBalance: strategyYieldData.lastRecordedBalance,
       newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
       positionShares: positionShares,
       positionRegistry: _positionYieldData,
@@ -627,7 +647,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   )
     internal
   {
-    bool strategyHadLoss = false;
     if (
       calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
         || calculatedData.newStrategyCompleteLossEvents != 0
@@ -644,24 +663,38 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         newPositionLossAccum: calculatedData.newStrategyLossAccum,
         newPositionCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents
       });
-      strategyHadLoss = true;
+      _strategyYieldData.update({
+        strategyId: strategyId,
+        token: token,
+        newTotalBalance: newStrategyBalance,
+        newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
+        newStrategyHadLoss: true
+      });
+      _positionYieldData.update({
+        positionId: positionId,
+        token: token,
+        newPositionYieldAccum: calculatedData.newStrategyYieldAccum,
+        newPositionBalance: calculatedData.positionBalance - withdrawn,
+        newShares: positionShares,
+        newPositionHadLoss: true
+      });
+    } else {
+       _strategyYieldData.update({
+        strategyId: strategyId,
+        token: token,
+        newTotalBalance: newStrategyBalance,
+        newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
+        newStrategyHadLoss: false
+      });
+      _positionYieldData.update({
+        positionId: positionId,
+        token: token,
+        newPositionYieldAccum: calculatedData.newStrategyYieldAccum,
+        newPositionBalance: calculatedData.positionBalance - withdrawn,
+        newShares: positionShares,
+        newPositionHadLoss: false
+      });
     }
-
-    _strategyYieldData.update({
-      strategyId: strategyId,
-      token: token,
-      newTotalBalance: newStrategyBalance,
-      newStrategyYieldAccum: calculatedData.newStrategyYieldAccum,
-      newStrategyHadLoss: strategyHadLoss
-    });
-    _positionYieldData.update({
-      positionId: positionId,
-      token: token,
-      newPositionYieldAccum: calculatedData.newStrategyYieldAccum,
-      newPositionBalance: calculatedData.positionBalance - withdrawn,
-      newShares: positionShares,
-      newPositionHadLoss: strategyHadLoss
-    });
   }
 
   /// @inheritdoc ERC721
