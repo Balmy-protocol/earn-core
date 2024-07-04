@@ -694,7 +694,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         strategyHadLoss: true
       });
     } else {
-       _updateYieldData({
+      _updateYieldData({
         positionId: positionId,
         strategyId: strategyId,
         positionShares: positionShares,
@@ -705,7 +705,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         strategyHadLoss: false
       });
     }
-  }  
+  }
 
   /// @inheritdoc ERC721
   // slither-disable-next-line naming-convention
@@ -728,7 +728,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     uint256 withdrawn,
     uint256 newStrategyBalance,
     bool strategyHadLoss
-  ) internal {
+  )
+    internal
+  {
     _strategyYieldData.update({
       strategyId: strategyId,
       token: token,

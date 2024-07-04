@@ -34,7 +34,8 @@ library StrategyYieldLossDataForTokenLibrary {
     view
     returns (uint256 strategyLossAccum, uint256 strategyCompleteLossEvents)
   {
-    StrategyYieldLossDataForToken memory strategyYieldLossDataForToken = readRaw(strategyYieldLossData, strategyId, token);
+    StrategyYieldLossDataForToken memory strategyYieldLossDataForToken =
+      readRaw(strategyYieldLossData, strategyId, token);
     if (strategyYieldLossDataForToken.strategyLossAccum == 0) {
       return (YieldMath.LOSS_ACCUM_INITIAL, strategyYieldLossDataForToken.strategyCompleteLossEvents);
     }
