@@ -34,11 +34,23 @@ library PositionYieldLossDataForTokenLibrary {
     returns (uint256, uint256)
   {
     PositionYieldLossDataForToken memory positionYieldLossDataForToken =
-      positionYieldLossData[_keyFrom(positionId, token)];
+      readRaw(positionYieldLossData, positionId, token);
     if (positionYieldLossDataForToken.positionLossAccum == 0) {
       return (YieldMath.LOSS_ACCUM_INITIAL, positionYieldLossDataForToken.positionCompleteLossEvents);
     }
     return (positionYieldLossDataForToken.positionLossAccum, positionYieldLossDataForToken.positionCompleteLossEvents);
+  }
+
+  function readRaw(
+    mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken) storage positionYieldLossData,
+    uint256 positionId,
+    address token
+  )
+    internal
+    view
+    returns (PositionYieldLossDataForToken memory)
+  {
+    return positionYieldLossData[_keyFrom(positionId, token)];
   }
 
   /**

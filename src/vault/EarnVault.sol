@@ -131,6 +131,49 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     return super.paused();
   }
 
+  function getStrategyYieldData(StrategyId strategyId)
+    external
+    view
+    returns (
+      uint256 totalShares,
+      address[] memory tokens,
+      StrategyYieldDataForToken[] memory yieldData,
+      StrategyYieldLossDataForToken[] memory yieldLossData
+    )
+  {
+    totalShares = _totalSharesInStrategy[strategyId];
+    // slither-disable-next-line unused-return
+    (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
+    yieldData = new StrategyYieldDataForToken[](tokens.length - 1);
+    yieldLossData = new StrategyYieldLossDataForToken[](tokens.length - 1);
+    for (uint256 i = 1; i < tokens.length; ++i) {
+      yieldData[i - 1] = _strategyYieldData.readRaw(strategyId, tokens[i]);
+      yieldLossData[i - 1] = _strategyYieldLossData.readRaw(strategyId, tokens[i]);
+    }
+  }
+
+  function getPositionYieldData(uint256 positionId)
+    external
+    view
+    returns (
+      StrategyId strategyId,
+      uint256 positionShares,
+      address[] memory tokens,
+      PositionYieldDataForToken[] memory yieldData,
+      PositionYieldLossDataForToken[] memory yieldLossData
+    )
+  {
+    (strategyId, positionShares) = _positions.read(positionId);
+    // slither-disable-next-line unused-return
+    (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
+    yieldData = new PositionYieldDataForToken[](tokens.length - 1);
+    yieldLossData = new PositionYieldLossDataForToken[](tokens.length - 1);
+    for (uint256 i = 1; i < tokens.length; ++i) {
+      yieldData[i - 1] = _positionYieldData.readRaw(positionId, tokens[i]);
+      yieldLossData[i - 1] = _positionYieldLossData.readRaw(positionId, tokens[i]);
+    }
+  }
+
   /// @inheritdoc IERC165
   function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
     return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
@@ -461,7 +504,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       previousStrategyLossAccum: strategyLossAccum,
       previousStrategyCompleteLossEvents: strategyCompleteLossEvents
     });
-
     calculatedData.positionBalance = YieldMath.calculateBalance({
       positionId: positionId,
       token: token,
@@ -627,7 +669,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   )
     internal
   {
-    bool strategyHadLoss = false;
     if (
       calculatedData.newStrategyLossAccum != YieldMath.LOSS_ACCUM_INITIAL
         || calculatedData.newStrategyCompleteLossEvents != 0
@@ -644,9 +685,54 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         newPositionLossAccum: calculatedData.newStrategyLossAccum,
         newPositionCompleteLossEvents: calculatedData.newStrategyCompleteLossEvents
       });
-      strategyHadLoss = true;
+      _updateYieldData({
+        positionId: positionId,
+        strategyId: strategyId,
+        positionShares: positionShares,
+        token: token,
+        calculatedData: calculatedData,
+        withdrawn: withdrawn,
+        newStrategyBalance: newStrategyBalance,
+        strategyHadLoss: true
+      });
+    } else {
+      _updateYieldData({
+        positionId: positionId,
+        strategyId: strategyId,
+        positionShares: positionShares,
+        token: token,
+        calculatedData: calculatedData,
+        withdrawn: withdrawn,
+        newStrategyBalance: newStrategyBalance,
+        strategyHadLoss: false
+      });
     }
+  }
 
+  /// @inheritdoc ERC721
+  // slither-disable-next-line naming-convention
+  function tokenURI(uint256 positionId) public view override returns (string memory) {
+    return NFT_DESCRIPTOR.tokenURI(this, positionId);
+  }
+
+  function _assignRoles(bytes32 role, address[] memory accounts) internal {
+    for (uint256 i; i < accounts.length; ++i) {
+      _grantRole(role, accounts[i]);
+    }
+  }
+
+  function _updateYieldData(
+    uint256 positionId,
+    StrategyId strategyId,
+    uint256 positionShares,
+    address token,
+    CalculatedDataForToken memory calculatedData,
+    uint256 withdrawn,
+    uint256 newStrategyBalance,
+    bool strategyHadLoss
+  )
+    internal
+  {
     _strategyYieldData.update({
       strategyId: strategyId,
       token: token,
@@ -662,17 +748,5 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       newShares: positionShares,
       newPositionHadLoss: strategyHadLoss
     });
-  }
-
-  /// @inheritdoc ERC721
-  // slither-disable-next-line naming-convention
-  function tokenURI(uint256 positionId) public view override returns (string memory) {
-    return NFT_DESCRIPTOR.tokenURI(this, positionId);
-  }
-
-  function _assignRoles(bytes32 role, address[] memory accounts) internal {
-    for (uint256 i; i < accounts.length; ++i) {
-      _grantRole(role, accounts[i]);
-    }
   }
 }

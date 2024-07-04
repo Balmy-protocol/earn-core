@@ -35,7 +35,19 @@ library PositionYieldDataForTokenLibrary {
     view
     returns (uint256 baseAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
   {
-    return _decode(positionYieldData[_keyFrom(positionId, token)]);
+    return _decode(readRaw(positionYieldData, positionId, token));
+  }
+
+  function readRaw(
+    mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionYieldData,
+    uint256 positionId,
+    address token
+  )
+    internal
+    view
+    returns (PositionYieldDataForToken raw)
+  {
+    return positionYieldData[_keyFrom(positionId, token)];
   }
 
   /**

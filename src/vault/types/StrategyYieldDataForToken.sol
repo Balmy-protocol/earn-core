@@ -36,7 +36,19 @@ library StrategyYieldDataForTokenLibrary {
     view
     returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool strategyHadLoss)
   {
-    return _decode(totalYieldData[_keyFrom(strategyId, token)]);
+    return _decode(readRaw(totalYieldData, strategyId, token));
+  }
+
+  function readRaw(
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
+    StrategyId strategyId,
+    address token
+  )
+    internal
+    view
+    returns (StrategyYieldDataForToken raw)
+  {
+    return totalYieldData[_keyFrom(strategyId, token)];
   }
 
   /**
