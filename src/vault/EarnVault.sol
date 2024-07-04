@@ -131,12 +131,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     return super.paused();
   }
 
-  /// @inheritdoc IERC165
-  function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
-    return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
-      || interfaceId == type(IEarnVault).interfaceId;
-  }
-
   function getStrategyYieldData(StrategyId strategyId)
     external
     view
@@ -148,6 +142,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     )
   {
     totalShares = _totalSharesInStrategy[strategyId];
+    // slither-disable-next-line unused-return
     (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
     yieldData = new StrategyYieldDataForToken[](tokens.length - 1);
     yieldLossData = new StrategyYieldLossDataForToken[](tokens.length - 1);
@@ -169,6 +164,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     )
   {
     (strategyId, positionShares) = _positions.read(positionId);
+    // slither-disable-next-line unused-return
     (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
     yieldData = new PositionYieldDataForToken[](tokens.length - 1);
     yieldLossData = new PositionYieldLossDataForToken[](tokens.length - 1);
@@ -176,6 +172,12 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       yieldData[i - 1] = _positionYieldData.readRaw(positionId, tokens[i]);
       yieldLossData[i - 1] = _positionYieldLossData.readRaw(positionId, tokens[i]);
     }
+  }
+
+  /// @inheritdoc IERC165
+  function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
+    return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
+      || interfaceId == type(IEarnVault).interfaceId;
   }
 
   /// @inheritdoc IEarnVault
