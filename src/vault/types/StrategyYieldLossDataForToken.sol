@@ -34,12 +34,23 @@ library StrategyYieldLossDataForTokenLibrary {
     view
     returns (uint256 strategyLossAccum, uint256 strategyCompleteLossEvents)
   {
-    StrategyYieldLossDataForToken memory strategyYieldLossDataForToken =
-      strategyYieldLossData[_keyFrom(strategyId, token)];
+    StrategyYieldLossDataForToken memory strategyYieldLossDataForToken = readRaw(strategyYieldLossData, strategyId, token);
     if (strategyYieldLossDataForToken.strategyLossAccum == 0) {
       return (YieldMath.LOSS_ACCUM_INITIAL, strategyYieldLossDataForToken.strategyCompleteLossEvents);
     }
     return (strategyYieldLossDataForToken.strategyLossAccum, strategyYieldLossDataForToken.strategyCompleteLossEvents);
+  }
+
+  function readRaw(
+    mapping(StrategyYieldLossDataKey => StrategyYieldLossDataForToken) storage strategyYieldLossData,
+    StrategyId strategyId,
+    address token
+  )
+    internal
+    view
+    returns (StrategyYieldLossDataForToken memory raw)
+  {
+    return strategyYieldLossData[_keyFrom(strategyId, token)];
   }
 
   /**

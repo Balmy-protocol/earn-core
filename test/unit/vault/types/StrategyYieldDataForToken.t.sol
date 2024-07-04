@@ -6,7 +6,6 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 // solhint-disable no-unused-import
 import {
-  EncodedStrategyYieldDataForToken,
   StrategyYieldDataKey,
   StrategyYieldDataForToken,
   StrategyYieldDataForTokenLibrary,
@@ -16,12 +15,12 @@ import {
 // solhint-enable no-unused-import
 
 contract StrategyYieldDataForTokenTest is PRBTest, StdUtils {
-  using StrategyYieldDataForTokenLibrary for mapping(StrategyYieldDataKey => EncodedStrategyYieldDataForToken);
+  using StrategyYieldDataForTokenLibrary for mapping(StrategyYieldDataKey => StrategyYieldDataForToken);
 
   StrategyId internal constant STRATEGY_ID = StrategyId.wrap(1);
   address internal constant TOKEN = address(2);
 
-  mapping(StrategyYieldDataKey key => EncodedStrategyYieldDataForToken yieldData) internal _strategyYieldData;
+  mapping(StrategyYieldDataKey key => StrategyYieldDataForToken yieldData) internal _strategyYieldData;
 
   function test_update_RevertWhen_BalanceIsTooBig() public {
     vm.expectRevert(abi.encodeWithSelector(CustomUintSizeChecks.UintOverflowed.selector, 2 ** 151, 2 ** 151 - 1));
@@ -56,10 +55,10 @@ contract StrategyYieldDataForTokenTest is PRBTest, StdUtils {
       newStrategyHadLoss: _strategyHadLoss
     });
 
-    StrategyYieldDataForToken memory yieldData =
+    (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool strategyHadLoss) =
       _strategyYieldData.read(STRATEGY_ID, TOKEN);
-    assertEq(yieldData.yieldAccumulator, accumulator);
-    assertEq(yieldData.lastRecordedBalance, totalBalance);
-    assertEq(yieldData.strategyHadLoss, _strategyHadLoss);
+    assertEq(yieldAccumulator, accumulator);
+    assertEq(lastRecordedTotalBalance, totalBalance);
+    assertEq(strategyHadLoss, _strategyHadLoss);
   }
 }

@@ -15,14 +15,7 @@ import { CustomUintSizeChecks } from "../libraries/CustomUintSizeChecks.sol";
  *      - Strategy had loss: indicates if the strategy ever had a loss. Will use 1 bit
  *      To understand why we chose these variable sizes, please refer to the [README](../README.md).
  */
-type EncodedStrategyYieldDataForToken is uint256;
-
-struct StrategyYieldDataForToken {
-  uint256 yieldAccumulator;
-  uint256 lastRecordedBalance; 
-  bool strategyHadLoss;
-}
-
+type StrategyYieldDataForToken is uint256;
 
 /// @notice A key composed of a strategy id and a token address
 type StrategyYieldDataKey is bytes32;
@@ -35,25 +28,25 @@ library StrategyYieldDataForTokenLibrary {
    * @notice Reads total yield data from storage
    */
   function read(
-    mapping(StrategyYieldDataKey => EncodedStrategyYieldDataForToken) storage totalYieldData,
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
     StrategyId strategyId,
     address token
   )
     internal
     view
-    returns (StrategyYieldDataForToken memory yieldData)
+    returns (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool strategyHadLoss)
   {
-    return _decode(readEncoded(totalYieldData, strategyId, token));
+    return _decode(readRaw(totalYieldData, strategyId, token));
   }
 
-  function readEncoded(
-    mapping(StrategyYieldDataKey => EncodedStrategyYieldDataForToken) storage totalYieldData,
+  function readRaw(
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
     StrategyId strategyId,
     address token
   )
     internal
     view
-    returns (EncodedStrategyYieldDataForToken encoded)
+    returns (StrategyYieldDataForToken raw)
   {
     return totalYieldData[_keyFrom(strategyId, token)];
   }
@@ -62,7 +55,7 @@ library StrategyYieldDataForTokenLibrary {
    * @notice Updates total yield data based on the given values
    */
   function update(
-    mapping(StrategyYieldDataKey => EncodedStrategyYieldDataForToken) storage totalYieldData,
+    mapping(StrategyYieldDataKey => StrategyYieldDataForToken) storage totalYieldData,
     StrategyId strategyId,
     address token,
     uint256 newTotalBalance,
@@ -78,15 +71,15 @@ library StrategyYieldDataForTokenLibrary {
     });
   }
 
-  function _decode(EncodedStrategyYieldDataForToken encoded)
+  function _decode(StrategyYieldDataForToken encoded)
     private
     pure
-    returns (StrategyYieldDataForToken memory yieldData)
+    returns (uint256 yieldAccumulator, uint256 recordedBalance, bool strategyHadLoss)
   {
-    uint256 unwrapped = EncodedStrategyYieldDataForToken.unwrap(encoded);
-    yieldData.yieldAccumulator = unwrapped >> 105;
-    yieldData.lastRecordedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
-    yieldData.strategyHadLoss = unwrapped & 0x1 == 1;
+    uint256 unwrapped = StrategyYieldDataForToken.unwrap(encoded);
+    yieldAccumulator = unwrapped >> 105;
+    recordedBalance = (unwrapped >> 1) & 0xffffffffffffffffffffffffff;
+    strategyHadLoss = unwrapped & 0x1 == 1;
   }
 
   function _encode(
@@ -96,12 +89,12 @@ library StrategyYieldDataForTokenLibrary {
   )
     private
     pure
-    returns (EncodedStrategyYieldDataForToken)
+    returns (StrategyYieldDataForToken)
   {
     yieldAccumulator.assertFitsInUint151();
     // slither-disable-next-line unused-return
     recordedBalance.toUint104();
-    return EncodedStrategyYieldDataForToken.wrap((yieldAccumulator << 105) | (recordedBalance << 1) | strategyHadLoss);
+    return StrategyYieldDataForToken.wrap((yieldAccumulator << 105) | (recordedBalance << 1) | strategyHadLoss);
   }
 
   function _keyFrom(StrategyId strategyId, address token) internal pure returns (StrategyYieldDataKey) {
