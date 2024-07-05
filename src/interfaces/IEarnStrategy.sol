@@ -175,8 +175,8 @@ interface IEarnStrategy is IERC165 {
    * @notice Executes a special withdraw
    * @dev Can only be called by the vault
    * @param positionId The position that initiated the withdrawal
-   * @param withdrawCode The code that identifies the type of withdrawal
-   * @param withdrawData Data necessary to execute the withdrawal
+   * @param withdrawalCode The code that identifies the type of withdrawal
+   * @param withdrawalData Data necessary to execute the withdrawal
    * @param recipient The account that will receive the tokens
    * @return withdrawn How much was withdrawn from each token, in the same order as `tokens`
    * @return withdrawalTypes The types of withdrawals for each token, in the same order as `tokens`
@@ -184,8 +184,8 @@ interface IEarnStrategy is IERC165 {
    */
   function specialWithdraw(
     uint256 positionId,
-    SpecialWithdrawalCode withdrawCode,
-    bytes calldata withdrawData,
+    SpecialWithdrawalCode withdrawalCode,
+    bytes calldata withdrawalData,
     address recipient
   )
     external
@@ -195,9 +195,10 @@ interface IEarnStrategy is IERC165 {
    * @notice Migrates all tokens and data to a new strategy
    * @dev Can only be called by the strategy registry
    * @param newStrategy The strategy to migrate to
-   * @return Data related to the migration. Will be sent to the new strategy
+   * @param data Data to be used as part of the migration
+   * @return Data related to the result of the migration. Will be sent to the new strategy
    */
-  function migrateToNewStrategy(IEarnStrategy newStrategy) external returns (bytes memory);
+  function migrateToNewStrategy(IEarnStrategy newStrategy, bytes calldata data) external returns (bytes memory);
 
   /**
    * @notice Performs any necessary preparations to be used by the vault

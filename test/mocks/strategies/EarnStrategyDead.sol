@@ -107,7 +107,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function migrateToNewStrategy(IEarnStrategy) external virtual returns (bytes memory) {
+  function migrateToNewStrategy(IEarnStrategy, bytes calldata) external virtual returns (bytes memory) {
     revert NotImplemented();
   }
 

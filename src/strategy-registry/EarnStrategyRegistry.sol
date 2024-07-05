@@ -11,7 +11,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
 
   struct ProposedUpdate {
     IEarnStrategy newStrategy;
-    uint256 executableAt;
+    uint96 executableAt;
+    bytes32 migrationDataHash;
   }
 
   uint256 public constant STRATEGY_UPDATE_DELAY = 3 days;
@@ -72,13 +73,21 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function proposeStrategyUpdate(StrategyId strategyId, IEarnStrategy newStrategy) external onlyOwner(strategyId) {
+  function proposeStrategyUpdate(
+    StrategyId strategyId,
+    IEarnStrategy newStrategy,
+    bytes calldata migrationData
+  )
+    external
+    onlyOwner(strategyId)
+  {
     _revertIfNotStrategy(newStrategy);
     _revertIfNotAssetAsFirstToken(newStrategy);
     if (proposedUpdate[strategyId].executableAt != 0) revert StrategyAlreadyProposedUpdate();
     if (assignedId[newStrategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();
     _revertIfTokensAreNotSuperset(strategyId, newStrategy);
-    proposedUpdate[strategyId] = ProposedUpdate(newStrategy, block.timestamp + STRATEGY_UPDATE_DELAY);
+    proposedUpdate[strategyId] =
+      ProposedUpdate(newStrategy, uint96(block.timestamp + STRATEGY_UPDATE_DELAY), keccak256(migrationData));
     assignedId[newStrategy] = strategyId;
     emit StrategyUpdateProposed(strategyId, newStrategy);
   }
@@ -93,10 +102,11 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function updateStrategy(StrategyId strategyId) external onlyOwner(strategyId) {
+  function updateStrategy(StrategyId strategyId, bytes calldata migrationData) external onlyOwner(strategyId) {
     ProposedUpdate memory proposedStrategyUpdate = proposedUpdate[strategyId];
 
     if (proposedStrategyUpdate.executableAt == 0) revert MissingStrategyProposedUpdate(strategyId);
+    if (proposedStrategyUpdate.migrationDataHash != keccak256(migrationData)) revert MigrationDataMismatch(strategyId);
     //slither-disable-next-line timestamp
     if (proposedStrategyUpdate.executableAt > block.timestamp) revert StrategyUpdateBeforeDelay(strategyId);
 
@@ -108,13 +118,14 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     emit StrategyUpdated(strategyId, proposedStrategyUpdate.newStrategy);
     (address[] memory oldStrategyTokens, uint256[] memory oldStrategyBalances) = oldStrategy.totalBalances();
     // slither-disable-next-line reentrancy-no-eth
-    bytes memory migrationData = oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy);
+    bytes memory migrationResultData =
+      oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy, migrationData);
     (address[] memory newStrategyTokens, uint256[] memory newStrategyBalances) =
       proposedStrategyUpdate.newStrategy.totalBalances();
     _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
       oldStrategyTokens, oldStrategyBalances, newStrategyTokens, newStrategyBalances
     );
-    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationData);
+    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationResultData);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {

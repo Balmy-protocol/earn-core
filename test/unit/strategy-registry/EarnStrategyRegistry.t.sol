@@ -96,10 +96,12 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.expectEmit();
     emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy);
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
-    (IEarnStrategy proposedStrategy, uint256 executableAt) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x1234");
+    (IEarnStrategy proposedStrategy, uint96 executableAt, bytes32 migrationHash) =
+      strategyRegistry.proposedUpdate(aRegisteredStrategyId);
     assertEq(address(proposedStrategy), address(anotherStrategy));
     assertEq(executableAt, block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY());
+    assertEq(migrationHash, keccak256("0x1234"));
   }
 
   function test_proposeStrategyUpdate_UpdateWithMoreTokens() public {
@@ -116,7 +118,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     EarnStrategyStateBalanceMock anotherStrategy = StrategyUtils.deployStateStrategy(newStrategyTokens);
 
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_WrongOwner() public {
@@ -130,7 +132,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
     vm.prank(anotherOwner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyProposedUpdate() public {
@@ -140,10 +142,10 @@ contract EarnStrategyRegistryTest is PRBTest {
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyProposedUpdate.selector));
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
     vm.stopPrank();
   }
 
@@ -156,7 +158,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.prank(owner);
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_StrategyAlreadyRegistered_InAnotherProposedUpdate() public {
@@ -168,11 +170,11 @@ contract EarnStrategyRegistryTest is PRBTest {
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     // The strategy 'newStrategy' was proposed to another strategyId
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
-    strategyRegistry.proposeStrategyUpdate(anotherRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(anotherRegisteredStrategyId, newStrategy, "0x");
     vm.stopPrank();
   }
 
@@ -188,7 +190,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.prank(owner);
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.TokensSupportedMismatch.selector));
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_AssetMismatch() public {
@@ -200,7 +202,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetMismatch.selector));
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_AddressIsNotStrategy() public {
@@ -211,7 +213,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AddressIsNotStrategy.selector, badStrategy));
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy, "0x");
   }
 
   function test_proposeStrategyUpdate_RevertWhen_AssetIsNotFirstToken() public {
@@ -225,7 +227,7 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetIsNotFirstToken.selector, badStrategy));
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, badStrategy, "0x");
   }
 
   function test_cancelStrategyUpdate() public {
@@ -234,13 +236,13 @@ contract EarnStrategyRegistryTest is PRBTest {
     EarnStrategyStateBalanceMock anotherStrategy =
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
     vm.expectEmit();
     emit StrategyUpdateCanceled(aRegisteredStrategyId, anotherStrategy);
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
 
     // and can propose same strategy update again
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
     vm.stopPrank();
   }
 
@@ -250,7 +252,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     EarnStrategyStateBalanceMock anotherStrategy =
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
 
     address anotherOwner = address(2);
 
@@ -277,7 +279,7 @@ contract EarnStrategyRegistryTest is PRBTest {
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
     vm.expectEmit();
     emit StrategyUpdateCanceled(aRegisteredStrategyId, anotherStrategy);
     strategyRegistry.cancelStrategyUpdate(aRegisteredStrategyId);
@@ -295,13 +297,13 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
     vm.expectEmit();
     emit StrategyUpdated(aRegisteredStrategyId, newStrategy);
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
     vm.stopPrank();
 
     //The strategy was updated
@@ -312,7 +314,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     assertTrue(strategyRegistry.assignedId(oldStrategy) == StrategyIdConstants.NO_STRATEGY);
 
     // The Strategy ID doesn't have any proposed update
-    (, uint256 executableAt) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
+    (, uint96 executableAt,) = strategyRegistry.proposedUpdate(aRegisteredStrategyId);
     assertEq(executableAt, 0);
   }
 
@@ -327,13 +329,13 @@ contract EarnStrategyRegistryTest is PRBTest {
       StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(address(erc20), address(thirdErc20), address(anotherErc20)));
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.ProposedStrategyBalancesAreLowerThanCurrentStrategy.selector)
     );
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
     vm.stopPrank();
   }
 
@@ -349,11 +351,24 @@ contract EarnStrategyRegistryTest is PRBTest {
     );
 
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.TokensSupportedMismatch.selector));
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
+    vm.stopPrank();
+  }
+
+  function test_updateStrategy_RevertWhen_MigrationDataMismatch() public {
+    (, StrategyId aRegisteredStrategyId) =
+      StrategyUtils.deployStateStrategy(strategyRegistry, CommonUtils.arrayOf(Token.NATIVE_TOKEN), owner);
+
+    IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+    vm.startPrank(owner);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x1234");
+    vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); // Waiting for the delay...
+    vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.MigrationDataMismatch.selector, aRegisteredStrategyId));
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x1233");
     vm.stopPrank();
   }
 
@@ -363,14 +378,14 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.prank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
     address anotherOwner = address(2);
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.UnauthorizedStrategyOwner.selector));
     vm.prank(anotherOwner);
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
   }
 
   function test_updateStrategy_RevertWhen_StrategyUpdateBeforeDelay() public {
@@ -379,19 +394,19 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x");
 
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.StrategyUpdateBeforeDelay.selector, aRegisteredStrategyId)
     );
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY() - 1);
 
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.StrategyUpdateBeforeDelay.selector, aRegisteredStrategyId)
     );
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
 
     vm.stopPrank();
   }
@@ -404,7 +419,7 @@ contract EarnStrategyRegistryTest is PRBTest {
       abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
     );
     vm.prank(owner);
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
   }
 
   function test_updateStrategy_RevertWhen_MissingStrategyProposedUpdate_AfterStrategyUpdate() public {
@@ -413,16 +428,16 @@ contract EarnStrategyRegistryTest is PRBTest {
 
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     vm.startPrank(owner);
-    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, newStrategy, "0x");
 
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
 
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
 
     vm.expectRevert(
       abi.encodeWithSelector(IEarnStrategyRegistry.MissingStrategyProposedUpdate.selector, aRegisteredStrategyId)
     );
-    strategyRegistry.updateStrategy(aRegisteredStrategyId);
+    strategyRegistry.updateStrategy(aRegisteredStrategyId, "0x");
     vm.stopPrank();
   }
 

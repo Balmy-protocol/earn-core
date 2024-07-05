@@ -99,7 +99,15 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     data = "0x";
   }
 
-  function migrateToNewStrategy(IEarnStrategy newStrategy) external virtual override returns (bytes memory) {
+  function migrateToNewStrategy(
+    IEarnStrategy newStrategy,
+    bytes calldata
+  )
+    external
+    virtual
+    override
+    returns (bytes memory)
+  {
     (, uint256[] memory balances) = this.totalBalances();
     for (uint256 i; i < tokens.length; ++i) {
       if (tokens[i] == Token.NATIVE_TOKEN) {

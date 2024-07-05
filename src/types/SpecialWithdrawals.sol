@@ -3,6 +3,16 @@ pragma solidity >=0.8.8;
 
 type SpecialWithdrawalCode is uint256;
 
+using { equals as ==, notEquals as != } for SpecialWithdrawalCode global;
+
+function equals(SpecialWithdrawalCode code1, SpecialWithdrawalCode code2) pure returns (bool) {
+  return SpecialWithdrawalCode.unwrap(code1) == SpecialWithdrawalCode.unwrap(code2);
+}
+
+function notEquals(SpecialWithdrawalCode code1, SpecialWithdrawalCode code2) pure returns (bool) {
+  return SpecialWithdrawalCode.unwrap(code1) != SpecialWithdrawalCode.unwrap(code2);
+}
+
 /**
  * @title Special withdrawals
  * @notice There are some cases where we might want to perform a special withdrawal. For example, if a
