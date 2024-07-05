@@ -89,7 +89,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     proposedUpdate[strategyId] =
       ProposedUpdate(newStrategy, uint96(block.timestamp + STRATEGY_UPDATE_DELAY), keccak256(migrationData));
     assignedId[newStrategy] = strategyId;
-    emit StrategyUpdateProposed(strategyId, newStrategy);
+    emit StrategyUpdateProposed(strategyId, newStrategy, migrationData);
   }
 
   /// @inheritdoc IEarnStrategyRegistry

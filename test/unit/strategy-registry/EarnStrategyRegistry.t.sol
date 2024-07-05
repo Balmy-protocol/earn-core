@@ -16,7 +16,7 @@ import { ERC20MintableBurnableMock } from "../../mocks/ERC20/ERC20MintableBurnab
 
 contract EarnStrategyRegistryTest is PRBTest {
   event StrategyRegistered(address owner, StrategyId strategyId, IEarnStrategy strategy);
-  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy);
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy strategy, bytes migrationData);
   event StrategyUpdateCanceled(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyUpdated(StrategyId strategyId, IEarnStrategy strategy);
   event StrategyOwnershipTransferProposed(StrategyId strategyId, address newOwner);
@@ -94,7 +94,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectEmit();
-    emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy);
+    emit StrategyUpdateProposed(aRegisteredStrategyId, anotherStrategy, "0x1234");
     vm.prank(owner);
     strategyRegistry.proposeStrategyUpdate(aRegisteredStrategyId, anotherStrategy, "0x1234");
     (IEarnStrategy proposedStrategy, uint96 executableAt, bytes32 migrationHash) =

@@ -86,8 +86,9 @@ interface IEarnStrategyRegistry {
    * @notice Emitted when a new strategy is proposed
    * @param strategyId The strategy id
    * @param newStrategy The strategy
+   * @param migrationData Data to be used as part of the migration
    */
-  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy, bytes migrationData);
 
   /**
    * @notice Emitted when a new strategy is updated
