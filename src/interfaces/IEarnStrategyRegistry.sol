@@ -59,6 +59,12 @@ interface IEarnStrategyRegistry {
    */
   error StrategyUpdateBeforeDelay(StrategyId strategyId);
 
+  /**
+   * @notice Thrown when the migration data doesn't match the expected one
+   * @param strategyId The strategy id to update
+   */
+  error MigrationDataMismatch(StrategyId strategyId);
+
   /// @notice Thrown when trying to propose a strategy ownership transfer that has a pending proposal
   error StrategyOwnershipTransferAlreadyProposed();
 
@@ -80,8 +86,9 @@ interface IEarnStrategyRegistry {
    * @notice Emitted when a new strategy is proposed
    * @param strategyId The strategy id
    * @param newStrategy The strategy
+   * @param migrationData Data to be used as part of the migration
    */
-  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy);
+  event StrategyUpdateProposed(StrategyId strategyId, IEarnStrategy newStrategy, bytes migrationData);
 
   /**
    * @notice Emitted when a new strategy is updated
@@ -148,7 +155,7 @@ interface IEarnStrategyRegistry {
   function proposedUpdate(StrategyId strategyId)
     external
     view
-    returns (IEarnStrategy newStrategy, uint256 executableAt);
+    returns (IEarnStrategy newStrategy, uint96 executableAt, bytes32 migrationDataHash);
 
   /**
    * @notice Returns any proposed ownership transfer for the given strategy id
@@ -208,8 +215,14 @@ interface IEarnStrategyRegistry {
    *      The new strategy must support the same tokens as the strategy it's replacing. It may also support new ones.
    * @param strategyId The strategy to update
    * @param newStrategy The new strategy to associate to the id
+   * @param migrationData Data to be used as part of the migration
    */
-  function proposeStrategyUpdate(StrategyId strategyId, IEarnStrategy newStrategy) external;
+  function proposeStrategyUpdate(
+    StrategyId strategyId,
+    IEarnStrategy newStrategy,
+    bytes calldata migrationData
+  )
+    external;
 
   /**
    * @notice Cancels a strategy update
@@ -220,7 +233,9 @@ interface IEarnStrategyRegistry {
 
   /**
    * @notice Updates a strategy, after the delay has passed
+   * @dev The migration data must be the same as the ones passed during the proposal
    * @param strategyId The strategy to update
+   * @param migrationData Data to be used as part of the migration
    */
-  function updateStrategy(StrategyId strategyId) external;
+  function updateStrategy(StrategyId strategyId, bytes calldata migrationData) external;
 }

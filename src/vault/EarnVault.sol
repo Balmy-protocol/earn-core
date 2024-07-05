@@ -356,8 +356,8 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     // slither-disable-next-line reentrancy-no-eth
     (withdrawn, withdrawalTypes, result) = strategy.specialWithdraw({
       positionId: positionId,
-      withdrawCode: withdrawalCode,
-      withdrawData: withdrawalData,
+      withdrawalCode: withdrawalCode,
+      withdrawalData: withdrawalData,
       recipient: recipient
     });
     // slither-disable-next-line unused-return

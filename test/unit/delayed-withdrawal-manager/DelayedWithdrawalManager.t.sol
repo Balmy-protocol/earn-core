@@ -175,9 +175,9 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     // Update strategy to register a new adapter
     IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.STRATEGY_REGISTRY();
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
-    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy, "0x");
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
-    strategyRegistry.updateStrategy(strategyId);
+    strategyRegistry.updateStrategy(strategyId, "0x");
 
     // Register new strategy adapter
     IDelayedWithdrawalAdapter adapter2 = newStrategy.delayedWithdrawalAdapter(token);
@@ -251,9 +251,9 @@ contract DelayedWithdrawalManagerTest is PRBTest {
     // Update strategy to register a new adapter
     IEarnStrategyRegistry strategyRegistry = delayedWithdrawalManager.VAULT().STRATEGY_REGISTRY();
     IEarnStrategy newStrategy = StrategyUtils.deployStateStrategy(tokens);
-    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy);
+    strategyRegistry.proposeStrategyUpdate(strategyId, newStrategy, "0x");
     vm.warp(block.timestamp + strategyRegistry.STRATEGY_UPDATE_DELAY()); //Waiting for the delay...
-    strategyRegistry.updateStrategy(strategyId);
+    strategyRegistry.updateStrategy(strategyId, "0x");
 
     // Register new strategy adapter
     IDelayedWithdrawalAdapter adapter2 = newStrategy.delayedWithdrawalAdapter(token);

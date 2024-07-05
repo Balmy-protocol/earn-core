@@ -18,7 +18,7 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
     getStrategy[strategyId] = strategy;
   }
 
-  function proposedUpdate(StrategyId) external pure returns (IEarnStrategy, uint256) {
+  function proposedUpdate(StrategyId) external pure returns (IEarnStrategy, uint96, bytes32) {
     revert NotImplemented();
   }
 
@@ -38,7 +38,7 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
     revert NotImplemented();
   }
 
-  function proposeStrategyUpdate(StrategyId, IEarnStrategy) external pure {
+  function proposeStrategyUpdate(StrategyId, IEarnStrategy, bytes calldata) external pure {
     revert NotImplemented();
   }
 
@@ -46,7 +46,7 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
     revert NotImplemented();
   }
 
-  function updateStrategy(StrategyId) external pure {
+  function updateStrategy(StrategyId, bytes calldata) external pure {
     revert NotImplemented();
   }
 
