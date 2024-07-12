@@ -48,8 +48,8 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     return depositAmount;
   }
 
-  function allTokens() external view override returns (address[] memory, WithdrawalType[] memory) {
-    return (tokens, withdrawalTypes);
+  function allTokens() external view override returns (address[] memory) {
+    return tokens;
   }
 
   function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {

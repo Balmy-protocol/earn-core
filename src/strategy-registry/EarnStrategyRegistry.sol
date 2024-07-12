@@ -134,8 +134,7 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   function _revertIfNotAssetAsFirstToken(IEarnStrategy strategyToCheck) internal view {
-    // slither-disable-next-line unused-return
-    (address[] memory tokens,) = strategyToCheck.allTokens();
+    address[] memory tokens = strategyToCheck.allTokens();
     bool isAssetFirstToken = (strategyToCheck.asset() == tokens[0]);
     if (!isAssetFirstToken) revert AssetIsNotFirstToken(strategyToCheck);
   }
@@ -144,10 +143,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     IEarnStrategy currentStrategy = getStrategy[strategyId];
     bool isSameAsset = newStrategyToCheck.asset() == currentStrategy.asset();
     if (!isSameAsset) revert AssetMismatch();
-    // slither-disable-start unused-return
-    (address[] memory newTokens,) = newStrategyToCheck.allTokens();
-    (address[] memory currentTokens,) = currentStrategy.allTokens();
-    // slither-disable-end unused-return
+    address[] memory newTokens = newStrategyToCheck.allTokens();
+    address[] memory currentTokens = currentStrategy.allTokens();
     bool sameOrMoreTokensSupported = newTokens.isSupersetOf(currentTokens);
     if (!sameOrMoreTokensSupported) revert TokensSupportedMismatch();
   }

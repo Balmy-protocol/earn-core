@@ -27,7 +27,6 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *      which is in charge of handling this process. Users will be able to monitor their funds through the
  *      "delayed withdrawal" manager, who aggregates all available adapters. Finally, once the withdrawal can be
  *      executed, only those with withdraw permissions over the position will be able to retrieve the funds
- *
  */
 interface IEarnStrategy is IERC165 {
   /// @notice The type of withdrawal supported for a specific token
@@ -38,10 +37,11 @@ interface IEarnStrategy is IERC165 {
 
   /// @notice The type of fee charged for a specific token
   enum FeeType {
-    OTHER,
     PERFORMANCE,
     DEPOSIT,
-    WITHDRAW
+    WITHDRAW,
+    SAVE,
+    OTHER
   }
 
   /**
@@ -72,9 +72,8 @@ interface IEarnStrategy is IERC165 {
    * @notice Returns all tokens under the strategy's control
    * @dev The asset must be the first token returned
    * @return tokens All tokens under the strategy's control
-   * @return withdrawalTypes The types of withdrawals for each token
    */
-  function allTokens() external view returns (address[] memory tokens, WithdrawalType[] memory withdrawalTypes);
+  function allTokens() external view returns (address[] memory tokens);
 
   /**
    * @notice Returns the types of withdrawals supported for each token
@@ -137,11 +136,10 @@ interface IEarnStrategy is IERC165 {
 
   /**
    * @notice Returns how much is charged in terms of fees, for each token
-   * @return tokens All tokens under the strategy's control
    * @return types The type of fee charged for each token
    * @return bps How much fee is being charged, in basis points
    */
-  function fees() external view returns (address[] memory tokens, FeeType[] memory types, uint16[] memory bps);
+  function fees() external view returns (FeeType[] memory types, uint16[] memory bps);
 
   /**
    * @notice Notifies the strategy that funds have been deposited into it
@@ -195,10 +193,10 @@ interface IEarnStrategy is IERC165 {
    * @notice Migrates all tokens and data to a new strategy
    * @dev Can only be called by the strategy registry
    * @param newStrategy The strategy to migrate to
-   * @param data Data to be used as part of the migration
+   * @param migrationData Data to be used as part of the migration
    * @return Data related to the result of the migration. Will be sent to the new strategy
    */
-  function migrateToNewStrategy(IEarnStrategy newStrategy, bytes calldata data) external returns (bytes memory);
+  function migrateToNewStrategy(IEarnStrategy newStrategy, bytes calldata migrationData) external returns (bytes memory);
 
   /**
    * @notice Performs any necessary preparations to be used by the vault
@@ -206,10 +204,10 @@ interface IEarnStrategy is IERC165 {
    * @param strategyId The id that this strategy was registered to
    * @param oldStrategy The previous strategy registered to the id. Will be the zero address if this is the first
    *                    strategy registered to the id
-   * @param migrationData Data sent by the previous strategy registered to the id. Will be empty if this is the
+   * @param migrationResultData Data sent by the previous strategy registered to the id. Will be empty if this is the
    *                      first strategy registered to the id
    */
-  function strategyRegistered(StrategyId strategyId, IEarnStrategy oldStrategy, bytes calldata migrationData) external;
+  function strategyRegistered(StrategyId strategyId, IEarnStrategy oldStrategy, bytes calldata migrationResultData) external;
 
   /**
    * @notice Validates if the position can be created for this strategy, and fails it it can't

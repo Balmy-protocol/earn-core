@@ -19,8 +19,8 @@ contract EarnStrategyBadMock is EarnStrategyDead {
     return tokens[1];
   }
 
-  function allTokens() external view override returns (address[] memory, WithdrawalType[] memory) {
-    return (tokens, new WithdrawalType[](tokens.length));
+  function allTokens() external view override returns (address[] memory) {
+    return tokens;
   }
 
   function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {

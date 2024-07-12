@@ -22,7 +22,7 @@ contract StrategyHandler is StdUtils {
   }
 
   function addToken() public returns (address newToken) {
-    (address[] memory tokens,) = _strategy.allTokens();
+    address[] memory tokens = _strategy.allTokens();
     newToken = _tokenManager.getTokenNotInList(tokens);
     _strategy.addToken(newToken, 0);
   }
@@ -42,7 +42,7 @@ contract StrategyHandler is StdUtils {
   }
 
   function _findTokenWithIndex(uint256 tokenIndex) private view returns (address) {
-    (address[] memory tokens,) = _strategy.allTokens();
+    address[] memory tokens = _strategy.allTokens();
     tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
     return tokens[tokenIndex];
   }

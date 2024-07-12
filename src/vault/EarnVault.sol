@@ -142,8 +142,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     )
   {
     totalShares = _totalSharesInStrategy[strategyId];
-    // slither-disable-next-line unused-return
-    (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
+    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
     yieldData = new StrategyYieldDataForToken[](tokens.length - 1);
     yieldLossData = new StrategyYieldLossDataForToken[](tokens.length - 1);
     for (uint256 i = 1; i < tokens.length; ++i) {
@@ -164,8 +163,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     )
   {
     (strategyId, positionShares) = _positions.read(positionId);
-    // slither-disable-next-line unused-return
-    (tokens,) = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
+    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
     yieldData = new PositionYieldDataForToken[](tokens.length - 1);
     yieldLossData = new PositionYieldLossDataForToken[](tokens.length - 1);
     for (uint256 i = 1; i < tokens.length; ++i) {

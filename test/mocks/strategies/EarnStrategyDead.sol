@@ -53,7 +53,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function allTokens() external view virtual returns (address[] memory, WithdrawalType[] memory) {
+  function allTokens() external view virtual returns (address[] memory) {
     revert NotImplemented();
   }
 
@@ -77,7 +77,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function fees() external view virtual returns (address[] memory, FeeType[] memory, uint16[] memory) {
+  function fees() external view virtual returns (FeeType[] memory, uint16[] memory) {
     revert NotImplemented();
   }
 

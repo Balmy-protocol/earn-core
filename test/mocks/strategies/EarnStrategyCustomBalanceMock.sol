@@ -23,9 +23,8 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     return _tokens.at(0);
   }
 
-  function allTokens() external view override returns (address[] memory tokens, WithdrawalType[] memory types) {
+  function allTokens() external view override returns (address[] memory tokens) {
     tokens = _tokens.values();
-    types = supportedWithdrawals();
   }
 
   function supportedWithdrawals() public view override returns (WithdrawalType[] memory types) {
