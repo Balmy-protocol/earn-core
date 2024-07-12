@@ -196,7 +196,12 @@ interface IEarnStrategy is IERC165 {
    * @param migrationData Data to be used as part of the migration
    * @return Data related to the result of the migration. Will be sent to the new strategy
    */
-  function migrateToNewStrategy(IEarnStrategy newStrategy, bytes calldata migrationData) external returns (bytes memory);
+  function migrateToNewStrategy(
+    IEarnStrategy newStrategy,
+    bytes calldata migrationData
+  )
+    external
+    returns (bytes memory);
 
   /**
    * @notice Performs any necessary preparations to be used by the vault
@@ -207,7 +212,12 @@ interface IEarnStrategy is IERC165 {
    * @param migrationResultData Data sent by the previous strategy registered to the id. Will be empty if this is the
    *                      first strategy registered to the id
    */
-  function strategyRegistered(StrategyId strategyId, IEarnStrategy oldStrategy, bytes calldata migrationResultData) external;
+  function strategyRegistered(
+    StrategyId strategyId,
+    IEarnStrategy oldStrategy,
+    bytes calldata migrationResultData
+  )
+    external;
 
   /**
    * @notice Validates if the position can be created for this strategy, and fails it it can't
