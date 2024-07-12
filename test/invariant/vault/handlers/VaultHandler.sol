@@ -106,7 +106,7 @@ contract VaultHandler is StdUtils {
   }
 
   function _findTokenWithIndex(uint256 tokenIndex) private view returns (address) {
-    (address[] memory tokens,) = _strategy.allTokens();
+    address[] memory tokens = _strategy.allTokens();
     tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
     return tokens[tokenIndex];
   }

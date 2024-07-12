@@ -108,7 +108,6 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
 
   /// @inheritdoc IDelayedWithdrawalManager
   function registerDelayedWithdraw(uint256 positionId, address token) external {
-    emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
     _revertIfNotCurrentStrategyAdapter(positionId, token);
 
     mapping(uint256 index => RegisteredAdapter registeredAdapter) storage registeredAdapters =
@@ -119,6 +118,8 @@ contract DelayedWithdrawalManager is IDelayedWithdrawalManager {
       revert AdapterDuplicated();
     }
     registeredAdapters.set(length, IDelayedWithdrawalAdapter(msg.sender));
+    // slither-disable-next-line reentrancy-events
+    emit DelayedWithdrawalRegistered(positionId, token, msg.sender);
   }
 
   /// @inheritdoc IDelayedWithdrawalManager
