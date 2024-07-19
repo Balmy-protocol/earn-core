@@ -2,7 +2,7 @@
 pragma solidity >=0.8.22;
 
 import { IEarnVault } from "../../../src/interfaces/IEarnVault.sol";
-import { IDelayedWithdrawalManager } from "../../../src/interfaces/IDelayedWithdrawalManager.sol";
+import { IDelayedWithdrawalManager } from "@balmy/earn-periphery/interfaces/IDelayedWithdrawalManager.sol";
 import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 
 /// @notice An implementation of IDelayedWithdrawalAdapter that always reverts

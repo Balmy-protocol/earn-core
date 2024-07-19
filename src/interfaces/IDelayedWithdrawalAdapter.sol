@@ -3,7 +3,7 @@ pragma solidity >=0.8.8;
 
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
 import { IEarnVault } from "./IEarnVault.sol";
-import { IDelayedWithdrawalManager } from "./IDelayedWithdrawalManager.sol";
+import { IDelayedWithdrawalManager } from "@balmy/earn-periphery/interfaces/IDelayedWithdrawalManager.sol";
 
 /**
  * @title Delayed Withdrawal Adapter Interface

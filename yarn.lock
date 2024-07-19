@@ -25,6 +25,10 @@
     js-tokens "^4.0.0"
     picocolors "^1.0.0"
 
+"@balmy/earn-periphery@github:balmy-protocol/earn-periphery#1b15905812866f59faae1692f21c1df2bd5f1231":
+  version "0.0.0"
+  resolved "git+ssh://git@github.com/balmy-protocol/earn-periphery.git#1b15905812866f59faae1692f21c1df2bd5f1231"
+
 "@balmy/nft-permissions@github:balmy-protocol/nft-permissions#1e75f88d0da6e93f2afbd1069a8c37553f448638":
   version "1.0.0"
   resolved "https://codeload.github.com/balmy-protocol/nft-permissions/tar.gz/1e75f88d0da6e93f2afbd1069a8c37553f448638"
