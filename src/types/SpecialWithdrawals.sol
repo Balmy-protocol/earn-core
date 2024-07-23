@@ -5,10 +5,12 @@ type SpecialWithdrawalCode is uint256;
 
 using { equals as ==, notEquals as != } for SpecialWithdrawalCode global;
 
+// slither-disable-next-line dead-code
 function equals(SpecialWithdrawalCode code1, SpecialWithdrawalCode code2) pure returns (bool) {
   return SpecialWithdrawalCode.unwrap(code1) == SpecialWithdrawalCode.unwrap(code2);
 }
 
+// slither-disable-next-line dead-code
 function notEquals(SpecialWithdrawalCode code1, SpecialWithdrawalCode code2) pure returns (bool) {
   return SpecialWithdrawalCode.unwrap(code1) != SpecialWithdrawalCode.unwrap(code2);
 }

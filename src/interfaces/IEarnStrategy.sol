@@ -2,7 +2,6 @@
 pragma solidity >=0.8.8;
 
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import { IDelayedWithdrawalAdapter } from "./IDelayedWithdrawalAdapter.sol";
 import { IEarnStrategyRegistry } from "./IEarnStrategyRegistry.sol";
 import { IEarnVault } from "./IEarnVault.sol";
 import { StrategyId } from "../types/StrategyId.sol";
@@ -126,13 +125,6 @@ interface IEarnStrategy is IERC165 {
    * @return withdrawable How much can be withdrawn for each one
    */
   function maxWithdraw() external view returns (address[] memory tokens, uint256[] memory withdrawable);
-
-  /**
-   * @notice Returns the "delayed withdrawal" adapter that will be used for the given token
-   * @param token The token to use the adapter for
-   * @return The address of the "delayed withdrawal" adapter, or the zero address if none is configured
-   */
-  function delayedWithdrawalAdapter(address token) external view returns (IDelayedWithdrawalAdapter);
 
   /**
    * @notice Returns how much is charged in terms of fees, for each token

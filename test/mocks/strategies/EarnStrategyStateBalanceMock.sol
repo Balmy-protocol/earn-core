@@ -6,9 +6,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/ERC165Check
 // solhint-disable-next-line no-unused-import
 import { StrategyId, EarnStrategyDead, IEarnStrategy } from "./EarnStrategyDead.sol";
 // solhint-disable-next-line no-unused-import
-import { IDelayedWithdrawalAdapter } from "../../../src/interfaces/IDelayedWithdrawalAdapter.sol";
 import { Token, IERC20, Address } from "../../../src/libraries/Token.sol";
-import { DelayedWithdrawalAdapterMock } from "../delayed-withdrawal-adapter/DelayedWithdrawalAdapterMock.sol";
 import { SpecialWithdrawalCode } from "../../../src/types/SpecialWithdrawals.sol";
 
 /// @notice An implementation of IEarnStrategy that returns balances by reading token's state
@@ -17,15 +15,11 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
 
   address[] internal tokens;
   WithdrawalType[] internal withdrawalTypes;
-  mapping(address token => IDelayedWithdrawalAdapter adapter) public override delayedWithdrawalAdapter;
 
   constructor(address[] memory tokens_, WithdrawalType[] memory withdrawalTypes_) {
     require(tokens_.length == withdrawalTypes_.length, "Invalid");
     tokens = tokens_;
     withdrawalTypes = withdrawalTypes_;
-    for (uint256 i; i < tokens_.length; ++i) {
-      delayedWithdrawalAdapter[tokens_[i]] = new DelayedWithdrawalAdapterMock();
-    }
   }
 
   function asset() external view override returns (address) {
