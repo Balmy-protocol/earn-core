@@ -6,8 +6,7 @@ import {
   StrategyId,
   IEarnVault,
   IEarnStrategyRegistry,
-  SpecialWithdrawalCode,
-  IDelayedWithdrawalAdapter
+  SpecialWithdrawalCode
 } from "../../../src/interfaces/IEarnStrategy.sol";
 
 /// @notice An implementation of IEarnStrategy that always reverts
@@ -70,10 +69,6 @@ contract EarnStrategyDead is IEarnStrategy {
   }
 
   function maxWithdraw() external view virtual returns (address[] memory, uint256[] memory) {
-    revert NotImplemented();
-  }
-
-  function delayedWithdrawalAdapter(address) external view virtual returns (IDelayedWithdrawalAdapter) {
     revert NotImplemented();
   }
 

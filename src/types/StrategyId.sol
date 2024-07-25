@@ -9,6 +9,7 @@ function increment(StrategyId id) pure returns (StrategyId) {
   return StrategyId.wrap(StrategyId.unwrap(id) + 1);
 }
 
+// slither-disable-next-line dead-code
 function equals(StrategyId id1, StrategyId id2) pure returns (bool) {
   return StrategyId.unwrap(id1) == StrategyId.unwrap(id2);
 }
