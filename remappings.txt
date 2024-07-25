@@ -5,7 +5,3 @@ src/=src/
 @openzeppelin/=node_modules/@openzeppelin/
 @balmy/nft-permissions/=node_modules/@balmy/nft-permissions/src/
 @balmy/nft-permissions-test/=node_modules/@balmy/nft-permissions/test/
-@balmy/earn-periphery/=node_modules/@balmy/earn-periphery/src/
-@balmy/earn-periphery-test/=node_modules/@balmy/earn-periphery/test/
-@balmy/earn-core/=src/
-@balmy/earn-core-test/=test/
