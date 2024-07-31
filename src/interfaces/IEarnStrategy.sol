@@ -39,7 +39,7 @@ interface IEarnStrategy is IERC165 {
     PERFORMANCE,
     DEPOSIT,
     WITHDRAW,
-    SAVE,
+    RESCUE,
     OTHER
   }
 
