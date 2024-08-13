@@ -71,7 +71,9 @@ library StrategyYieldDataForTokenLibrary {
     });
   }
 
-  function _decode(StrategyYieldDataForToken encoded)
+  function _decode(
+    StrategyYieldDataForToken encoded
+  )
     private
     pure
     returns (uint256 yieldAccumulator, uint256 recordedBalance, bool strategyHadLoss)

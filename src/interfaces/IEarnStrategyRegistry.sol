@@ -152,7 +152,9 @@ interface IEarnStrategyRegistry {
    * @return newStrategy The new strategy
    * @return executableAt When the update will be executable
    */
-  function proposedUpdate(StrategyId strategyId)
+  function proposedUpdate(
+    StrategyId strategyId
+  )
     external
     view
     returns (IEarnStrategy newStrategy, uint96 executableAt, bytes32 migrationDataHash);
