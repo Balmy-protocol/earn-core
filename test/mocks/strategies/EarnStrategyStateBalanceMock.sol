@@ -46,7 +46,7 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     return tokens;
   }
 
-  function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
+  function supportsInterface(bytes4 interfaceId) external pure virtual override returns (bool) {
     return interfaceId == type(IEarnStrategy).interfaceId || interfaceId == type(IERC165).interfaceId;
   }
 
