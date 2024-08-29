@@ -92,9 +92,7 @@ interface IEarnVault is INFTPermissions {
    * @return balances Total balance of each token
    * @return strategy The position's strategy
    */
-  function position(
-    uint256 positionId
-  )
+  function position(uint256 positionId)
     external
     view
     returns (address[] memory tokens, uint256[] memory balances, IEarnStrategy strategy);

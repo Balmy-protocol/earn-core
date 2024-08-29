@@ -131,9 +131,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     return super.paused();
   }
 
-  function getStrategyYieldData(
-    StrategyId strategyId
-  )
+  function getStrategyYieldData(StrategyId strategyId)
     external
     view
     returns (
@@ -153,9 +151,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     }
   }
 
-  function getPositionYieldData(
-    uint256 positionId
-  )
+  function getPositionYieldData(uint256 positionId)
     external
     view
     returns (
@@ -393,9 +389,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     _unpause();
   }
 
-  function _loadCurrentState(
-    uint256 positionId
-  )
+  function _loadCurrentState(uint256 positionId)
     internal
     view
     returns (

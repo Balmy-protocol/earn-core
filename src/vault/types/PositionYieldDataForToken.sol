@@ -76,9 +76,7 @@ library PositionYieldDataForTokenLibrary {
     }
   }
 
-  function _decode(
-    PositionYieldDataForToken encoded
-  )
+  function _decode(PositionYieldDataForToken encoded)
     private
     pure
     returns (uint256 baseYieldAccumulator, uint256 preAccountedBalance, bool positionHadLoss)
