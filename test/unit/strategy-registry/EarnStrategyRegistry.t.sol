@@ -36,6 +36,10 @@ contract EarnStrategyRegistryTest is PRBTest {
     assertEq(address(strategyRegistry.getStrategy(invalidStrategyId)), address(0));
   }
 
+  function test_constructor() public {
+    assertEq(strategyRegistry.totalRegistered(), 0);
+  }
+
   function test_registerStrategy() public {
     IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
@@ -47,6 +51,7 @@ contract EarnStrategyRegistryTest is PRBTest {
     assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
     assertTrue(strategyRegistry.assignedId(aStrategy) == aRegisteredStrategyId);
     assertGt(StrategyId.unwrap(aRegisteredStrategyId), StrategyId.unwrap(StrategyIdConstants.NO_STRATEGY));
+    assertEq(strategyRegistry.totalRegistered(), 1);
   }
 
   function test_registerStrategy_RevertWhen_StrategyIsAlreadyRegistered() public {
@@ -85,6 +90,7 @@ contract EarnStrategyRegistryTest is PRBTest {
       address(strategyRegistry.getStrategy(anotherRegisteredStrategyId))
     );
     assertFalse(strategyRegistry.assignedId(aStrategy) == strategyRegistry.assignedId(anotherStrategy));
+    assertEq(strategyRegistry.totalRegistered(), 2);
   }
 
   function test_proposeStrategyUpdate() public {

@@ -165,6 +165,12 @@ interface IEarnStrategyRegistry {
   function proposedOwnershipTransfer(StrategyId strategyId) external view returns (address newOwner);
 
   /**
+   * @notice Returns the number of registered strategies
+   * @return The number of registered strategies
+   */
+  function totalRegistered() external view returns (uint256);
+
+  /**
    * @notice Registers a new strategy
    * @dev The strategy must report the asset as the first token
    *      The strategy can't be associated to another id

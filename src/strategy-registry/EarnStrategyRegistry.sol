@@ -35,6 +35,11 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   mapping(StrategyId strategyId => address newOwner) public proposedOwnershipTransfer;
 
   /// @inheritdoc IEarnStrategyRegistry
+  function totalRegistered() external view returns (uint256) {
+    return StrategyId.unwrap(_nextStrategyId) - 1;
+  }
+
+  /// @inheritdoc IEarnStrategyRegistry
   function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
     _revertIfNotStrategy(strategy);
     _revertIfNotAssetAsFirstToken(strategy);
