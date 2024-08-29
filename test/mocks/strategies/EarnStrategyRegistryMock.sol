@@ -18,6 +18,10 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
     getStrategy[strategyId] = strategy;
   }
 
+  function totalRegistered() external pure returns (uint256) {
+    revert NotImplemented();
+  }
+
   function proposedUpdate(StrategyId) external pure returns (IEarnStrategy, uint96, bytes32) {
     revert NotImplemented();
   }
