@@ -176,16 +176,20 @@ interface IEarnVault is INFTPermissions {
    * @dev The caller must have permissions to withdraw from the position
    * @param positionId The position to withdraw funds from
    * @param withdrawalCode The code that identifies the special withdrawal
+   * @param toWithdraw Amounts to withdraw, based on the withdrawal code. Does not need to have the same
+   *                   length or order as `tokens`
    * @param withdrawalData The data that defines the withdrawal
    * @param recipient The account that will receive the withdrawn funds
    * @return tokens All of the position's tokens
-   * @return withdrawn How much was actually withdrawn from each token
-   * @return withdrawalTypes The type of withdrawal for each token
+   * @return balanceChanges Changes in the position's balances, in the same order as `tokens`
+   * @return actualWithdrawnTokens The tokens that were actually withdrawn
+   * @return actualWithdrawnAmounts How much was withdrawn from each token
    * @return result The result of the withdrawal. Can be different for each strategy
    */
   function specialWithdraw(
     uint256 positionId,
     SpecialWithdrawalCode withdrawalCode,
+    uint256[] calldata toWithdraw,
     bytes calldata withdrawalData,
     address recipient
   )
@@ -193,8 +197,9 @@ interface IEarnVault is INFTPermissions {
     payable
     returns (
       address[] memory tokens,
-      uint256[] memory withdrawn,
-      IEarnStrategy.WithdrawalType[] memory withdrawalTypes,
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
       bytes memory result
     );
 

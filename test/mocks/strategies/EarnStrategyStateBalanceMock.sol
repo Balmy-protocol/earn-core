@@ -73,23 +73,32 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
   function specialWithdraw(
     uint256,
     SpecialWithdrawalCode,
+    uint256[] calldata toWithdraw,
     bytes calldata withdrawData,
     address recipient
   )
     external
     override
-    returns (uint256[] memory withdrawn, WithdrawalType[] memory types, bytes memory data)
+    returns (
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
+      bytes memory data
+    )
   {
     // Withdraw specific token
-    (uint256 tokenIndex, uint256 toWithdraw) = abi.decode(withdrawData, (uint256, uint256));
+    (uint256 tokenIndex) = abi.decode(withdrawData, (uint256));
     if (tokens[tokenIndex] == Token.NATIVE_TOKEN) {
-      Address.sendValue(payable(recipient), toWithdraw);
+      Address.sendValue(payable(recipient), toWithdraw[0]);
     } else {
-      IERC20(tokens[tokenIndex]).transfer(recipient, toWithdraw);
+      IERC20(tokens[tokenIndex]).transfer(recipient, toWithdraw[0]);
     }
-    withdrawn = new uint256[](tokens.length);
-    withdrawn[tokenIndex] = toWithdraw;
-    types = new WithdrawalType[](tokens.length);
+    balanceChanges = new uint256[](tokens.length);
+    balanceChanges[tokenIndex] = toWithdraw[0];
+    actualWithdrawnTokens = new address[](1);
+    actualWithdrawnTokens[0] = tokens[tokenIndex];
+    actualWithdrawnAmounts = new uint256[](1);
+    actualWithdrawnAmounts[0] = toWithdraw[0];
     data = "0x";
   }
 

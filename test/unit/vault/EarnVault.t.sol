@@ -1470,7 +1470,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.prank(operator);
     vm.expectEmit();
     emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
-    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+    vault.specialWithdraw(
+      positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), recipient
+    );
     // Funds after withdraw
     (, balances,) = vault.position(positionId);
     assertEq(erc20.balanceOf(recipient), amountToWithdraw);
@@ -1504,7 +1506,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     vm.prank(operator);
     vm.expectEmit();
     emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
-    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+    vault.specialWithdraw(
+      positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), recipient
+    );
 
     // Funds after withdraw
     (, balances,) = vault.position(positionId);
@@ -1535,7 +1539,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
       )
     );
     vm.prank(operator);
-    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), recipient);
+    vault.specialWithdraw(
+      positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), recipient
+    );
   }
 
   function test_specialWithdraw_CheckRewards() public {
@@ -1622,7 +1628,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256[] memory intendendWithdraw = CommonUtils.arrayOf(amountToWithdraw1, 0);
 
     vm.prank(operator);
-    vault.specialWithdraw(positionId1, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw1), recipient);
+    vault.specialWithdraw(
+      positionId1, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw1), abi.encode(0), recipient
+    );
 
     // UPDATE SHARES
     //Shares: 5
@@ -1644,7 +1652,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
     intendendWithdraw[1] = amountToWithdraw1;
 
     vm.prank(operator);
-    vault.specialWithdraw(positionId1, SpecialWithdrawalCode.wrap(0), abi.encode(1, amountToWithdraw1), recipient);
+    vault.specialWithdraw(
+      positionId1, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw1), abi.encode(1), recipient
+    );
 
     (, balances1,) = vault.position(positionId1);
     assertApproxEqAbs(amountToDeposit1 - amountToWithdraw1, balances1[0], 1);
