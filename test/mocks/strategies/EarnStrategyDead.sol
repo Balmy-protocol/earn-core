@@ -92,12 +92,13 @@ contract EarnStrategyDead is IEarnStrategy {
   function specialWithdraw(
     uint256,
     SpecialWithdrawalCode,
+    uint256[] calldata,
     bytes calldata,
     address
   )
     external
     virtual
-    returns (uint256[] memory, WithdrawalType[] memory, bytes memory)
+    returns (uint256[] memory, address[] memory, uint256[] memory, bytes memory)
   {
     revert NotImplemented();
   }

@@ -326,6 +326,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   function specialWithdraw(
     uint256 positionId,
     SpecialWithdrawalCode withdrawalCode,
+    uint256[] calldata toWithdraw,
     bytes calldata withdrawalData,
     address recipient
   )
@@ -335,8 +336,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     nonReentrant
     returns (
       address[] memory tokens,
-      uint256[] memory withdrawn,
-      IEarnStrategy.WithdrawalType[] memory withdrawalTypes,
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
       bytes memory result
     )
   {
@@ -352,9 +354,10 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     ) = _loadCurrentState(positionId);
 
     // slither-disable-next-line reentrancy-no-eth
-    (withdrawn, withdrawalTypes, result) = strategy.specialWithdraw({
+    (balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result) = strategy.specialWithdraw({
       positionId: positionId,
       withdrawalCode: withdrawalCode,
+      toWithdraw: toWithdraw,
       withdrawalData: withdrawalData,
       recipient: recipient
     });
@@ -369,14 +372,14 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       tokens: tokens_,
       calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
-      updateAmounts: withdrawn,
+      updateAmounts: balanceChanges,
       balancesAfterUpdate: balancesAfterUpdate,
       action: UpdateAction.WITHDRAW
     });
 
     tokens = tokens_;
 
-    emit PositionWithdrawn(positionId, tokens, withdrawn, recipient);
+    emit PositionWithdrawn(positionId, tokens, balanceChanges, recipient);
   }
 
   /// @inheritdoc IEarnVault

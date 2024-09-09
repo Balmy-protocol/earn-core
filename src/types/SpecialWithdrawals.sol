@@ -27,19 +27,11 @@ function notEquals(SpecialWithdrawalCode code1, SpecialWithdrawalCode code2) pur
 library SpecialWithdrawal {
   /*
    * Withdraws the asset's farm token directly, by specifying the amount of farm tokens to withdraw
-   * Input: 
-   * - uint256: amount of farm tokens to withdraw
-   * Output: 
-   * - uint256: amount of assets withdrawn
    */
   SpecialWithdrawalCode internal constant WITHDRAW_ASSET_FARM_TOKEN_BY_AMOUNT = SpecialWithdrawalCode.wrap(0);
 
   /*
    * Withdraws the asset's farm token directly, by specifying the equivalent in terms of the asset
-   * Input: 
-   * - uint256: amount of assets to withdraw
-   * Output: 
-   * - uint256: amount of farm tokens withdrawn
    */
   SpecialWithdrawalCode internal constant WITHDRAW_ASSET_FARM_TOKEN_BY_ASSET_AMOUNT = SpecialWithdrawalCode.wrap(1);
 }

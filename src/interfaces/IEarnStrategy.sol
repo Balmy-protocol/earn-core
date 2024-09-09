@@ -166,20 +166,29 @@ interface IEarnStrategy is IERC165 {
    * @dev Can only be called by the vault
    * @param positionId The position that initiated the withdrawal
    * @param withdrawalCode The code that identifies the type of withdrawal
+   * @param toWithdraw Amounts to withdraw, based on the withdrawal code. Does not need to have the same
+   *                   length or order as `tokens`
    * @param withdrawalData Data necessary to execute the withdrawal
    * @param recipient The account that will receive the tokens
-   * @return withdrawn How much was withdrawn from each token, in the same order as `tokens`
-   * @return withdrawalTypes The types of withdrawals for each token, in the same order as `tokens`
+   * @return balanceChanges Changes in the position's balances
+   * @return actualWithdrawnTokens The tokens that were actually withdrawn
+   * @return actualWithdrawnAmounts How much was withdrawn from each token
    * @return result Some custom data related to the withdrawal
    */
   function specialWithdraw(
     uint256 positionId,
     SpecialWithdrawalCode withdrawalCode,
+    uint256[] calldata toWithdraw,
     bytes calldata withdrawalData,
     address recipient
   )
     external
-    returns (uint256[] memory withdrawn, WithdrawalType[] memory withdrawalTypes, bytes memory result);
+    returns (
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
+      bytes memory result
+    );
 
   /**
    * @notice Migrates all tokens and data to a new strategy

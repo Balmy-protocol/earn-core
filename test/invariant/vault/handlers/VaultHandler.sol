@@ -9,6 +9,7 @@ import { IEarnVault, StrategyId } from "../../../../src/vault/EarnVault.sol";
 import { SpecialWithdrawalCode } from "../../../../src/types/SpecialWithdrawals.sol";
 
 import { EarnStrategyCustomBalanceMock } from "../../../mocks/strategies/EarnStrategyCustomBalanceMock.sol";
+import { CommonUtils } from "../../../utils/CommonUtils.sol";
 // solhint-disable no-empty-blocks
 // solhint-disable reason-string
 
@@ -79,7 +80,8 @@ contract VaultHandler is StdUtils {
         _vault.specialWithdraw({
           positionId: positionId,
           withdrawalCode: SpecialWithdrawalCode.wrap(0),
-          withdrawalData: abi.encode(tokenIndex, amountToWithdraw),
+          toWithdraw: CommonUtils.arrayOf(amountToWithdraw),
+          withdrawalData: abi.encode(tokenIndex),
           recipient: address(1)
         });
       }

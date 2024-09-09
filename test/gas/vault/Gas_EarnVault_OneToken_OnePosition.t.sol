@@ -64,7 +64,9 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
   }
 
   function test_Gas_specialWithdraw() public {
-    vault.specialWithdraw(positionId, SpecialWithdrawalCode.wrap(0), abi.encode(0, amountToWithdraw), address(this));
+    vault.specialWithdraw(
+      positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), address(this)
+    );
   }
 
   function test_Gas_increasePosition_WithNative() public {
