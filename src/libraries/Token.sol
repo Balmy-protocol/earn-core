@@ -40,6 +40,22 @@ library Token {
   }
 
   /**
+   * @notice Transfer tokens from the contract, to the recipient
+   * @param token The token to transfer
+   * @param recipient The recipient of the tokens
+   * @param amount The amount of tokens to transfer
+   */
+  function transfer(address token, address recipient, uint256 amount) internal {
+    if (amount > 0) {
+      if (token == NATIVE_TOKEN) {
+        Address.sendValue(payable(recipient), amount);
+      } else {
+        IERC20(token).safeTransfer(recipient, amount);
+      }
+    }
+  }
+
+  /**
    * @notice Reverts if the given token is the native token
    * @param token The token to check
    */
