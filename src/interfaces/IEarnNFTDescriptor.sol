@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: TBD
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.8.8;
 
 import { IEarnVault } from "./IEarnVault.sol";
