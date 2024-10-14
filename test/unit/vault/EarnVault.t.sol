@@ -39,12 +39,16 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 indexed positionId,
     address indexed owner,
     StrategyId strategyId,
+    address depositedToken,
+    uint256 depositedAmount,
     uint256 assetsDeposited,
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
 
-  event PositionIncreased(uint256 indexed positionId, uint256 assetsDeposited);
+  event PositionIncreased(
+    uint256 indexed positionId, address depositedToken, uint256 depositedAmount, uint256 assetsDeposited
+  );
 
   event PositionWithdrawn(uint256 indexed positionId, address[] tokens, uint256[] withdrawn, address recipient);
 
@@ -208,7 +212,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
       1
     );
     vm.expectEmit();
-    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
+    emit PositionCreated(
+      1, positionOwner, strategyId, Token.NATIVE_TOKEN, amountToDeposit, amountToDeposit, permissions, misc
+    );
     (uint256 positionId, uint256 assetsDeposited) = vault.createPosition{ value: amountToDeposit }(
       strategyId, Token.NATIVE_TOKEN, amountToDeposit, positionOwner, permissions, creationData, misc
     );
@@ -248,7 +254,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
-    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
+    emit PositionCreated(
+      1, positionOwner, strategyId, address(erc20), amountToDeposit, amountToDeposit, permissions, misc
+    );
     (uint256 positionId, uint256 assetsDeposited) =
       vault.createPosition(strategyId, address(erc20), amountToDeposit, positionOwner, permissions, creationData, misc);
 
@@ -290,7 +298,9 @@ contract EarnVaultTest is PRBTest, StdUtils {
       address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
-    emit PositionCreated(1, positionOwner, strategyId, amountToDeposit, permissions, misc);
+    emit PositionCreated(
+      1, positionOwner, strategyId, address(erc20), amountToDeposit, amountToDeposit, permissions, misc
+    );
     (uint256 positionId, uint256 assetsDeposited) = vault.createPosition(
       strategyId, address(erc20), type(uint256).max, positionOwner, permissions, creationData, misc
     );
@@ -1183,7 +1193,10 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousStrategyBalance = erc20.balanceOf(address(strategy));
     vm.expectEmit();
     emit PositionIncreased(
-      positionId, amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance
+      positionId,
+      address(erc20),
+      amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance,
+      amountToIncrease != type(uint256).max ? amountToIncrease : previousOperatorBalance
     );
     vm.prank(operator);
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
@@ -1232,7 +1245,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     uint256 previousStrategyBalance = address(strategy).balance;
 
     vm.expectEmit();
-    emit PositionIncreased(positionId, amountToIncrease);
+    emit PositionIncreased(positionId, Token.NATIVE_TOKEN, amountToIncrease, amountToIncrease);
     vm.prank(operator);
     vault.increasePosition{ value: amountToIncrease }(positionId, Token.NATIVE_TOKEN, amountToIncrease);
 
