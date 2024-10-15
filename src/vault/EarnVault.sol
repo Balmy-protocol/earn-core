@@ -192,7 +192,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     payable
     nonReentrant
     whenNotPaused
-    returns (uint256 positionId, uint256 assetsDeposited)
+    returns (uint256, uint256)
   {
     (
       ,
@@ -205,9 +205,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
 
     strategy.validatePositionCreation(msg.sender, strategyValidationData);
 
-    positionId = _mintWithPermissions(owner, permissions);
+    uint256 positionId = _mintWithPermissions(owner, permissions);
 
-    assetsDeposited = _increasePosition({
+    (uint256 depositedAmount, uint256 assetsDeposited) = _increasePosition({
       positionId: positionId,
       strategyId: strategyId,
       strategy: strategy,
@@ -220,7 +220,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       depositAmount: depositAmount
     });
 
-    emit PositionCreated(positionId, owner, strategyId, assetsDeposited, permissions, misc);
+    emit PositionCreated(
+      positionId, owner, strategyId, depositToken, depositedAmount, assetsDeposited, permissions, misc
+    );
+
+    return (positionId, assetsDeposited);
   }
 
   /// @inheritdoc IEarnVault
@@ -234,7 +238,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     onlyWithPermission(positionId, INCREASE_PERMISSION)
     nonReentrant
     whenNotPaused
-    returns (uint256 assetsDeposited)
+    returns (uint256)
   {
     (
       ,
@@ -247,7 +251,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       uint256[] memory totalBalances
     ) = _loadCurrentState(positionId);
 
-    assetsDeposited = _increasePosition({
+    (uint256 depositedAmount, uint256 assetsDeposited) = _increasePosition({
       positionId: positionId,
       strategyId: strategyId,
       strategy: strategy,
@@ -260,7 +264,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       depositAmount: depositAmount
     });
 
-    emit PositionIncreased(positionId, assetsDeposited);
+    emit PositionIncreased(positionId, depositToken, depositedAmount, assetsDeposited);
+
+    return assetsDeposited;
   }
 
   /// @inheritdoc IEarnVault
@@ -557,18 +563,20 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     uint256 depositAmount
   )
     internal
-    returns (uint256 assetsDeposited)
+    returns (uint256 depositedAmount, uint256 assetsDeposited)
   {
     if (depositAmount == type(uint256).max) {
       depositToken.assertNonNative(); // This operation is only supported with ERC20s
-      depositAmount = depositToken.balanceOf(msg.sender);
+      depositedAmount = depositToken.balanceOf(msg.sender);
+    } else {
+      depositedAmount = depositAmount;
     }
-    if (depositAmount == 0) {
+    if (depositedAmount == 0) {
       revert ZeroAmountDeposit();
     }
 
-    depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositAmount });
-    assetsDeposited = strategy.deposited(depositToken, depositAmount);
+    depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositedAmount });
+    assetsDeposited = strategy.deposited(depositToken, depositedAmount);
 
     uint256[] memory deposits = new uint256[](tokens.length);
     deposits[0] = assetsDeposited;

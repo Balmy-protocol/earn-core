@@ -32,13 +32,17 @@ interface IEarnVault is INFTPermissions {
     uint256 indexed positionId,
     address indexed owner,
     StrategyId strategyId,
+    address depositedToken,
+    uint256 depositedAmount,
     uint256 assetsDeposited,
     INFTPermissions.PermissionSet[] permissions,
     bytes misc
   );
 
   /// @notice Emitted when a new position is increased
-  event PositionIncreased(uint256 indexed positionId, uint256 assetsDeposited);
+  event PositionIncreased(
+    uint256 indexed positionId, address depositedToken, uint256 depositedAmount, uint256 assetsDeposited
+  );
 
   /// @notice Emitted when a new position is withdrawn
   event PositionWithdrawn(uint256 indexed positionId, address[] tokens, uint256[] withdrawn, address recipient);
