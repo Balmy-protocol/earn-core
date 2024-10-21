@@ -212,6 +212,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategyId: strategyId,
       strategy: strategy,
       totalShares: totalShares,
+      positionAssetBalance: 0,
       positionShares: 0,
       tokens: tokens,
       totalBalances: totalBalances,
@@ -241,7 +242,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     returns (uint256)
   {
     (
-      ,
+      uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -257,6 +258,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategy: strategy,
       totalShares: totalShares,
       positionShares: positionShares,
+      positionAssetBalance: positionAssetBalance,
       tokens: tokens,
       totalBalances: totalBalances,
       calculatedData: calculatedData,
@@ -317,6 +319,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategyId: strategyId,
       totalShares: totalShares,
       positionShares: positionShares,
+      positionAssetBalanceBeforeUpdate: positionAssetBalance,
       tokens: tokensToWithdraw,
       calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
@@ -349,7 +352,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     )
   {
     (
-      ,
+      uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
       StrategyId strategyId,
       IEarnStrategy strategy,
@@ -375,6 +378,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategyId: strategyId,
       totalShares: totalShares,
       positionShares: positionShares,
+      positionAssetBalanceBeforeUpdate: positionAssetBalance,
       tokens: tokens_,
       calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
@@ -555,6 +559,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     StrategyId strategyId,
     IEarnStrategy strategy,
     uint256 totalShares,
+    uint256 positionAssetBalance,
     uint256 positionShares,
     address[] memory tokens,
     CalculatedDataForToken[] memory calculatedData,
@@ -586,6 +591,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategyId: strategyId,
       totalShares: totalShares,
       positionShares: positionShares,
+      positionAssetBalanceBeforeUpdate: positionAssetBalance,
       tokens: tokens,
       calculatedData: calculatedData,
       balancesBeforeUpdate: totalBalances,
@@ -601,6 +607,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     uint256 positionId,
     StrategyId strategyId,
     uint256 totalShares,
+    uint256 positionAssetBalanceBeforeUpdate,
     uint256 positionShares,
     address[] memory tokens,
     CalculatedDataForToken[] memory calculatedData,
@@ -616,6 +623,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       strategyId: strategyId,
       totalShares: totalShares,
       positionShares: positionShares,
+      positionAssetBalanceBeforeUpdate: positionAssetBalanceBeforeUpdate,
       totalAssetsBeforeUpdate: balancesBeforeUpdate[0],
       updateAmount: updateAmounts[0],
       action: action
@@ -638,6 +646,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     uint256 positionId,
     StrategyId strategyId,
     uint256 totalShares,
+    uint256 positionAssetBalanceBeforeUpdate,
     uint256 positionShares,
     uint256 totalAssetsBeforeUpdate,
     uint256 updateAmount,
@@ -646,12 +655,15 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     internal
     returns (uint256)
   {
-    uint256 shares = SharesMath.convertToShares({
-      assets: updateAmount,
-      totalAssets: totalAssetsBeforeUpdate,
-      totalShares: totalShares,
-      rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
-    });
+    // Note: we do this to make sure that if a position withdraws all assets, then it ends up with 0 shares
+    uint256 shares = action == UpdateAction.WITHDRAW && positionAssetBalanceBeforeUpdate == updateAmount
+      ? positionShares
+      : SharesMath.convertToShares({
+        assets: updateAmount,
+        totalAssets: totalAssetsBeforeUpdate,
+        totalShares: totalShares,
+        rounding: action == UpdateAction.DEPOSIT ? Math.Rounding.Floor : Math.Rounding.Ceil
+      });
     if (shares == 0) {
       if (action == UpdateAction.DEPOSIT) {
         revert ZeroSharesDeposit();
