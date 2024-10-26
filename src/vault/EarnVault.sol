@@ -188,8 +188,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     bytes calldata strategyValidationData,
     bytes calldata misc
   )
-    external
+    public
     payable
+    virtual
     nonReentrant
     whenNotPaused
     returns (uint256, uint256)
@@ -234,8 +235,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     address depositToken,
     uint256 depositAmount
   )
-    external
+    public
     payable
+    virtual
     onlyWithPermission(positionId, INCREASE_PERMISSION)
     nonReentrant
     whenNotPaused
@@ -279,8 +281,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     uint256[] calldata intendedWithdraw,
     address recipient
   )
-    external
+    public
     payable
+    virtual
     onlyWithPermission(positionId, WITHDRAW_PERMISSION)
     nonReentrant
     returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes)
@@ -339,8 +342,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     bytes calldata withdrawalData,
     address recipient
   )
-    external
+    public
     payable
+    virtual
     onlyWithPermission(positionId, WITHDRAW_PERMISSION)
     nonReentrant
     returns (
