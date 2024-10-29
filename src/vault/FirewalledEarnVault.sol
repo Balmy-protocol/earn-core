@@ -11,33 +11,20 @@ import {
   IEarnNFTDescriptor
 } from "./EarnVault.sol";
 
-import "@forta/firewall/InternalFirewall.sol";
-import "@forta/firewall/interfaces/Checkpoint.sol";
+import { CheckpointExecutor } from "@forta/firewall/CheckpointExecutor.sol";
+import { IExternalFirewall } from "@forta/firewall/interfaces/IExternalFirewall.sol";
 
-contract FirewalledEarnVault is EarnVault, InternalFirewall {
+contract FirewalledEarnVault is EarnVault, CheckpointExecutor {
   constructor(
     IEarnStrategyRegistry strategyRegistry,
     address superAdmin,
     address[] memory initialPauseAdmins,
     IEarnNFTDescriptor nftDescriptor,
-    ISecurityValidator validator,
-    ICheckpointHook checkpointHook,
-    bytes32 attesterControllerId,
-    IFirewallAccess firewallAccess
+    IExternalFirewall externalFirewall
   )
     EarnVault(strategyRegistry, superAdmin, initialPauseAdmins, nftDescriptor)
-    InternalFirewall(validator, checkpointHook, attesterControllerId, firewallAccess)
   {
-    Checkpoint memory checkpoint;
-    checkpoint.refStart = 4;
-    /// exclude selector
-    checkpoint.refEnd = 65_535;
-    /// max uint16 - defaults to call data size if that is smaller
-    checkpoint.activation = Activation.AlwaysActive;
-    setCheckpoint(EarnVault.createPosition.selector, checkpoint);
-    setCheckpoint(EarnVault.increasePosition.selector, checkpoint);
-    setCheckpoint(EarnVault.withdraw.selector, checkpoint);
-    setCheckpoint(EarnVault.specialWithdraw.selector, checkpoint);
+    _setExternalFirewall(externalFirewall);
   }
 
   /// @inheritdoc IEarnVault
@@ -112,5 +99,10 @@ contract FirewalledEarnVault is EarnVault, InternalFirewall {
     )
   {
     return super.specialWithdraw(positionId, withdrawalCode, toWithdraw, withdrawalData, recipient);
+  }
+
+  modifier safeExecution() {
+    _executeCheckpoint(msg.sig, keccak256(msg.data));
+    _;
   }
 }

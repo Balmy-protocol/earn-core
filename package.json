@@ -9,7 +9,7 @@
   "devDependencies": {
     "@balmy/nft-permissions": "github:balmy-protocol/nft-permissions#1e75f88d0da6e93f2afbd1069a8c37553f448638",
     "@openzeppelin": "github:OpenZeppelin/openzeppelin-contracts#28aed34dc5e025e61ea0390c18cac875bfde1a78",
-    "@forta/firewall": "github:forta-network/forta-firewall-contracts#a5e331ebbf4bda7e8481874a219df426c405bdf7",
+    "@forta/firewall": "github:forta-network/forta-firewall-contracts#57aa26481ed76e50723ea29e42bfdd6398eb2e08",
     "@prb/test": "github:PaulRBerg/prb-test#8d76ad63d1bfa0b16bb880cfe4620a9e7e6aaa19",
     "ds-test": "github:dapphub/ds-test",
     "forge-std": "github:foundry-rs/forge-std#1d9650e951204a0ddce9ff89c32f1997984cef4d",
