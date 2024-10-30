@@ -71,10 +71,7 @@ contract YieldDataForTokenTest is PRBTest, StdUtils {
     });
 
     // Clear
-    _positionYieldData.clear({
-      positionId: POSITION_ID,
-      token: TOKEN
-    });
+    _positionYieldData.clear({ positionId: POSITION_ID, token: TOKEN });
 
     // Assert it was cleared
     (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool positionHadLoss) =
