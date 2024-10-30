@@ -8,17 +8,10 @@ import { StdUtils } from "forge-std/StdUtils.sol";
 import { YieldMath } from "../../../../src/vault/libraries/YieldMath.sol";
 // solhint-disable no-unused-import
 import {
-  PositionYieldDataKey,
-  PositionYieldDataForToken,
-  PositionYieldDataForTokenLibrary
-} from "../../../../src/vault/types/PositionYieldDataForToken.sol";
-
-import {
-  PositionYieldLossDataKey,
-  PositionYieldLossDataForToken,
-  PositionYieldLossDataForTokenLibrary
-} from "../../../../src/vault/types/PositionYieldLossDataForToken.sol";
-
+  YieldDataForToken,
+  YieldLossDataForToken,
+  YieldDataForTokenLibrary
+} from "../../../../src/vault/types/YieldDataForToken.sol";
 import { StrategyId } from "../../../../src/types/StrategyId.sol";
 
 // solhint-enable no-unused-import
@@ -26,11 +19,11 @@ import { StrategyId } from "../../../../src/types/StrategyId.sol";
 contract YieldMathTest is PRBTest, StdUtils {
   using Math for uint256;
   using Math for uint160;
-  using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
+  using YieldDataForTokenLibrary for mapping(bytes32 => YieldDataForToken);
+  using YieldDataForTokenLibrary for mapping(bytes32 => YieldLossDataForToken);
 
-  mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal positionRegistry;
-  mapping(PositionYieldLossDataKey key => PositionYieldLossDataForToken lossAmount) internal positionLossRegistry;
+  mapping(bytes32 key => YieldDataForToken yieldData) internal positionRegistry;
+  mapping(bytes32 key => YieldLossDataForToken lossAmount) internal positionLossRegistry;
 
   function testFuzz_calculateAccum_ZeroShares(
     uint256 currentBalance,
@@ -123,10 +116,9 @@ contract YieldMathTest is PRBTest, StdUtils {
     positionRegistry.update({
       positionId: 1,
       token: address(0),
-      newPositionYieldAccum: initialAccum,
-      newPositionBalance: previousBalance,
-      newPositionHadLoss: false,
-      newShares: positionShares
+      newYieldAccum: initialAccum,
+      newBalance: previousBalance,
+      newHadLoss: false
     });
 
     (, uint256 lastRecordedTotalBalance,) = positionRegistry.read(1, address(0));
@@ -169,10 +161,9 @@ contract YieldMathTest is PRBTest, StdUtils {
     positionRegistry.update({
       positionId: 1,
       token: token,
-      newPositionYieldAccum: newPositionYieldAccum,
-      newPositionBalance: previousBalance,
-      newPositionHadLoss: false,
-      newShares: positionShares
+      newYieldAccum: newPositionYieldAccum,
+      newBalance: previousBalance,
+      newHadLoss: false
     });
 
     (, uint256 lastRecordedTotalBalance,) = positionRegistry.read(1, token);
