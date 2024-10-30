@@ -29,9 +29,9 @@
   version "1.0.0"
   resolved "https://codeload.github.com/balmy-protocol/nft-permissions/tar.gz/1e75f88d0da6e93f2afbd1069a8c37553f448638"
 
-"@openzeppelin@github:OpenZeppelin/openzeppelin-contracts#28aed34dc5e025e61ea0390c18cac875bfde1a78":
+"@openzeppelin@github:OpenZeppelin/openzeppelin-contracts#bcdfa848a6abb37216df861573d9576636e77824":
   version "5.1.0"
-  resolved "https://codeload.github.com/OpenZeppelin/openzeppelin-contracts/tar.gz/28aed34dc5e025e61ea0390c18cac875bfde1a78"
+  resolved "https://codeload.github.com/OpenZeppelin/openzeppelin-contracts/tar.gz/bcdfa848a6abb37216df861573d9576636e77824"
 
 "@prb/test@github:PaulRBerg/prb-test#8d76ad63d1bfa0b16bb880cfe4620a9e7e6aaa19":
   version "0.6.1"
