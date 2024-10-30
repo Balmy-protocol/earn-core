@@ -50,7 +50,7 @@ contract VaultHandler is StdUtils {
   function withdraw(uint256 positionIdIndex, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
     if (_vault.totalSupply() != 0) {
       uint256 positionId = bound(positionIdIndex, 1, _vault.totalSupply());
-      (address[] memory tokens, uint256[] memory balances,) = _vault.position(positionId);
+      (address[] memory tokens, uint256[] memory balances,,) = _vault.position(positionId);
       tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
 
       uint256 previousBalance = balances[tokenIndex];
@@ -70,7 +70,7 @@ contract VaultHandler is StdUtils {
   function specialWithdraw(uint256 positionId, uint256 tokenIndex, uint256 amountToWithdraw) external payable {
     if (_vault.totalSupply() != 0) {
       positionId = bound(positionId, 1, _vault.totalSupply());
-      (address[] memory tokens, uint256[] memory balances,) = _vault.position(positionId);
+      (address[] memory tokens, uint256[] memory balances,,) = _vault.position(positionId);
       tokenIndex = bound(tokenIndex, 0, tokens.length - 1);
 
       uint256 previousBalance = balances[tokenIndex];

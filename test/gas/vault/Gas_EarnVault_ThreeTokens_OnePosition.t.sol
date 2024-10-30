@@ -30,7 +30,7 @@ contract GasEarnVaultThreeTokensOnePosition is BaseEarnVaultGasTest {
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
     anotherErc20.mint(address(strategy), amountToReward);
-    (tokens,,) = vault.position(positionId);
+    (tokens,,,) = vault.position(positionId);
     intendedToWithdrawRewards = CommonUtils.arrayOf(0, amountToWithdraw, 0);
   }
 

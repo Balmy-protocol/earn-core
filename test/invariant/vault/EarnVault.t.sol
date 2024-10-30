@@ -53,7 +53,7 @@ contract EarnVaultInvariantTest is StdInvariant, StdUtils, StdAssertions {
     uint256[] memory totalBalances = new uint256[](tokens.length);
 
     for (uint256 positionId = 1; positionId <= vault.totalSupply(); positionId++) {
-      (, uint256[] memory balances,) = vault.position(positionId);
+      (, uint256[] memory balances,,) = vault.position(positionId);
       for (uint256 i; i < tokens.length; i++) {
         totalBalances[i] += balances[i];
       }
