@@ -83,23 +83,17 @@ interface IEarnVault is INFTPermissions {
   function NFT_DESCRIPTOR() external view returns (IEarnNFTDescriptor);
 
   /**
-   * @notice Returns the strategy chosen by the given position
-   * @param positionId The position to check
-   * @return strategyId The strategy chosen by the given position. Will return 0 if the position doesn't exist
-   */
-  function positionsStrategy(uint256 positionId) external view returns (StrategyId strategyId);
-
-  /**
    * @notice Returns a summary of the position's balances
    * @param positionId The position to check the balances for
    * @return tokens All of the position's tokens
    * @return balances Total balance of each token
-   * @return strategy The position's strategy
+   * @return strategyId The position's strategy id
+   * @return strategy The position's strategy address
    */
   function position(uint256 positionId)
     external
     view
-    returns (address[] memory tokens, uint256[] memory balances, IEarnStrategy strategy);
+    returns (address[] memory tokens, uint256[] memory balances, StrategyId strategyId, IEarnStrategy strategy);
 
   /**
    * @notice Returns if deposits and paused

@@ -34,7 +34,7 @@ contract GasEarnVaultTwoTokensOnePositionWithLoss is BaseEarnVaultGasTest {
     vault.increasePosition(positionId, address(erc20), amountToIncrease);
     anotherErc20.burn(address(strategy), amountToLose);
 
-    (tokens,,) = vault.position(positionId);
+    (tokens,,,) = vault.position(positionId);
     intendedToWithdrawRewards = CommonUtils.arrayOf(0, amountToWithdraw);
   }
 

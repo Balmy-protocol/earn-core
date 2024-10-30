@@ -33,7 +33,7 @@ contract GasEarnVaultOneTokenOnePosition is BaseEarnVaultGasTest {
       strategyId, address(erc20), amountToDeposit, address(this), PermissionUtils.buildEmptyPermissionSet(), "", ""
     );
 
-    (tokens,,) = vault.position(positionId);
+    (tokens,,,) = vault.position(positionId);
     intendedToWithdraw = CommonUtils.arrayOf(amountToWithdraw);
   }
 
