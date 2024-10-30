@@ -6,30 +6,28 @@ import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { StdUtils } from "forge-std/StdUtils.sol";
 // solhint-disable no-unused-import
 import {
-  PositionYieldDataKey,
-  PositionYieldDataForToken,
-  PositionYieldDataForTokenLibrary,
+  YieldDataForToken,
+  YieldDataForTokenLibrary,
   CustomUintSizeChecks
-} from "../../../../src/vault/types/PositionYieldDataForToken.sol";
+} from "../../../../src/vault/types/YieldDataForToken.sol";
 // solhint-enable no-unused-import
 
-contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
-  using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
+contract YieldDataForTokenTest is PRBTest, StdUtils {
+  using YieldDataForTokenLibrary for mapping(bytes32 => YieldDataForToken);
 
   uint256 internal constant POSITION_ID = 1;
   address internal constant TOKEN = address(2);
 
-  mapping(PositionYieldDataKey key => PositionYieldDataForToken yieldData) internal _positionYieldData;
+  mapping(bytes32 key => YieldDataForToken yieldData) internal _positionYieldData;
 
   function test_update_RevertWhen_BalanceIsTooBig() public {
     vm.expectRevert(abi.encodeWithSelector(CustomUintSizeChecks.UintOverflowed.selector, 2 ** 151, 2 ** 151 - 1));
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newPositionYieldAccum: 2 ** 151,
-      newPositionBalance: 2 ** 104 - 1,
-      newShares: 1,
-      newPositionHadLoss: true
+      newYieldAccum: 2 ** 151,
+      newBalance: 2 ** 104 - 1,
+      newHadLoss: true
     });
   }
 
@@ -38,10 +36,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newPositionYieldAccum: 2 ** 151 - 1,
-      newPositionBalance: 2 ** 104,
-      newPositionHadLoss: true,
-      newShares: 1
+      newYieldAccum: 2 ** 151 - 1,
+      newBalance: 2 ** 104,
+      newHadLoss: true
     });
   }
 
@@ -51,10 +48,9 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newPositionYieldAccum: accumulator,
-      newPositionBalance: totalBalance,
-      newPositionHadLoss: _positionHadLoss,
-      newShares: 1
+      newYieldAccum: accumulator,
+      newBalance: totalBalance,
+      newHadLoss: _positionHadLoss
     });
 
     (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool positionHadLoss) =
@@ -64,26 +60,18 @@ contract PositionYieldDataForTokenTest is PRBTest, StdUtils {
     assertEq(positionHadLoss, _positionHadLoss);
   }
 
-  function test_update_SharesAndPositionIsZero() public {
+  function test_clear() public {
     // Set some values
     _positionYieldData.update({
       positionId: POSITION_ID,
       token: TOKEN,
-      newPositionYieldAccum: 2 ** 151 - 1,
-      newPositionBalance: 2 ** 104 - 1,
-      newPositionHadLoss: true,
-      newShares: 1
+      newYieldAccum: 2 ** 151 - 1,
+      newBalance: 2 ** 104 - 1,
+      newHadLoss: true
     });
 
-    // Update it again with zero shares and balance
-    _positionYieldData.update({
-      positionId: POSITION_ID,
-      token: TOKEN,
-      newPositionYieldAccum: 2 ** 151 - 1,
-      newPositionBalance: 0,
-      newPositionHadLoss: true,
-      newShares: 0
-    });
+    // Clear
+    _positionYieldData.clear({ positionId: POSITION_ID, token: TOKEN });
 
     // Assert it was cleared
     (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool positionHadLoss) =

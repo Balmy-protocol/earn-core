@@ -4,23 +4,14 @@ pragma solidity >=0.8.22;
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 // solhint-disable no-unused-import
-import {
-  PositionYieldDataKey,
-  PositionYieldDataForToken,
-  PositionYieldDataForTokenLibrary
-} from "../types/PositionYieldDataForToken.sol";
-import {
-  PositionYieldLossDataKey,
-  PositionYieldLossDataForToken,
-  PositionYieldLossDataForTokenLibrary
-} from "../types/PositionYieldLossDataForToken.sol";
+import { YieldDataForToken, YieldLossDataForToken, YieldDataForTokenLibrary } from "../types/YieldDataForToken.sol";
 // solhint-enable no-unused-import
 
 library YieldMath {
   using SafeCast for uint256;
   using Math for uint256;
-  using PositionYieldDataForTokenLibrary for mapping(PositionYieldDataKey => PositionYieldDataForToken);
-  using PositionYieldLossDataForTokenLibrary for mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken);
+  using YieldDataForTokenLibrary for mapping(bytes32 => YieldDataForToken);
+  using YieldDataForTokenLibrary for mapping(bytes32 => YieldLossDataForToken);
 
   /**
    * @dev We are increasing the precision when storing the yield accumulator, to prevent data loss. We will reduce the
@@ -121,8 +112,8 @@ library YieldMath {
     uint256 newStrategyLossAccum,
     uint256 newStrategyCompleteLossEvents,
     uint256 newStrategyYieldAccum,
-    mapping(PositionYieldDataKey => PositionYieldDataForToken) storage positionRegistry,
-    mapping(PositionYieldLossDataKey => PositionYieldLossDataForToken) storage positionLossRegistry
+    mapping(bytes32 => YieldDataForToken) storage positionRegistry,
+    mapping(bytes32 => YieldLossDataForToken) storage positionLossRegistry
   )
     internal
     view
