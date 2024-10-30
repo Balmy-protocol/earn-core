@@ -32,7 +32,7 @@ contract GasEarnVaultTwoTokensOnePosition is BaseEarnVaultGasTest {
     );
     anotherErc20.mint(address(strategy), amountToReward);
 
-    (tokens,,) = vault.position(positionId);
+    (tokens,,,) = vault.position(positionId);
     intendedToWithdraw = CommonUtils.arrayOf(amountToWithdraw, 0);
     intendedToWithdrawRewards = CommonUtils.arrayOf(0, amountToWithdraw);
   }
