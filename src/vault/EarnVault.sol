@@ -376,7 +376,9 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
 
     tokens = tokens_;
 
-    emit PositionWithdrawn(positionId, tokens, balanceChanges, recipient);
+    emit PositionWithdrawnSpecially(
+      positionId, tokens, balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result, recipient
+    );
   }
 
   /// @inheritdoc IEarnVault
