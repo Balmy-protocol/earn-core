@@ -81,6 +81,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   receive() external payable { }
 
   /// @inheritdoc IEarnVault
+  function positionsStrategy(uint256 positionId) external view returns (StrategyId strategyId, IEarnStrategy strategy) {
+    (strategyId,, strategy) = _loadPositionState(positionId);
+  }
+
+  /// @inheritdoc IEarnVault
   function position(uint256 positionId)
     external
     view
@@ -168,14 +173,19 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     whenNotPaused
     returns (uint256, uint256)
   {
+    IEarnStrategy strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
     (
       ,
       CalculatedDataForToken[] memory calculatedData,
-      IEarnStrategy strategy,
       uint256 totalShares,
       address[] memory tokens,
       uint256[] memory totalBalances
-    ) = _loadCurrentState({ positionId: YieldMath.POSITION_BEING_CREATED, strategyId: strategyId, positionShares: 0 });
+    ) = _loadCurrentState({
+      positionId: YieldMath.POSITION_BEING_CREATED,
+      strategyId: strategyId,
+      strategy: strategy,
+      positionShares: 0
+    });
 
     strategy.validatePositionCreation(msg.sender, strategyValidationData);
 
@@ -379,6 +389,15 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     _unpause();
   }
 
+  function _loadPositionState(uint256 positionId)
+    internal
+    view
+    returns (StrategyId strategyId, uint256 positionShares, IEarnStrategy strategy)
+  {
+    (strategyId, positionShares) = _positions.read(positionId);
+    strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
+  }
+
   function _loadCurrentState(uint256 positionId)
     internal
     view
@@ -393,14 +412,15 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       uint256[] memory totalBalances
     )
   {
-    (strategyId, positionShares) = _positions.read(positionId);
-    (positionAssetBalance, calculatedData, strategy, totalShares, tokens, totalBalances) =
-      _loadCurrentState(positionId, strategyId, positionShares);
+    (strategyId, positionShares, strategy) = _loadPositionState(positionId);
+    (positionAssetBalance, calculatedData, totalShares, tokens, totalBalances) =
+      _loadCurrentState(positionId, strategyId, strategy, positionShares);
   }
 
   function _loadCurrentState(
     uint256 positionId,
     StrategyId strategyId,
+    IEarnStrategy strategy,
     uint256 positionShares
   )
     internal
@@ -408,14 +428,12 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     returns (
       uint256 positionAssetBalance,
       CalculatedDataForToken[] memory calculatedData,
-      IEarnStrategy strategy,
       uint256 totalShares,
       address[] memory tokens,
       uint256[] memory totalBalances
     )
   {
     totalShares = _totalSharesInStrategy[strategyId];
-    strategy = STRATEGY_REGISTRY.getStrategy(strategyId);
     (positionAssetBalance, calculatedData, tokens, totalBalances) = _calculateAllData({
       positionId: positionId,
       strategyId: strategyId,
