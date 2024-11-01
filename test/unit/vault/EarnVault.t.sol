@@ -51,6 +51,15 @@ contract EarnVaultTest is PRBTest, StdUtils {
   );
 
   event PositionWithdrawn(uint256 indexed positionId, address[] tokens, uint256[] withdrawn, address recipient);
+  event PositionWithdrawnSpecially(
+    uint256 indexed positionId,
+    address[] tokens,
+    uint256[] balanceChanges,
+    address[] actualWithdrawnTokens,
+    uint256[] actualWithdrawnAmounts,
+    bytes result,
+    address recipient
+  );
 
   using StrategyUtils for EarnStrategyRegistryMock;
   using InternalUtils for INFTPermissions.Permission[];
@@ -1485,7 +1494,15 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.prank(operator);
     vm.expectEmit();
-    emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+    emit PositionWithdrawnSpecially(
+      positionId,
+      tokens,
+      CommonUtils.arrayOf(amountToWithdraw),
+      CommonUtils.arrayOf(address(erc20)),
+      CommonUtils.arrayOf(amountToWithdraw),
+      "0x",
+      recipient
+    );
     vault.specialWithdraw(
       positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), recipient
     );
@@ -1521,7 +1538,15 @@ contract EarnVaultTest is PRBTest, StdUtils {
 
     vm.prank(operator);
     vm.expectEmit();
-    emit PositionWithdrawn(positionId, tokens, CommonUtils.arrayOf(amountToWithdraw), recipient);
+    emit PositionWithdrawnSpecially(
+      positionId,
+      tokens,
+      CommonUtils.arrayOf(amountToWithdraw),
+      CommonUtils.arrayOf(Token.NATIVE_TOKEN),
+      CommonUtils.arrayOf(amountToWithdraw),
+      "0x",
+      recipient
+    );
     vault.specialWithdraw(
       positionId, SpecialWithdrawalCode.wrap(0), CommonUtils.arrayOf(amountToWithdraw), abi.encode(0), recipient
     );
