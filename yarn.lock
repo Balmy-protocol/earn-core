@@ -34,9 +34,9 @@
   version "1.0.0"
   resolved "https://codeload.github.com/balmy-protocol/nft-permissions/tar.gz/1e75f88d0da6e93f2afbd1069a8c37553f448638"
 
-"@forta/firewall@github:forta-network/forta-firewall-contracts#57aa26481ed76e50723ea29e42bfdd6398eb2e08":
+"@forta/firewall@github:forta-network/forta-firewall-contracts#abd618903aa81dfde63575069694de2bb1fa382d":
   version "1.0.0"
-  resolved "https://codeload.github.com/forta-network/forta-firewall-contracts/tar.gz/57aa26481ed76e50723ea29e42bfdd6398eb2e08"
+  resolved "https://codeload.github.com/forta-network/forta-firewall-contracts/tar.gz/abd618903aa81dfde63575069694de2bb1fa382d"
   dependencies:
     axios "^1.7.2"
     dotenv "^16.4.5"
