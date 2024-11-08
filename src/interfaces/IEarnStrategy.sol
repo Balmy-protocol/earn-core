@@ -16,7 +16,7 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *      - The asset cannot change over time, it must always be the same
  *      - The strategy must report the asset as the first token
  *      - Tokens can never be removed from the list. New ones can be added, but they cannot be removed later
- *      - Functions like `withdrawalTypes` and `balances` must return the same amount of values as `tokens`, and
+ *      - Functions like `withdrawalTypes` and `totalBalances` must return the same amount of values as `allTokens`, and
  *        in the same order too
  *      - Tokens with very high supplies or a high amount of decimals might not fit correctly into the Vault's
  *        accounting system. For more information about this, please refer to the [README](../vault/README.md).
