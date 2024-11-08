@@ -32,8 +32,8 @@
     "clean": "rm -rf cache out",
     "lint": "yarn lint:sol && yarn prettier:check",
     "lint:sol": "forge fmt --check && yarn solhint \"{script,src,test}/**/*.sol\"",
-    "lint:fix": "forge fmt && prettier --write \"**/*.{json,md,yml}\"",
-    "prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
+    "lint:fix": "forge fmt && prettier --write \"**/*.{json,yml}\"",
+    "prettier:check": "prettier --check \"**/*.{json,yml}\"",
     "prepublishOnly": "cp -r ./src ./contracts",
     "postpublish": "rm -r ./contracts"
   },
