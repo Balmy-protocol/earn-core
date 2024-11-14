@@ -79,7 +79,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
     strategyRegistry = new EarnStrategyRegistryMock();
     erc20 = new ERC20MintableBurnableMock();
     anotherErc20 = new ERC20MintableBurnableMock();
-    nftDescriptor = new EarnNFTDescriptor();
+    nftDescriptor = new EarnNFTDescriptor("baseUrl", address(1));
     vault = new EarnVault(strategyRegistry, superAdmin, CommonUtils.arrayOf(pauseAdmin), nftDescriptor);
     erc20.approve(address(vault), type(uint256).max);
 
