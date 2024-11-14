@@ -31,7 +31,7 @@ contract EarnNFTDescriptor is IEarnNFTDescriptor, Ownable2Step {
     );
   }
 
-  function setBaseURL(string memory _newBaseURL) external onlyOwner {
-    baseURL = _newBaseURL;
+  function setBaseURL(string memory newBaseURL) external onlyOwner {
+    baseURL = newBaseURL;
   }
 }
