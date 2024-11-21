@@ -16,6 +16,10 @@ contract EarnStrategyDead is IEarnStrategy {
   // solhint-disable-next-line no-empty-blocks
   receive() external payable virtual { }
 
+  function registerStrategy(IEarnStrategyRegistry registry_, address owner) external returns (StrategyId) {
+    return registry_.registerStrategy(owner);
+  }
+
   function asset() external view virtual returns (address) {
     revert NotImplemented();
   }

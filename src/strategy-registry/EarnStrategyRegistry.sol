@@ -40,7 +40,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
   }
 
   /// @inheritdoc IEarnStrategyRegistry
-  function registerStrategy(address firstOwner, IEarnStrategy strategy) external returns (StrategyId strategyId) {
+  function registerStrategy(address firstOwner) external returns (StrategyId strategyId) {
+    IEarnStrategy strategy = IEarnStrategy(msg.sender);
     _revertIfNotStrategy(strategy);
     _revertIfNotAssetAsFirstToken(strategy);
     if (assignedId[strategy] != StrategyIdConstants.NO_STRATEGY) revert StrategyAlreadyRegistered();

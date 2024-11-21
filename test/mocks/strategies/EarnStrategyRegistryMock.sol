@@ -12,7 +12,8 @@ contract EarnStrategyRegistryMock is IEarnStrategyRegistry {
   mapping(IEarnStrategy strategy => StrategyId strategyId) public assignedId;
   uint96 internal _nextStrategyId = 1;
 
-  function registerStrategy(address, IEarnStrategy strategy) external returns (StrategyId strategyId) {
+  function registerStrategy(address) external returns (StrategyId strategyId) {
+    IEarnStrategy strategy = IEarnStrategy(msg.sender);
     strategyId = StrategyId.wrap(_nextStrategyId++);
     assignedId[strategy] = strategyId;
     getStrategy[strategyId] = strategy;

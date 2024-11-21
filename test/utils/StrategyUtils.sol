@@ -23,7 +23,7 @@ library StrategyUtils {
   {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
     strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
-    strategyId = registry.registerStrategy(owner, strategy);
+    strategyId = strategy.registerStrategy(registry, owner);
   }
 
   function deployBadMigrationStrategy(
@@ -36,7 +36,7 @@ library StrategyUtils {
   {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
     strategy = new EarnStrategyStateBalanceBadMigrationMock(tokens, withdrawalTypes);
-    strategyId = registry.registerStrategy(owner, strategy);
+    strategyId = strategy.registerStrategy(registry, owner);
   }
 
   function deployBadPositionValidationStrategy(
@@ -48,7 +48,7 @@ library StrategyUtils {
   {
     IEarnStrategy.WithdrawalType[] memory withdrawalTypes = new IEarnStrategy.WithdrawalType[](tokens.length);
     strategy = new EarnStrategyStateBalanceBadPositionValidationMock(tokens, withdrawalTypes);
-    strategyId = registry.registerStrategy(address(this), strategy);
+    strategyId = strategy.registerStrategy(registry, address(this));
   }
 
   function deployStateStrategy(address[] memory tokens) internal returns (EarnStrategyStateBalanceMock strategy) {
@@ -82,7 +82,7 @@ library StrategyUtils {
   {
     require(tokens.length > 0, "Invalid");
     strategy = new EarnStrategyStateBalanceMock(tokens, withdrawalTypes);
-    strategyId = registry.registerStrategy(address(this), strategy);
+    strategyId = strategy.registerStrategy(registry, address(this));
   }
 
   function deployCustomStrategy(
@@ -93,6 +93,6 @@ library StrategyUtils {
     returns (StrategyId strategyId, EarnStrategyCustomBalanceMock strategy)
   {
     strategy = new EarnStrategyCustomBalanceMock(asset);
-    strategyId = registry.registerStrategy(address(this), strategy);
+    strategyId = strategy.registerStrategy(registry, address(this));
   }
 }

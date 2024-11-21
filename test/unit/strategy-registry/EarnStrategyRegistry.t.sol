@@ -46,7 +46,8 @@ contract EarnStrategyRegistryTest is PRBTest {
     vm.expectEmit();
     emit StrategyRegistered(owner, StrategyIdConstants.INITIAL_STRATEGY_ID, aStrategy);
 
-    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
+    vm.prank(address(aStrategy));
+    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner);
     assertEq(address(strategyRegistry.getStrategy(aRegisteredStrategyId)), address(aStrategy));
     assertEq(owner, strategyRegistry.owner(aRegisteredStrategyId));
     assertTrue(strategyRegistry.assignedId(aStrategy) == aRegisteredStrategyId);
@@ -57,10 +58,12 @@ contract EarnStrategyRegistryTest is PRBTest {
   function test_registerStrategy_RevertWhen_StrategyIsAlreadyRegistered() public {
     IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
-    strategyRegistry.registerStrategy(owner, aStrategy);
+    vm.prank(address(aStrategy));
+    strategyRegistry.registerStrategy(owner);
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.StrategyAlreadyRegistered.selector));
-    strategyRegistry.registerStrategy(owner, aStrategy);
+    vm.prank(address(aStrategy));
+    strategyRegistry.registerStrategy(owner);
   }
 
   function test_registerStrategy_RevertWhen_AssetIsNotFirstToken() public {
@@ -70,20 +73,24 @@ contract EarnStrategyRegistryTest is PRBTest {
     IEarnStrategy badStrategy = new EarnStrategyBadMock(tokens);
 
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AssetIsNotFirstToken.selector, badStrategy));
-    strategyRegistry.registerStrategy(owner, badStrategy);
+    vm.prank(address(badStrategy));
+    strategyRegistry.registerStrategy(owner);
   }
 
   function test_registerStrategy_RevertWhen_AddressIsNotStrategy() public {
     IEarnStrategy badStrategy;
     vm.expectRevert(abi.encodeWithSelector(IEarnStrategyRegistry.AddressIsNotStrategy.selector, badStrategy));
-    strategyRegistry.registerStrategy(owner, badStrategy);
+    vm.prank(address(badStrategy));
+    strategyRegistry.registerStrategy(owner);
   }
 
   function test_registerStrategy_MultipleStrategiesRegistered() public {
     IEarnStrategy aStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
     IEarnStrategy anotherStrategy = StrategyUtils.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
-    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner, aStrategy);
-    StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner, anotherStrategy);
+    vm.prank(address(aStrategy));
+    StrategyId aRegisteredStrategyId = strategyRegistry.registerStrategy(owner);
+    vm.prank(address(anotherStrategy));
+    StrategyId anotherRegisteredStrategyId = strategyRegistry.registerStrategy(owner);
 
     assertNotEq(
       address(strategyRegistry.getStrategy(aRegisteredStrategyId)),
