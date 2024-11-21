@@ -163,6 +163,8 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     internal
     pure
   {
+    // While nested loops can be very expensive, we expect strategies to have a small number of tokens. We assume
+    // that almost all of them will have one token, with some having maybe two tokens, and very rarely having three.
     for (uint256 i; i < oldStrategyTokens.length; ++i) {
       uint256 j;
       while (j < newStrategyTokens.length && oldStrategyTokens[i] != newStrategyTokens[j]) {
