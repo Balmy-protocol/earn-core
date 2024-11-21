@@ -222,6 +222,9 @@ interface IEarnStrategy is IERC165 {
 
   /**
    * @notice Validates if the position can be created for this strategy, and fails it it can't
+   * @dev While most implementations of this function don't modify state, we want to be flexible and allow potential
+   *      implementations that do modify it. Since this function is called inside a function that supports non-view
+   *      calls, we can support it
    * @param sender The address to be checked
    * @param creationData The hash to check with the sender
    */
