@@ -295,7 +295,7 @@ $$
 
 and 
 
-$$ lossAccum_n = lossAccum_{n-1} \ast \frac{balance_n}{balance_{n-1}} $$
+$$ lossAccum_n = lossAccum_{n-1} \ast \frac{strategyBalance_n}{strategyBalance_{n-1}} $$
 
 with n being the current update and n-1 being the last snapshot.
 
