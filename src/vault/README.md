@@ -293,6 +293,12 @@ lossRatio =
 \frac{lossAccum} {lossAccumInitial}
 $$
 
+and 
+
+$$ lossAccum_n = lossAccum_{n-1} \ast \frac{balance_n}{balance_{n-1}} $$
+
+with n being the current update and n-1 being the last snapshot.
+
 $$ yield(since\ last\ snapshot) = shares \ast (yieldAccum - yieldAccumInitial \ast lossRatio) $$
 
 By doing this, we're applying the losses to the already calculated balance. And we also need to apply them to what was
