@@ -87,6 +87,7 @@ owned(John, OP) & = \frac{yield_{t_0 \rightarrow t_1}(OP) * shares(John)}{totalS
 $$
 
 Now that we have this formula, we can simply keep track of this sum by using an accumulator. We'll define:
+
 $$
 yieldAccum_t = yieldAccum_{t-1} + \frac{yield_{(t-1) \rightarrow t}}{totalShares_{t}}\\
 $$
@@ -385,7 +386,9 @@ owned(Peter, OP, t_6) & = owned(Peter, OP, t_5) + shares(Peter) * yield_{t_5 \ri
                      & = 35 \notag \\                     
 \end{align}
 $$
+
 Now, we can see that the previous definitions of `yieldAccum` doesn't work anymore. So we'll make the following changes:
+
 $$ 
 yieldAccum_t = \begin{dcases}
     0,&  \text{if } t = 0\\
@@ -499,7 +502,7 @@ timeline
 Now that we have all the pieces, let's see how it works in practice:
 
 $$
-owned(user, OP) = shares(user) * \left[ yieldAccum(strategy, OP) - yieldAccum(user, OP) * \frac{lossAccum(strategy, OP)}{lossAccum(user, OP)} \right] \notag \\
+owned(user, OP) = shares(user) * (yieldAccum(strategy, OP) - yieldAccum(user, OP) * \frac{lossAccum(strategy, OP)}{lossAccum(user, OP)}) \notag \\
 $$
 
 And now we can calculate both John and Peter's balances correctly 🎉
