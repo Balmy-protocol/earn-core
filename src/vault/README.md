@@ -74,7 +74,7 @@ owned(John, OP) & = \frac{yield(OP) * shares(John)}{totalShares} \notag \\
 \end{align}
 $$
 
-Now, the thing is that the total amount of shares changes over time, when a user deposits or withdraws their assets. So, with each update, we would need to calculate how much John owns by doing the same as before:
+Now, the thing is that the total amount of shares changes over time, like when a user deposits or withdraws their assets. So, with each update, we would need to calculate how much John owns by doing the same as before:
 
 $$
 \begin{align}
@@ -173,7 +173,7 @@ The accumulator is the sum of:
 
 $$ \frac{yield * ACCUM\ PRECISION}{total(shares)} $$
 
-We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
+We add `ACCUM PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
 
 ##### Worst case analysis: precision loss scenario
@@ -182,7 +182,7 @@ This would happen when we have big precision on shares, small precision on yield
 using _$DAI_ for asset. We know that 1 _$DAI_ wei starts at _1e3_ shares. And let's say that there is 100m worth of
 _$DAI_ deposited, so we have ~`1e8 * 1e18 * 1e3` shares, which is _1e29_.
 
-Now, if we yielded 0.01 USDC, that is _1e4_. So `1e4 * ACCUM_PRECISION / 1e29` needs to be > 1, or we'll lose the yield
+Now, if we yielded 0.01 USDC, that is _1e4_. So `1e4 * ACCUM PRECISION / 1e29` needs to be > 1, or we'll lose the yield
 due to precision.
 
 $$
@@ -193,7 +193,7 @@ $$
 \end{align}
 $$
 
-We'll go with `ACCUM_PRECISION = 1e33` so that we can support even smaller amounts of USDC but let's understand the
+We'll go with `ACCUM PRECISION = 1e33` so that we can support even smaller amounts of USDC but let's understand the
 limitations a little more. In order to be able to track 1 wei of yield, we need to
 
 $$
@@ -440,7 +440,7 @@ lossAccum_t = \begin{dcases}
 \end{align}
 $$
 
-Let's go back to the previous example one more time and see we can keep track of it:
+Let's go back to the previous example one more time and see how we can keep track of it:
 ```mermaid
 timeline    
     t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
@@ -503,7 +503,7 @@ owned(user, OP) & = shares(user) * (yieldAccum(strategy, OP) - yieldAccum(user, 
 \end{align}
 $$
 
-And now we can calculate both John and Peter's balances correctly 🎉
+If we use this new formula for each point in time, we'll see that we can calculate both John and Peter's balances correctly 🎉
 
 
 #### Loss accumulator precision
