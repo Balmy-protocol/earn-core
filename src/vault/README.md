@@ -355,7 +355,28 @@ owned(John, OP, t_1) & = owned(John, OP, t_0) + shares(John) * yield_{t_0 \right
                      & = 100 \notag \\
 owned(John, OP, t_2) & = owned(John, OP, t_1) * balance_{t_2} / balance_{t_1} \notag \\
                      & = 100 * 50 / 100 \notag \\
-                     & = 50 \notag \\                               
+                     & = 50 \notag \\
+owned(John, OP, t_3) & = owned(John, OP, t_2) + shares(John) * yield_{t_2 \rightarrow t_3} / totalShares_{t_3} \notag \\ 
+                     & = 50 + 100 * 50 / 100 \notag \\
+                     & = 100 \notag \\
+owned(John, OP, t_4) & = owned(John, OP, t_3) + shares(John) * yield_{t_3 \rightarrow t_4} / totalShares_{t_4} \notag \\ 
+                     & = 100 + 100 * 100 / 150 \notag \\
+                     & = 166.67 \notag \\                
+owned(John, OP, t_5) & = owned(John, OP, t_4) * balance_{t_5} / balance_{t_4} \notag \\
+                     & = 166.67 * 150 / 200 \notag \\
+                     & = 125 \notag \\
+owned(John, OP, t_6) & = owned(John, OP, t_5) + shares(John) * yield_{t_5 \rightarrow t_6} / totalShares_{t_6} \notag \\ 
+                     & = 125 + 100 * 30 / 150 \notag \\
+                     & = 145 \notag \\                    
+owned(Peter, OP, t_4) & = owned(Peter, OP, t_3) + shares(Peter) * yield_{t_3 \rightarrow t_4} / totalShares_{t_4} \notag \\ 
+                     & = 0 + 50 * 100 / 150 \notag \\
+                     & = 33.33 \notag \\
+owned(Peter, OP, t_5) & = owned(Peter, OP, t_4) * balance_{t_5} / balance_{t_4} \notag \\ 
+                     & = 33.33 * 150 / 200 \notag \\
+                     & = 25 \notag \\   
+owned(Peter, OP, t_6) & = owned(Peter, OP, t_5) + shares(Peter) * yield_{t_5 \rightarrow t_6} / totalShares_{t_6} \notag \\ 
+                     & = 25 + 50 * 30 / 150 \notag \\
+                     & = 35 \notag \\                                        
 \end{align}
 $$
 
