@@ -62,38 +62,72 @@ Let's remember that when a user deposits assets into Earn, they'll start earning
 these tokens could be the asset, but they also earn yield in other tokens.
 
 Calculating who owns what in these others tokens is a little harder than the asset. Let's go over it with an example.
-Let's say that when John last deposited into the strategy, there were 50 _$OP_ rewards already collected. Then, after a
-few days, there were 100 _$OP_ rewards collected in total. That's 50 _$OP_ rewards generated since John's deposit. So,
+Let's say that when John last deposited into the strategy, there were 50 _$OP_ rewards already available. Then, after a
+few days, there were 100 _$OP_ rewards in total. That's 50 _$OP_ rewards generated since John's deposit. So,
 how much of that belongs to John?
 
 $$
 \begin{align}
-owned(John, OP) & = \frac{yielded(OP) * shares(John)}{totalShares} \notag \\
+owned(John, OP) & = \frac{yield(OP) * shares(John)}{totalShares} \notag \\
 & = 50 * 250 / 2750 \notag \\
 & \approx 4.54 \notag \\
 \end{align}
 $$
 
-Now, the thing is that the total amount of shares changes over time. So, with each update, we would need to calculate
-how much John owns by doing the same as before:
+Now, the thing is that the total amount of shares changes over time, when a user deposits or withdraws their assets. So, with each update, we would need to calculate how much John owns by doing the same as before:
 
 $$
 \begin{align}
-owned(John, OP) & = \frac{yielded_{t_1 - t_0}(OP) * shares(John)}{totalShares_{t_1}} \notag \\
-& \quad+ \frac{yielded_{t_2 - t_1}(OP) * shares(John)}{totalShares_{t_2}}  \notag \\
-& \quad+ \frac{yielded_{t_3 - t_2}(OP) * shares(John)}{totalShares_{t_3}}  \notag \\
+owned(John, OP) & = \frac{yield_{t_0 \rightarrow t_1}(OP) * shares(John)}{totalShares_{t_1}} \notag \\
+& \quad+ \frac{yield_{t_1 \rightarrow t_2}(OP) * shares(John)}{totalShares_{t_2}}  \notag \\
+& \quad+ \frac{yield_{t_2 \rightarrow t_3}(OP) * shares(John)}{totalShares_{t_3}}  \notag \\
 & \quad+ ... \notag \\
-& = shares(John) * \sum_{n=1}^{\infty} \frac{yielded_{t_n-t_{n-1}}}{totalShares_{t_n}}  \notag \\
+& = shares(John) * \sum_{n=1}^{\infty} \frac{yield_{t_{n-1} \rightarrow t_n}(OP)}{totalShares_{t_n}}  \notag \\
 \end{align}
 $$
 
-Now that we have this formula, we can simply store keep track of this sum by using an accumulator. When a position is
-modified, we'll store the current accumulator value and associate it when a position. Then, in the future, we can do
-`accum(current) - accum(stored for position)` to end up with the sum we needed.
+Now that we have this formula, we can simply keep track of this sum by using an accumulator. We'll define:
+$$
+yieldAccum_t = yieldAccum_{t-1} + \frac{yield_{(t-1) \rightarrow t}}{totalShares_{t}}\\
+$$
 
-_Note: there are some nuances in the actual implementation since we would only need to consider from $t_d$ (when John
-makes a deposit). At the same time, we would also need to consider that John's shares could also change over time. But
-the overall idea is the one explained here._ 🤓
+Then, when a position is modified, we'll store the current accumulator value and associate it to the position. In the future, when we need to calculate how much the position has earned, we can do `yieldAccum(current) - yieldAccum(last stored for position)` to end up with the sum we needed. Let's see an example:
+
+:::mermaid
+timeline
+    t0<br>Strategy is deployed
+       : yieldAccum(strategy) = 0
+       : totalShares = 0
+    t1<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
+       : yieldAccum(strategy) = 0
+       : yieldAccum(John) = 0
+       : totalShares = 100
+    t2<br>Balance is 200 $OP
+       : yieldAccum(strategy)<br>= (200 - 0) / 100<br>= 2
+       : yieldAccum(John) = 0
+       : totalShares = 100
+    t3<br>Peter deposits and is assigned 50 shares<br>Balance is 250 $OP
+       : yieldAccum(strategy)<br>= 2 + (250 - 200) / 100<br>= 2.5
+       : yieldAccum(John) = 0       
+       : yieldAccum(Peter) = 2.5
+       : totalShares = 150
+    t4<br>Balance is 325 $OP
+       : yieldAccum(strategy)<br>= 2.5 + (325 - 250) / 150<br>= 3
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 2.5
+       : totalShares = 150    
+:::
+
+Now, if we calculate balances for John and Peter at this point, we'll get:
+
+$$
+\begin{align}
+owned(John, OP) & = shares(John) * (yieldAccum(strategy, OP) - yieldAccum(John, OP)) \notag \\ & = 100 * (3 - 0)  \notag \\ & = 300 \notag \\
+owned(Peter, OP) & = shares(Peter) * (yieldAccum(strategy, OP) - yieldAccum(Peter, OP))  \notag \\ & = 50 * (3 - 2.5)  \notag \\ & = 25 \notag \\
+\end{align}
+$$
+
+_Note: there are some nuances in the actual implementation since we would need to consider that John's shares could also change over time. But the overall idea is the one we just explained_ 🤓
 
 ## Technical Choices / Limitations
 
@@ -136,7 +170,7 @@ this sum, instead of calculating it every time. But we need to be careful with t
 
 The accumulator is the sum of:
 
-$$ \frac{yielded * ACCUM\_PRECISION}{total(shares)} $$
+$$ \frac{yield * ACCUM\_PRECISION}{total(shares)} $$
 
 We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
@@ -207,9 +241,9 @@ So, we know that:
 
 $$
 \begin{align}
-\frac{yielded * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
-\frac{yielded * 1e33}{total(shares)} & < 9.05e36 \notag \\
-\frac{yielded}{total(shares)} & < 9050  \notag \\
+\frac{yield * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
+\frac{yield * 1e33}{total(shares)} & < 9.05e36 \notag \\
+\frac{yield}{total(shares)} & < 9050  \notag \\
 \end{align}
 $$
 
@@ -218,10 +252,10 @@ So we have `10 * 1e6 * 1e3` shares, which is _1e10_.
 
 $$
 \begin{align}
-yielded / total(shares) & < 9050  \notag \\
-yielded / 1e10 & < 9050  \notag \\
-yielded & < 9050 * 1e10  \notag \\
-yielded & < 9.05e13  \notag \\
+yield / total(shares) & < 9050  \notag \\
+yield / 1e10 & < 9050  \notag \\
+yield & < 9050 * 1e10  \notag \\
+yield & < 9.05e13  \notag \\
 \end{align}
 $$
 
@@ -236,8 +270,8 @@ but **it will be up to each strategy to make sure that the tokens they support w
 
 ### Yield Losses
 
-First, a few notes on losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity, as a
-form of liquidity mining. These rewards tend to be distributed based on amount of deposited liquidity, and the amount of
+First, a note on losses. Today in DeFi, reward tokens are mostly received as a reward for providing liquidity, as a
+form of "liquidity mining". These rewards tend to be distributed based on the amount of deposited liquidity, so the amount of
 earned rewards tends to increase over time until all the rewards are assigned. As a general rule, these rewards don't
 tend to diminish over time, only increase. There could be a few scenarios where a loss happens, like hacks or if a
 protocol removes all rewards that were unclaimed after a long period of time. But we believe that generally, there
@@ -245,157 +279,231 @@ shouldn't be any losses in reward tokens.
 
 So far, we've described how we can calculate how much each position has earned for reward tokens. The approach is
 simple, but it has its limitations. For example, it does not handle correctly a scenario where there might be a loss
-between to updates. Let's see an example:
+between two updates. Let's see an example:
 
-```
-Moment 0
-- Total rewards: 0 $OP
-- John deposits and is assigned 100 shares
-- yieldAccum = 0
+:::mermaid
+timeline
+    t0<br>Strategy is deployed
+       : yieldAccum(strategy) = 0
+       : totalShares = 0
+    t1<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
+       : yieldAccum(strategy) = 0
+       : yieldAccum(John) = 0
+       : totalShares = 100    
+    t2<br>Peter deposits and is assigned 200 shares<br>Balance is 100 $OP
+       : yieldAccum(strategy)<br>= 0 + (100 - 0) / 100<br>= 1
+       : yieldAccum(John) = 0       
+       : yieldAccum(Peter) = 1
+       : totalShares = 300
+    t3<br>Alice deposits and is assigned 50 shares. Balance is 400 $OP
+       : yieldAccum(strategy)<br>= 1 + (400 - 100) / 300<br>= 2
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : yieldAccum(Alice) = 2
+       : totalShares = 350
+    t4<br>There is a loss. Balance is 50 $OP
+       : yieldAccum(strategy)<br>= 2 + (50 - 400) / 350<br>= 1
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : yieldAccum(Alice) = 2
+       : totalShares = 350
+:::
 
-Moment 1
-- Total rewards: 100 OP
-- Peter deposits and is assigned 200 shares
-- yieldAccum = 0 + (100 - 0) / 100 = 1
+So how much is assigned to each user?
 
-Moment 2
-- Total rewards: 400 OP
-- Alice deposits and is assigned 50 shares
-- yieldAccum = 1 + (400 - 100) / 300 = 1 + 300 / 300 = 2
-
-How much is assigned to each user?
-- John = (2 - 0) * 100 = 200 OP
-- Peter = (2 - 1) * 200 = 200 OP
-- Alice = (2 - 2) * 5 = 0
-
-Moment 3
-- Total rewards: 50 OP
-- yieldAccum = 2 + (50 - 400) / 350 = 2 - 1 = 1
-
-How much is assigned to each user?
-- John = (1 - 0) * 100 = 100 OP
-- Peter = (1 - 1) * 200 = 0 OP
-- Alice = (1 - 2) * 50 = -50 OP
-```
+$$
+\begin{align}
+owned(John, OP) & = shares(John) * (yieldAccum(strategy, OP) - yieldAccum(John, OP)) \notag \\ & = 100 * (1 - 0)  \notag \\ & = 100 \notag \\
+owned(Peter, OP) & = shares(Peter) * (yieldAccum(strategy, OP) - yieldAccum(Peter, OP))  \notag \\ & = 200 * (1 - 1)  \notag \\ & = 0 \notag \\
+owned(Alice, OP) & = shares(Alice) * (yieldAccum(strategy, OP) - yieldAccum(Alice, OP))  \notag \\ & = 50 * (1 - 2)  \notag \\ & = -50 \notag \\
+\end{align}
+$$
 
 We can see that it doesn't add up 😅 The problem is that earnings can be distributed to everyone based on shares, but
-losses need to be distributed according to what they had earned so far. What would we want the balances to look like?
-Ideally, we would distribute the losses based on what each user had earned on the previous snapshot, to achieve this
-we'll need to apply the losses to the yieldAccum so we'll use an accumulator to keep track of this losses. Something
-like this:
+losses need to be distributed according to what each user had earned up to the moment the loss occurred.
 
-$$ balance(user) = earned(user, last\ snapshot) \ast lossRatio + yield(since\ last\ snapshot) $$
+So what would we want the balances to look like? Ideally, we would distribute the losses based on what each user had earned up to that point, and then continue to distribute yield as usual. Something like this:
 
-with:
+$$ balance(user) = earnedBeforeLoss(user) \ast \frac{strategyBalance_{when \ loss \ happened}}{strategyBalance_{last\ snapshot \ before \ loss}} + earnedSinceLoss(user) $$
+
+Let's see how this would work in practice:
+:::mermaid
+timeline    
+    t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP       
+       : totalShares = 100    
+    t1<br>Balance is 100 $OP       
+       : totalShares = 100
+    t2<br>Balance is 50 $OP       
+       : totalShares = 100
+    t3<br>Peter deposits and is assigned 50 shares<br>Balance is 100 $OP  
+       : totalShares = 150
+    t4<br>Balance is 200 $OP
+       : totalShares = 150
+    t5<br>Balance is 150 $OP
+       : totalShares = 150
+    t6<br>Balance is 180 $OP
+       : totalShares = 150
+:::
 
 $$
-lossRatio =
-\frac{lossAccum} {lossAccumInitial}
+\begin{align}
+
+owned(John, OP, t_1) & = owned(John, OP, t_0) + shares(John) * yield_{t_0 \rightarrow t_1} / totalShares_{t_1} \notag \\ 
+                     & = 0 + 100 * 100 / 100 \notag \\ 
+                     & = 100 \notag \\
+
+owned(John, OP, t_2) & = owned(John, OP, t_1) * balance_{t_2} / balance_{t_1} \notag \\
+                     & = 100 * 50 / 100 \notag \\
+                     & = 50 \notag \\
+
+owned(John, OP, t_3) & = owned(John, OP, t_2) + shares(John) * yield_{t_2 \rightarrow t_3} / totalShares_{t_3} \notag \\ 
+                     & = 50 + 100 * 50 / 100 \notag \\
+                     & = 100 \notag \\
+
+owned(John, OP, t_4) & = owned(John, OP, t_3) + shares(John) * yield_{t_3 \rightarrow t_4} / totalShares_{t_4} \notag \\ 
+                     & = 100 + 100 * 100 / 150 \notag \\
+                     & = 166.67 \notag \\                
+                
+owned(John, OP, t_5) & = owned(John, OP, t_4) * balance_{t_5} / balance_{t_4} \notag \\
+                     & = 166.67 * 150 / 200 \notag \\
+                     & = 125 \notag \\
+                     
+owned(John, OP, t_6) & = owned(John, OP, t_5) + shares(John) * yield_{t_5 \rightarrow t_6} / totalShares_{t_6} \notag \\ 
+                     & = 125 + 100 * 30 / 150 \notag \\
+                     & = 145 \notag \\                    
+
+owned(Peter, OP, t_4) & = owned(Peter, OP, t_3) + shares(Peter) * yield_{t_3 \rightarrow t_4} / totalShares_{t_4} \notag \\ 
+                     & = 0 + 50 * 100 / 150 \notag \\
+                     & = 33.33 \notag \\
+
+owned(Peter, OP, t_5) & = owned(Peter, OP, t_4) * balance_{t_5} / balance_{t_4} \notag \\ 
+                     & = 33.33 * 150 / 200 \notag \\
+                     & = 25 \notag \\   
+                     
+owned(Peter, OP, t_6) & = owned(Peter, OP, t_5) + shares(Peter) * yield_{t_5 \rightarrow t_6} / totalShares_{t_6} \notag \\ 
+                     & = 25 + 50 * 30 / 150 \notag \\
+                     & = 35 \notag \\                     
+\end{align}
+$$
+Now, we can see that the previous definitions of `yieldAccum` doesn't work anymore. So we'll make the following changes:
+$$ 
+yieldAccum_t = \begin{dcases}
+    0,&  \text{if } t = 0\\
+    yieldAccum_{t-1} + \frac{balance_{t} - balance_{t-1}}{totalShares_{t}},& \text{if } balance_{t} \geq balance_{t-1}\\
+    yieldAccum_{t-1} * \frac{balance_{t}}{balance_{t-1}},                    & \text{otherwise}    
+\end{dcases} \notag \\
 $$
 
-and 
+Now, let's check the previous example again:
+:::mermaid
+timeline    
+    t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
+       : yieldAccum(strategy) = 0
+       : yieldAccum(John) = 0
+       : totalShares = 100    
+    t1<br>Balance is 100 $OP
+       : yieldAccum(strategy)<br>= 0 + (100 - 0) / 100<br>= 1
+       : yieldAccum(John) = 0
+       : totalShares = 100
+    t2<br>Balance is 50 $OP
+       : yieldAccum(strategy)<br>= 1 * 50 / 100<br>= 0.5
+       : yieldAccum(John) = 0
+       : totalShares = 100
+    t3<br>Peter deposits and is assigned 50 shares<br>Balance is 100 $OP  
+       : yieldAccum(strategy)<br>= 0.5 + (100 - 50) / 100<br>= 1
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : totalShares = 150
+    t4<br>Balance is 200 $OP
+       : yieldAccum(strategy)<br>= 1 + (200 - 100) / 150<br>= 1.666
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : totalShares = 150
+    t5<br>Balance is 150 $OP
+       : yieldAccum(strategy)<br>= 1.666 * 150 / 200<br>= 1.25
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : totalShares = 150
+    t6<br>Balance is 180 $OP
+       : yieldAccum(strategy)<br>= 1.25 + (180 - 150) / 150<br>= 1.45
+       : yieldAccum(John) = 0
+       : yieldAccum(Peter) = 1
+       : totalShares = 150
+:::
 
-$$ lossAccum_n = lossAccum_{n-1} \ast \frac{strategyBalance_n}{strategyBalance_{n-1}} $$
 
-with n being the current update and n-1 being the last snapshot.
+We can see that we can now calculate the balance for John correctly at each point in time, but the math doesn't add up for Peter. This is because there is a part missing: we reduce the strategy's yield accumulator when there are losses, but we don't do the same for yield accumulator associated to the user/position. As a side note, it only worked for John because the yield accumulator was 0 when he deposited. But we can fix this issue by using a new accumulator to keep track of all losses:
+$$
+lossAccum_t = \begin{dcases}
+    1,&  \text{if } t = 0\\
+    lossAccum_{t-1},& \text{if } balance_{t} \geq balance_{t-1}\\
+    lossAccum_{t-1} * \frac{balance_{t}}{balance_{t-1}},                    & \text{otherwise}    
+\end{dcases}  \notag \\
+$$
 
-$$ yield(since\ last\ snapshot) = shares \ast (yieldAccum - yieldAccumInitial \ast lossRatio) $$
+Let's go back to the previous example one more time and see we can keep track of it:
+:::mermaid
+timeline    
+    t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
+       : yieldAccum(strategy) = 0
+       : lossAccum(strategy) = 1
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : totalShares = 100    
+    t1<br>Balance is 100 $OP
+       : yieldAccum(strategy)<br>= 0 + (100 - 0) / 100<br>= 1
+       : lossAccum(strategy) = 1
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : totalShares = 100
+    t2<br>Balance is 50 $OP
+       : yieldAccum(strategy)<br>= 1 * 50 / 100<br>= 0.5
+       : lossAccum(strategy)<br>= 1 * 50 / 100<br>= 0.5
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : totalShares = 100
+    t3<br>Peter deposits and is assigned 50 shares<br>Balance is 100 $OP  
+       : yieldAccum(strategy)<br>= 0.5 + (100 - 50) / 100<br>= 1
+       : lossAccum(strategy) = 0.5
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : yieldAccum(Peter) = 1
+       : lossAccum(Peter) = 0.5
+       : totalShares = 150
+    t4<br>Balance is 200 $OP
+       : yieldAccum(strategy)<br>= 1 + (200 - 100) / 150<br>= 1.666
+       : lossAccum(strategy) = 0.5
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : yieldAccum(Peter) = 1
+       : lossAccum(Peter) = 0.5
+       : totalShares = 150
+    t5<br>Balance is 150 $OP
+       : yieldAccum(strategy)<br>= 1.666 * 150 / 200<br>= 1.25
+       : lossAccum(strategy)<br>= 0.5 * 150 / 200<br>= 0.375
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : yieldAccum(Peter) = 1
+       : lossAccum(Peter) = 0.5
+       : totalShares = 150
+    t6<br>Balance is 180 $OP
+       : yieldAccum(strategy)<br>= 1.25 + (180 - 150) / 150<br>= 1.45
+       : lossAccum(strategy) = 0.375
+       : yieldAccum(John) = 0
+       : lossAccum(John) = 1
+       : yieldAccum(Peter) = 1
+       : lossAccum(Peter) = 0.5
+       : totalShares = 150
+:::
 
-By doing this, we're applying the losses to the already calculated balance. And we also need to apply them to what was
-yielded after the last snapshot. Losses have been successively applied to the strategy's yieldAccum, so it's necessary
-to apply them to the yieldAccumInitial, the one who belongs to the position.
+Now that we have all the pieces, let's see how it works in practice:
 
-So, what would it look like?
+$$
+owned(user, OP) = shares(user) * \left[ yieldAccum(strategy, OP) - yieldAccum(user, OP) * \frac{lossAccum(strategy, OP)}{lossAccum(user, OP)} \right] \notag \\
+$$
 
-```
-Moment 0
-- Total rewards: 0 $OP
-- John deposits and is assigned 100 shares
-- yieldAccum = 0
+And now we can calculate both John and Peter's balances correctly 🎉
 
-Moment 1
-- Total rewards: 100 OP
-- Peter deposits and is assigned 200 shares
-- yieldAccum = 0 + (100 - 0) / 100 = 1
-
-Moment 2
-- Total rewards: 400 OP
-- Alice deposits and is assigned 100 shares
-- yieldAccum = 1 + (400 - 100) / 300 = 1 + 300 / 300 = 2
-
-How much is assigned to each user?
-- John = (2 - 0) * 100 = 200 OP
-- Peter = (2 - 1) * 200 = 200 OP
-- Alice = (2 - 2) * 100 = 0
-
-Moment 3
-- Total rewards: 100 OP
-- yieldAccum = yieldAccum * 100 / 400 = 2 * 100 / 400 = 0.5
-- lossAccum = 0.25
-
-How much is assigned to each user?
-- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-       = (0.5 - 0 * 0.25) * 100 = 50
-- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.5 - 1 * 0.25) * 200 = 50
-- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.5 - 2 * 0.25) * 100 = 0
-
-Moment 4:
-- Total reward: 200 OP
-- yieldAccum = yieldAccum + yielded / total shares
-             = 0.5 + 100 OP / 400
-             = 0.75
-
-- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-       = (0.75 - 0 * 0.25) * 100 = 75
-- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.75 - 1 * 0.25) * 200 = 100
-- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.75 - 2 * 0.25) * 100 = 25
-
-Moment 5:
-- Total reward: 400 OP
-- yieldAccum = yieldAccum + yielded / total shares
-             = 0.75 + 200 OP / 400
-             = 1.25
-
-- John = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-       = (1.25 - 0 * 0.25) * 100 = 125
-- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (1.25 - 1 * 0.25) * 200 = 200
-- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (1.25 - 2 * 0.25) * 100 = 75
-
-Moment 6:
-- Total reward: 80 OP
-- Joseph deposits and is assigned 400 shares
-- yieldAccum = yieldAccum * 80 / 400
-             = 1.25 * 80 OP / 400
-             = 0.25
-- lossAccum = lossAccum * 80 / 400
-               = 0.05
-
-- John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
-       = (0.25 - 0 * 0.05) * 100 = 25
-- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.25 - 1 * 0.05) * 200 = 40
-- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.25 - 2 * 0.05) * 100 = 15
-
-Moment 7:
-- Total rewards: 160 OP
-- yieldAccum = yieldAccum + yielded / total shares
-             = 0.25 + 80 / 800 = 0.35
-- John = (yieldAccum - yieldAccumInitial * (lossAccum / lossAccumInitial)) * shares
-       = (0.35 - 0 * (0.05 / 1)) * 100 = 35
-- Peter = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.35 - 1 * (0.05 / 1)) * 200 = 60
-- Alice = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.35 - 2 * (0.05 / 1)) * 100 = 25
-- Joseph = (yieldAccum - yieldAccumInitial * (lossAccum/lossAccumInitial)) * shares
-        = (0.35 - 0.25 * (0.05 / 0.05)) * 400 = 40
-```
 
 #### Loss accumulator precision
 
@@ -406,12 +514,10 @@ better.
 #### Storing Complete Losses
 
 We just described how to take losses into account when calculate a position's balance for reward tokens. However, when a
-complete loss occurs, the loss accumulator multiplies down to zero and stays there. Our solution requires storing a
-counter to track when there was a complete loss, so that each position can compare their own counter against the
-strategy's counter. Then, after the complete loss has been accounted for, we can calculate the position's balance
-normally.
+complete loss occurs (balance goes to zero), the loss accumulator multiplies down to zero and stays there, which won't work for our purposes.
+Our solution requires storing a counter to track when there was a complete loss, so that each position can compare their own counter against the strategy's counter. Then, after the complete loss has been accounted for, we can calculate the position's balance normally. Technically speaking, when a complete loss happens, both yield and loss accumulators are reset to their initial values (0 and 1 respectively). We do this because a complete loss can be considered as if the strategy had just started from scratch.
 
-The vault is prepared to support **up to 255** complete loss events per token, for each strategy. This should be enough
+On a technical note, the vault is prepared to support **up to 255** complete loss events per token, for each strategy. This should be enough
 to cover for unexpected circumstances such as hacks, but it's very important that the strategy avoids complete losses as
 much as possible.
 
