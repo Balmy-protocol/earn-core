@@ -171,7 +171,7 @@ this sum, instead of calculating it every time. But we need to be careful with t
 
 The accumulator is the sum of:
 
-$$ \frac{yield * \text{ACCUM\_PRECISION}}{\text{total(shares)}} $$
+$$ \frac{yield * ACCUM\_PRECISION}{total(shares)} $$
 
 We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
@@ -431,11 +431,13 @@ timeline
 We can see that we can now calculate the balance for John correctly at each point in time, but the math doesn't add up for Peter. This is because there is a part missing: we reduce the strategy's yield accumulator when there are losses, but we don't do the same for yield accumulator associated to the user/position. As a side note, it only worked for John because the yield accumulator was 0 when he deposited. But we can fix this issue by using a new accumulator to keep track of all losses:
 
 $$
+\begin{align}
 lossAccum_t = \begin{dcases}
     1,&  \text{if } t = 0\\
     lossAccum_{t-1},& \text{if } balance_{t} \geq balance_{t-1}\\
     lossAccum_{t-1} * \frac{balance_{t}}{balance_{t-1}},                    & \text{otherwise}    
 \end{dcases}  \notag \\
+\end{align}
 $$
 
 Let's go back to the previous example one more time and see we can keep track of it:
@@ -496,7 +498,9 @@ timeline
 Now that we have all the pieces, let's see how it works in practice:
 
 $$
-owned(user, OP) = shares(user) * (yieldAccum(strategy, OP) - yieldAccum(user, OP) * \frac{lossAccum(strategy, OP)}{lossAccum(user, OP)}) \notag \\
+\begin{align}
+owned(user, OP) & = shares(user) * (yieldAccum(strategy, OP) - yieldAccum(user, OP) * \frac{lossAccum(strategy, OP)}{lossAccum(user, OP)}) \notag \\
+\end{align}
 $$
 
 And now we can calculate both John and Peter's balances correctly 🎉
