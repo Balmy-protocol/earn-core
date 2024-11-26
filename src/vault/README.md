@@ -171,7 +171,7 @@ this sum, instead of calculating it every time. But we need to be careful with t
 
 The accumulator is the sum of:
 
-$$ \frac{yield * ACCUM\_PRECISION}{total(shares)} $$
+$$ \frac{yield * ACCUM\ PRECISION}{total(shares)} $$
 
 We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
@@ -232,7 +232,7 @@ scenario of one update per block, we have:
 
 $$
 \begin{align}
-max\_size(update) & < \frac{total\_space}{max\_amount(updates)} \notag \\
+maxSize(update) & < \frac{totalSpace}{maxAmount(updates)} \notag \\
 & < \frac{2^{151}}{3.154e8} \notag \\
 & < 9.05e36 \notag \\
 \end{align}
@@ -242,7 +242,7 @@ So, we know that:
 
 $$
 \begin{align}
-\frac{yield * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
+\frac{yield * ACCUM\_PRECISION}{total(shares)} & < maxSize(update) \notag \\
 \frac{yield * 1e33}{total(shares)} & < 9.05e36 \notag \\
 \frac{yield}{total(shares)} & < 9050  \notag \\
 \end{align}
