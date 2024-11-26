@@ -187,9 +187,9 @@ due to precision.
 
 $$
 \begin{align}
-1e4 * ACCUM\_PRECISION / 1e29 & > 1 \notag \\
- ACCUM\_PRECISION & > 1e29 / 1e4 \notag \\
- ACCUM\_PRECISION & > 1e25 \notag  \\
+1e4 * ACCUM\ PRECISION / 1e29 & > 1 \notag \\
+ ACCUM\ PRECISION & > 1e29 / 1e4 \notag \\
+ ACCUM\ PRECISION & > 1e25 \notag  \\
 \end{align}
 $$
 
@@ -198,8 +198,8 @@ limitations a little more. In order to be able to track 1 wei of yield, we need 
 
 $$
 \begin{align}
-1 * ACCUM\_PRECISION / total(shares) & > 1 \notag \\
-total(shares) & < ACCUM\_PRECISION \notag \\
+1 * ACCUM\ PRECISION / total(shares) & > 1 \notag \\
+total(shares) & < ACCUM\ PRECISION \notag \\
 total(shares) & < 1e33 \notag \\
 \end{align}
 $$
@@ -242,7 +242,7 @@ So, we know that:
 
 $$
 \begin{align}
-\frac{yield * ACCUM\_PRECISION}{total(shares)} & < maxSize(update) \notag \\
+\frac{yield * ACCUM\ PRECISION}{total(shares)} & < maxSize(update) \notag \\
 \frac{yield * 1e33}{total(shares)} & < 9.05e36 \notag \\
 \frac{yield}{total(shares)} & < 9050  \notag \\
 \end{align}
