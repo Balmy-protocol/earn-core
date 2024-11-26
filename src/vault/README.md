@@ -351,6 +351,7 @@ And we can calculate the balance for John and Peter at each point in time like t
 $$
 \begin{align}
 owned(John, OP, t_1) & = owned(John, OP, t_0) + shares(John) * yield_{t_0 \rightarrow t_1} / totalShares_{t_1} \notag \\ 
+                     & = 0 + 100 * 100 / 100 \notag \\ 
 \end{align}
 $$
 
