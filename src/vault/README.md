@@ -381,11 +381,13 @@ $$
 Now, we can see that the previous definitions of `yieldAccum` doesn't work anymore. So we'll make the following changes:
 
 $$ 
+\begin{align}
 yieldAccum_t = \begin{dcases}
     0,&  \text{if } t = 0\\
     yieldAccum_{t-1} + \frac{balance_{t} - balance_{t-1}}{totalShares_{t}},& \text{if } balance_{t} \geq balance_{t-1}\\
     yieldAccum_{t-1} * \frac{balance_{t}}{balance_{t-1}},                    & \text{otherwise}    
 \end{dcases} \notag \\
+\end{align}
 $$
 
 Now, let's check the previous example again:
