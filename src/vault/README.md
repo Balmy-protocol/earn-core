@@ -346,6 +346,8 @@ timeline
        : totalShares = 150
 ```
 
+And we can calculate the balance for John and Peter at each point in time like this:
+
 $$
 \begin{align}
 
@@ -436,6 +438,7 @@ timeline
 
 
 We can see that we can now calculate the balance for John correctly at each point in time, but the math doesn't add up for Peter. This is because there is a part missing: we reduce the strategy's yield accumulator when there are losses, but we don't do the same for yield accumulator associated to the user/position. As a side note, it only worked for John because the yield accumulator was 0 when he deposited. But we can fix this issue by using a new accumulator to keep track of all losses:
+
 $$
 lossAccum_t = \begin{dcases}
     1,&  \text{if } t = 0\\
