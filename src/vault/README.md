@@ -171,7 +171,7 @@ this sum, instead of calculating it every time. But we need to be careful with t
 
 The accumulator is the sum of:
 
-$$ \frac{yield * ACCUM\_PRECISION}{total(shares)} $$
+$$ \frac{yield * ACCUM{\_}PRECISION}{total(shares)} $$
 
 We add `ACCUM_PRECISION` so that if the yield is low, we don't lose precision. Before starting with the analysis, let's
 remember that we are using a virtual assets approach, so let's assume that `1 asset ~ 1e3 shares`.
@@ -187,9 +187,9 @@ due to precision.
 
 $$
 \begin{align}
-1e4 * ACCUM\_PRECISION / 1e29 & > 1 \notag \\
- ACCUM\_PRECISION & > 1e29 / 1e4 \notag \\
- ACCUM\_PRECISION & > 1e25 \notag  \\
+1e4 * ACCUM{\_}PRECISION / 1e29 & > 1 \notag \\
+ ACCUM{\_}PRECISION & > 1e29 / 1e4 \notag \\
+ ACCUM{\_}PRECISION & > 1e25 \notag  \\
 \end{align}
 $$
 
@@ -198,8 +198,8 @@ limitations a little more. In order to be able to track 1 wei of yield, we need 
 
 $$
 \begin{align}
-1 * ACCUM\_PRECISION / total(shares) & > 1 \notag \\
-total(shares) & < ACCUM\_PRECISION \notag \\
+1 * ACCUM{\_}PRECISION / total(shares) & > 1 \notag \\
+total(shares) & < ACCUM{\_}PRECISION \notag \\
 total(shares) & < 1e33 \notag \\
 \end{align}
 $$
@@ -232,7 +232,7 @@ scenario of one update per block, we have:
 
 $$
 \begin{align}
-max\_size(update) & < \frac{total\_space}{max\_amount(updates)} \notag \\
+max{\_}size(update) & < \frac{total{\_}space}{max{\_}amount(updates)} \notag \\
 & < \frac{2^{151}}{3.154e8} \notag \\
 & < 9.05e36 \notag \\
 \end{align}
@@ -242,7 +242,7 @@ So, we know that:
 
 $$
 \begin{align}
-\frac{yield * ACCUM\_PRECISION}{total(shares)} & < max\_size(update) \notag \\
+\frac{yield * ACCUM{\_}PRECISION}{total(shares)} & < max{\_}size(update) \notag \\
 \frac{yield * 1e33}{total(shares)} & < 9.05e36 \notag \\
 \frac{yield}{total(shares)} & < 9050  \notag \\
 \end{align}
@@ -264,7 +264,7 @@ This means that if 10 USDC worth of tokens generate less than _9.05e13_ worth of
 least 10 years before the accum overflows.
 
 To put it in _$OP_ terms (known for its use as a reward), that would be 0,0002 (Dec 15, 2023) usd per second, which
-would be $17 usd per day. Not bad for a 10 _$USDC\_ deposit 😂
+would be $17 usd per day. Not bad for a 10 _$USDC{\_} deposit 😂
 
 Again, tokens with more decimals or higher supplies might be closer to an overflow than the examples we just layed out,
 but **it will be up to each strategy to make sure that the tokens they support work correctly with these limitations**.
@@ -350,8 +350,7 @@ And we can calculate the balance for John and Peter at each point in time like t
 
 $$
 \begin{align}
-owned(John, OP, t_1) & = 0 + 100 * 100 / 100 \notag \\ 
-                     & = 100 \notag \\           
+owned(John, OP, t_1) & = owned(John, OP, t_0) + shares(John) * yield_{t_0 \rightarrow t_1} / totalShares_{t_1} \notag \\ 
 \end{align}
 $$
 
