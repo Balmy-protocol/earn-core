@@ -346,8 +346,6 @@ timeline
        : totalShares = 150
 ```
 
-And we can calculate the balance for John and Peter at each point in time like this:
-
 $$
 \begin{align}
 owned(John, OP, t_1) & = owned(John, OP, t_0) + shares(John) * yield_{t_0 \rightarrow t_1} / totalShares_{t_1} \notag \\ 
