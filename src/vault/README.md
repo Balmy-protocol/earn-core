@@ -93,7 +93,7 @@ $$
 
 Then, when a position is modified, we'll store the current accumulator value and associate it to the position. In the future, when we need to calculate how much the position has earned, we can do `yieldAccum(current) - yieldAccum(last stored for position)` to end up with the sum we needed. Let's see an example:
 
-:::mermaid
+```mermaid
 timeline
     t0<br>Strategy is deployed
        : yieldAccum(strategy) = 0
@@ -116,7 +116,7 @@ timeline
        : yieldAccum(John) = 0
        : yieldAccum(Peter) = 2.5
        : totalShares = 150    
-:::
+```
 
 Now, if we calculate balances for John and Peter at this point, we'll get:
 
@@ -281,7 +281,7 @@ So far, we've described how we can calculate how much each position has earned f
 simple, but it has its limitations. For example, it does not handle correctly a scenario where there might be a loss
 between two updates. Let's see an example:
 
-:::mermaid
+```mermaid
 timeline
     t0<br>Strategy is deployed
        : yieldAccum(strategy) = 0
@@ -307,7 +307,7 @@ timeline
        : yieldAccum(Peter) = 1
        : yieldAccum(Alice) = 2
        : totalShares = 350
-:::
+```
 
 So how much is assigned to each user?
 
@@ -327,7 +327,7 @@ So what would we want the balances to look like? Ideally, we would distribute th
 $$ balance(user) = earnedBeforeLoss(user) \ast \frac{strategyBalance_{when \ loss \ happened}}{strategyBalance_{last\ snapshot \ before \ loss}} + earnedSinceLoss(user) $$
 
 Let's see how this would work in practice:
-:::mermaid
+```mermaid
 timeline    
     t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP       
        : totalShares = 100    
@@ -343,7 +343,7 @@ timeline
        : totalShares = 150
     t6<br>Balance is 180 $OP
        : totalShares = 150
-:::
+```
 
 $$
 \begin{align}
@@ -395,7 +395,7 @@ yieldAccum_t = \begin{dcases}
 $$
 
 Now, let's check the previous example again:
-:::mermaid
+```mermaid
 timeline    
     t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
        : yieldAccum(strategy) = 0
@@ -429,7 +429,7 @@ timeline
        : yieldAccum(John) = 0
        : yieldAccum(Peter) = 1
        : totalShares = 150
-:::
+```
 
 
 We can see that we can now calculate the balance for John correctly at each point in time, but the math doesn't add up for Peter. This is because there is a part missing: we reduce the strategy's yield accumulator when there are losses, but we don't do the same for yield accumulator associated to the user/position. As a side note, it only worked for John because the yield accumulator was 0 when he deposited. But we can fix this issue by using a new accumulator to keep track of all losses:
@@ -442,7 +442,7 @@ lossAccum_t = \begin{dcases}
 $$
 
 Let's go back to the previous example one more time and see we can keep track of it:
-:::mermaid
+```mermaid
 timeline    
     t0<br>John deposits and is assigned 100 shares<br>Balance is 0 $OP
        : yieldAccum(strategy) = 0
@@ -494,7 +494,7 @@ timeline
        : yieldAccum(Peter) = 1
        : lossAccum(Peter) = 0.5
        : totalShares = 150
-:::
+```
 
 Now that we have all the pieces, let's see how it works in practice:
 
