@@ -48,7 +48,6 @@ So for example, if the total amount of _$DAI_ increases to 15000, then:
 $$
 \begin{align}
 owned(John, DAI) & = \frac{totalAmount(DAI) * shares(John)}{totalShares} \notag \\
-& = [15000 - 0] * 250 / 2750 \notag \\
 & = 15000 * 250 / 2750 \notag \\
 & \approx 1363.63 \notag \\
 \end{align}
