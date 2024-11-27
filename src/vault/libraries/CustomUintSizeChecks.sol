@@ -9,7 +9,7 @@ library CustomUintSizeChecks {
   /// @notice Thrown when a value overflows
   error UintOverflowed(uint256 value, uint256 max);
 
-  uint256 private constant MAX_UINT_151 = 2**151 - 1;
+  uint256 private constant MAX_UINT_151 = 2 ** 151 - 1;
 
   function assertFitsInUint151(uint256 value) internal pure {
     _verifySize(value, MAX_UINT_151);
