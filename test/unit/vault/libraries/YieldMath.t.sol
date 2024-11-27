@@ -67,35 +67,41 @@ contract YieldMathTest is PRBTest, StdUtils {
     uint104 currentBalance,
     uint104 lastRecordedBalance,
     uint152 previousAccum,
-    uint128 totalShares
+    uint128 totalShares,
+    uint8 completeLossEvents
   )
     public
   {
     totalShares = uint128(bound(totalShares, 1, type(uint256).max));
     lastRecordedBalance = uint104(bound(lastRecordedBalance, 2, type(uint104).max));
+    completeLossEvents = uint8(bound(completeLossEvents, 1, YieldMath.MAX_COMPLETE_LOSS_EVENTS - 1));
     currentBalance = uint104(bound(currentBalance, 1, lastRecordedBalance - 1));
-    (, uint256 newTotalLossAccum,) = YieldMath.calculateAccum(
-      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 0
+    (, uint256 newTotalLossAccum, uint256 newStrategyCompleteLossEvents) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, completeLossEvents
     );
 
     assertEq(newTotalLossAccum, uint256(YieldMath.LOSS_ACCUM_INITIAL).mulDiv(currentBalance, lastRecordedBalance));
+    assertEq(newStrategyCompleteLossEvents, completeLossEvents);
   }
 
   function testFuzz_calculateAccum_WithCompleteLoss(
     uint104 lastRecordedBalance,
     uint152 previousAccum,
-    uint128 totalShares
+    uint128 totalShares,
+    uint8 completeLossEvents
   )
     public
   {
     totalShares = uint128(bound(totalShares, 1, type(uint256).max));
     lastRecordedBalance = uint104(bound(lastRecordedBalance, 2, type(uint104).max));
+    completeLossEvents = uint8(bound(completeLossEvents, 1, YieldMath.MAX_COMPLETE_LOSS_EVENTS - 1));
     uint104 currentBalance = 0;
-    (, uint256 newTotalLossAccum,) = YieldMath.calculateAccum(
-      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, 1
+    (, uint256 newTotalLossAccum, uint256 newStrategyCompleteLossEvents) = YieldMath.calculateAccum(
+      currentBalance, lastRecordedBalance, previousAccum, totalShares, YieldMath.LOSS_ACCUM_INITIAL, completeLossEvents
     );
 
     assertEq(newTotalLossAccum, YieldMath.LOSS_ACCUM_INITIAL);
+    assertEq(newStrategyCompleteLossEvents, completeLossEvents + 1);
   }
 
   function testFuzz_calculateBalance(
