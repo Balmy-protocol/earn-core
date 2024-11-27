@@ -81,6 +81,7 @@ library YieldMath {
        */
       newStrategyYieldAccum =
         previousStrategyYieldAccum.mulDiv(newStrategyLossAccum, previousStrategyLossAccum, Math.Rounding.Floor);
+      newStrategyCompleteLossEvents = previousStrategyCompleteLossEvents;
     } else if (totalShares == 0) {
       return (previousStrategyYieldAccum, previousStrategyLossAccum, previousStrategyCompleteLossEvents);
     } else {
