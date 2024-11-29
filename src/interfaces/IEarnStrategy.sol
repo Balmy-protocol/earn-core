@@ -18,6 +18,13 @@ import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
  *      - Tokens can never be removed from the list. New ones can be added, but they cannot be removed later
  *      - Functions like `withdrawalTypes` and `totalBalances` must return the same amount of values as `allTokens`, and
  *        in the same order too
+ *      - Yield generation should ideally be continuous over time, instead of happening "all at once". If the latter
+ *        happens, then an attacker might try to front-run the yield generation event to keep most yield to themselves
+ *      - During a withdrawal, a user might get less tokens than requested in some cases, like if the strategy
+ *        implements withdrawal fee. This is ok and expected but, if for some reason, a strategy does not have enough
+ *        funds to cover the expected withdrawal amount (the one that considers the fee), then the withdrawal must
+ *        revert. For example, if a strategy deposits funds in a lending market and most of the funds are borrowed,
+ *        then the strategy must revert
  *      - Tokens with very high supplies or a high amount of decimals might not fit correctly into the Vault's
  *        accounting system. For more information about this, please refer to the [README](../vault/README.md).
  *      Take into account some strategies might not support an immediate withdraw of all tokens, since they
