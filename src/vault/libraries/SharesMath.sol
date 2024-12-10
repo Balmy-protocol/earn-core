@@ -38,6 +38,10 @@ library SharesMath {
     pure
     returns (uint256)
   {
+    // Note: we recommend reading the [README](../README.md) for more information on why this is needed
+    if (totalShares == 0) {
+      totalAssets = 0;
+    }
     return assets.mulDiv(totalShares + SHARES_OFFSET_MAGNITUDE, totalAssets + 1, rounding);
   }
 }

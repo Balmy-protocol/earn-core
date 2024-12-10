@@ -146,6 +146,81 @@ because:
 - It would also help increase precision on low decimal tokens
 - It wasn't high enough to affect precision accounting (more on this explained below)
 
+#### Donation
+Even though the virtual shares approach is a good defense against inflation attacks, it does have some limitations. While the inflation attack become unprofitable, it can still cause issues for some users.
+Let's see the actual code. When a user makes a deposit, this is how we calculate how many shares they should get:
+```solidity
+function convertToShares(
+   uint256 depositedAssets,
+   uint256 totalAssets,
+   uint256 totalShares,
+   Math.Rounding rounding
+)
+   internal
+   pure
+   returns (uint256)
+{
+   return depositedAssets.mulDiv(totalShares + SHARES_OFFSET_MAGNITUDE, totalAssets + 1, rounding);
+}
+```
+We can see that the closer `totalAssets` is to `depositedAssets * (totalShares + SHARES_OFFSET_MAGNITUDE)`, the more likely it is that we'll have a precision problem. In particular, if `totalAssets` is bigger than `depositedAssets * (totalShares + SHARES_OFFSET_MAGNITUDE)`, the depositor would get 0 shares (and revert). 
+
+We will write it like this:
+```
+total assets > deposited assets * (total shares + 1e3)
+  // Now, I'll split total assets between (real assets + donation), so:
+real assets + donation > deposited assets * (total shares + 1e3)
+  // Let's also remember that since we are using virtual shares, 
+  // total shares ~= 1e3 * real assets, so:
+real assets + donation > deposited assets * (real assets * 1e3 + 1e3)
+```
+So it's easy to realize that if the strategy is empty and `real assets = 0`, then only the following needs to happen for a deposit to revert:
+```
+donation > deposited assets * 1e3
+```
+Again, the attacker would need to donate quite a lot of funds just to affect other users, but it's still possible. With a little less the transaction would work, but the user would have some loss. But, if we didn't assume that the strategy was empty, how would it look like?
+```
+real assets + donation > deposited assets * (real assets * 1e3 + 1e3)
+donation > assets * (real assets * 1e3 + 1e3) - real assets
+  // I'll ignore the +1e3, since it's probably negligible once there are funds
+donation > deposited assets * real assets * 1e3 - real assets
+donation > real assets * (deposited assets * 1e3 - 1)
+  // Again, I'll ignore the -1 since its negligible
+donation > real assets * deposited assets * 1e3 
+```
+
+So now the donation needs to be a lot higher for it to affect new deposits. Based on some tests with a `1e18` deposit, these were our findings:
+
+**Empty strategy**
+- If donation is 1:1 against deposit => no loss
+- If donation is 10x against deposit => 1% loss
+- If donation is 100x against deposit => 10% loss
+- If donation is 1000x against deposit => 100% loss/revert
+
+**Strategy with existing 1e18 deposit**
+- If donation is 1e21x against new deposit => no loss
+- If donation is 1e22x against new deposit, then 100% loss/revert
+
+Now we want to figure out a way to mitigate this issue. Since the attack only seems feasible when the strategy is empty, we could handle this by ignoring all assets when the strategy is empty. So, if total shares is 0, we can assume that all existing assets must have been donated. If that's the case, we can handle it like this:
+```solidity
+function convertToShares(
+   uint256 depositedAssets,
+   uint256 totalAssets,
+   uint256 totalShares,
+   Math.Rounding rounding
+)
+   internal
+   pure
+   returns (uint256)
+{
+   if (totalShares == 0) {
+      totalAssets = 0;
+   }
+   return depositedAssets.mulDiv(totalShares + SHARES_OFFSET_MAGNITUDE, totalAssets + 1, rounding);
+}
+```
+With this change, the attacker can deposit `1e28` tokens (`1e10` times more than the user) and there would be no balance loss. The first depositor would actually get the donation as balance, so they would be quite happy. 
+
 ### Precision
 
 When working with tricky math like we explained before, it's very important that we don't lose precision. At the same
