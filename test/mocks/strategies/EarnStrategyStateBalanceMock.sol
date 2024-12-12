@@ -38,7 +38,10 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
     }
   }
 
-  function deposited(address, uint256 depositAmount) external payable override returns (uint256 assetsDeposited) {
+  function deposit(address token, uint256 depositAmount) external payable override returns (uint256 assetsDeposited) {
+    if (token != Token.NATIVE_TOKEN) {
+      IERC20(token).transferFrom(msg.sender, address(this), depositAmount);
+    }
     return depositAmount;
   }
 

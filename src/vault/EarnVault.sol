@@ -13,7 +13,7 @@ import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol"
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
 import { IEarnNFTDescriptor } from "../interfaces/IEarnNFTDescriptor.sol";
 
-import { Token } from "../libraries/Token.sol";
+import { Token, SafeERC20, IERC20 } from "../libraries/Token.sol";
 import { SharesMath } from "./libraries/SharesMath.sol";
 import { YieldMath } from "./libraries/YieldMath.sol";
 import { StrategyId } from "../types/StrategyId.sol";
@@ -27,6 +27,7 @@ import { UpdateAction } from "./types/UpdateAction.sol";
 contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using Math for uint256;
   using Token for address;
+  using SafeERC20 for IERC20;
   using PositionDataLibrary for mapping(uint256 => PositionData);
   using YieldDataForTokenLibrary for mapping(bytes32 => YieldDataForToken);
   using YieldDataForTokenLibrary for mapping(bytes32 => YieldLossDataForToken);
@@ -577,8 +578,14 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       revert ZeroAmountDeposit();
     }
 
-    depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositedAmount });
-    assetsDeposited = strategy.deposited(depositToken, depositedAmount);
+    uint256 value;
+    if (depositToken == Token.NATIVE_TOKEN) {
+      value = depositedAmount;
+    } else {
+      IERC20(depositToken).transferFrom(msg.sender, address(this), depositedAmount);
+      IERC20(depositToken).forceApprove(address(strategy), depositedAmount);
+    }
+    assetsDeposited = strategy.deposit{ value: value }(depositToken, depositedAmount);
 
     uint256[] memory deposits = new uint256[](tokens.length);
     deposits[0] = assetsDeposited;
