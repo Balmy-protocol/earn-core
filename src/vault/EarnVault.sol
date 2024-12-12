@@ -47,7 +47,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   // solhint-disable-next-line var-name-mixedcase
   IEarnNFTDescriptor public immutable NFT_DESCRIPTOR;
   // Note: while this could (and should) be constant, we won't mark it as such because we are having contract size
-  // issues
+  //       issues. This value will only be read during pause/unpause, so the cost will only be paid by an admin
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   bytes32 public PAUSE_ROLE = keccak256("PAUSE_ROLE");
