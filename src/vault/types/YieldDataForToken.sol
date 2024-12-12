@@ -17,8 +17,6 @@ library YieldDataForTokenLibrary {
   using CustomUintSizeChecks for uint256;
   using SafeCast for uint256;
 
-  YieldDataForToken private constant EMPTY_DATA = YieldDataForToken.wrap(0);
-
   function read(
     mapping(bytes32 => YieldDataForToken) storage yieldData,
     uint256 positionId,
@@ -185,10 +183,6 @@ library YieldDataForTokenLibrary {
       newLossAccum: newLossAccum,
       newCompleteLossEvents: newCompleteLossEvents
     });
-  }
-
-  function clear(mapping(bytes32 => YieldDataForToken) storage yieldData, uint256 positionId, address token) internal {
-    yieldData[_keyFrom(positionId, token)] = EMPTY_DATA;
   }
 
   function _decode(YieldDataForToken encoded)

@@ -34,20 +34,23 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
-  bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
-  /// @inheritdoc IEarnVault
   // slither-disable-next-line uninitialized-state
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
   // slither-disable-next-line uninitialized-state
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
-  // slither-disable-start naming-convention
+  // slither-disable-start naming-convention,constable-states
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   IEarnNFTDescriptor public immutable NFT_DESCRIPTOR;
+  // Note: while this could (and should) be constant, we won't mark it as such because we are having contract size
+  // issues
+  /// @inheritdoc IEarnVault
+  // solhint-disable-next-line var-name-mixedcase
+  bytes32 public PAUSE_ROLE = keccak256("PAUSE_ROLE");
 
   // Stores total amount of shares per strategy
   mapping(StrategyId strategyId => uint256 totalShares) internal _totalSharesInStrategy;
@@ -61,7 +64,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   mapping(bytes32 key => YieldDataForToken yieldData) internal _positionYieldData;
   // Stores relevant data for a given position in the strategy, in the context of a specific reward token loss
   mapping(bytes32 key => YieldLossDataForToken positionLossAccum) internal _positionYieldLossData;
-  // slither-disable-end naming-convention
+  // slither-disable-end naming-convention,constable-states
 
   constructor(
     IEarnStrategyRegistry strategyRegistry,
@@ -153,8 +156,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
 
   /// @inheritdoc IERC165
   function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
-    return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
-      || interfaceId == type(IEarnVault).interfaceId;
+    return ERC721.supportsInterface(interfaceId) || interfaceId == type(IEarnVault).interfaceId;
   }
 
   /// @inheritdoc IEarnVault
@@ -331,13 +333,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     virtual
     onlyWithPermission(positionId, WITHDRAW_PERMISSION)
     nonReentrant
-    returns (
-      address[] memory tokens,
-      uint256[] memory balanceChanges,
-      address[] memory actualWithdrawnTokens,
-      uint256[] memory actualWithdrawnAmounts,
-      bytes memory result
-    )
+    returns (address[] memory, uint256[] memory, address[] memory, uint256[] memory, bytes memory)
   {
     (
       uint256 positionAssetBalance,
@@ -346,12 +342,17 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       IEarnStrategy strategy,
       uint256 totalShares,
       uint256 positionShares,
-      address[] memory tokens_,
+      address[] memory tokens,
       uint256[] memory balancesBeforeUpdate
     ) = _loadCurrentState(positionId);
 
     // slither-disable-next-line reentrancy-no-eth
-    (balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result) = strategy.specialWithdraw({
+    (
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
+      bytes memory result
+    ) = strategy.specialWithdraw({
       positionId: positionId,
       withdrawalCode: withdrawalCode,
       toWithdraw: toWithdraw,
@@ -367,7 +368,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       totalShares: totalShares,
       positionShares: positionShares,
       positionAssetBalanceBeforeUpdate: positionAssetBalance,
-      tokens: tokens_,
+      tokens: tokens,
       calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
       updateAmounts: balanceChanges,
@@ -375,11 +376,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       action: UpdateAction.WITHDRAW
     });
 
-    tokens = tokens_;
-
     emit PositionWithdrawnSpecially(
       positionId, tokens, balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result, recipient
     );
+
+    return (tokens, balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result);
   }
 
   /// @inheritdoc IEarnVault
@@ -544,10 +545,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         revert InvalidWithdrawInput();
       }
       uint256 balance = i == 0 ? positionAssetBalance : calculatedData[i - 1].positionBalance;
-      if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
+      uint256 toWithdraw = intendedWithdraw[i];
+      if (toWithdraw != type(uint256).max && balance < toWithdraw) {
         revert InsufficientFunds();
       }
-      withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
+      withdrawn[i] = Math.min(balance, toWithdraw);
     }
   }
 
@@ -578,13 +580,14 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       revert ZeroAmountDeposit();
     }
 
-    uint256 value;
+    uint256 value = 0;
     if (depositToken == Token.NATIVE_TOKEN) {
       value = depositedAmount;
     } else {
-      IERC20(depositToken).transferFrom(msg.sender, address(this), depositedAmount);
+      IERC20(depositToken).safeTransferFrom(msg.sender, address(this), depositedAmount);
       IERC20(depositToken).forceApprove(address(strategy), depositedAmount);
     }
+    // slither-disable-next-line arbitrary-send-eth
     assetsDeposited = strategy.deposit{ value: value }(depositToken, depositedAmount);
 
     uint256[] memory deposits = new uint256[](tokens.length);
@@ -755,15 +758,16 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     });
     uint256 newPositionBalance = calculatedData.positionBalance - withdrawn;
     if (positionShares == 0 && newPositionBalance == 0) {
-      _positionYieldData.clear({ positionId: positionId, token: token });
-    } else {
-      _positionYieldData.update({
-        positionId: positionId,
-        token: token,
-        newYieldAccum: calculatedData.newStrategyYieldAccum,
-        newBalance: calculatedData.positionBalance - withdrawn,
-        newHadLoss: strategyHadLoss
-      });
+      // If this is the case, then we'll clear the position's yield data
+      calculatedData.newStrategyYieldAccum = 0;
+      strategyHadLoss = false;
     }
+    _positionYieldData.update({
+      positionId: positionId,
+      token: token,
+      newYieldAccum: calculatedData.newStrategyYieldAccum,
+      newBalance: newPositionBalance,
+      newHadLoss: strategyHadLoss
+    });
   }
 }
