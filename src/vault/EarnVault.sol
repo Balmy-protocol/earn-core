@@ -156,7 +156,8 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
 
   /// @inheritdoc IERC165
   function supportsInterface(bytes4 interfaceId) public view override(AccessControl, ERC721, IERC165) returns (bool) {
-    return ERC721.supportsInterface(interfaceId) || interfaceId == type(IEarnVault).interfaceId;
+    return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId)
+      || interfaceId == type(IEarnVault).interfaceId;
   }
 
   /// @inheritdoc IEarnVault
