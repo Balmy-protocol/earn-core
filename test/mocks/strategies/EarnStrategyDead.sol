@@ -32,7 +32,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function deposited(address, uint256) external payable virtual returns (uint256) {
+  function deposit(address, uint256) external payable virtual returns (uint256) {
     revert NotImplemented();
   }
 

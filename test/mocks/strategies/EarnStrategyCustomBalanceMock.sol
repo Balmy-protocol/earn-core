@@ -39,7 +39,7 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     }
   }
 
-  function deposited(address, uint256 depositAmount) public payable override returns (uint256 assetsDeposited) {
+  function deposit(address, uint256 depositAmount) public payable override returns (uint256 assetsDeposited) {
     tokenBalance[this.asset()] += depositAmount.toUint104();
     return depositAmount;
   }

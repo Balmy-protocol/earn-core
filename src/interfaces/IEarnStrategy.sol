@@ -141,13 +141,15 @@ interface IEarnStrategy is IERC165 {
   function fees() external view returns (FeeType[] memory types, uint16[] memory bps);
 
   /**
-   * @notice Notifies the strategy that funds have been deposited into it
-   * @dev Will revert if the given token is not supported
+   * @notice Notifies the strategy that funds are ready to be deposited
+   * @dev The vault will send the funds to the strategy if the deposit token is the native token. If the token is an
+   *      ERC20, then the strategy should take the funds from the vault.
+   *      Will revert if the given token is not supported
    * @param depositToken The token that was deposited
    * @param depositAmount The amount that was deposited
    * @return assetsDeposited How much was deposited, measured in asset
    */
-  function deposited(address depositToken, uint256 depositAmount) external payable returns (uint256 assetsDeposited);
+  function deposit(address depositToken, uint256 depositAmount) external payable returns (uint256 assetsDeposited);
 
   /**
    * @notice Executes a withdraw, for the given tokens and amounts. If a token only supports delayed withdrawals,

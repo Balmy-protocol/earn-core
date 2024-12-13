@@ -13,7 +13,7 @@ import { IEarnVault, IEarnStrategyRegistry } from "../interfaces/IEarnVault.sol"
 import { IEarnStrategy } from "../interfaces/IEarnStrategy.sol";
 import { IEarnNFTDescriptor } from "../interfaces/IEarnNFTDescriptor.sol";
 
-import { Token } from "../libraries/Token.sol";
+import { Token, SafeERC20, IERC20 } from "../libraries/Token.sol";
 import { SharesMath } from "./libraries/SharesMath.sol";
 import { YieldMath } from "./libraries/YieldMath.sol";
 import { StrategyId } from "../types/StrategyId.sol";
@@ -27,6 +27,7 @@ import { UpdateAction } from "./types/UpdateAction.sol";
 contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, IEarnVault {
   using Math for uint256;
   using Token for address;
+  using SafeERC20 for IERC20;
   using PositionDataLibrary for mapping(uint256 => PositionData);
   using YieldDataForTokenLibrary for mapping(bytes32 => YieldDataForToken);
   using YieldDataForTokenLibrary for mapping(bytes32 => YieldLossDataForToken);
@@ -107,47 +108,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   /// @inheritdoc IEarnVault
   function paused() public view override(IEarnVault, Pausable) returns (bool) {
     return super.paused();
-  }
-
-  function getStrategyYieldData(StrategyId strategyId)
-    external
-    view
-    returns (
-      uint256 totalShares,
-      address[] memory tokens,
-      YieldDataForToken[] memory yieldData,
-      YieldLossDataForToken[] memory yieldLossData
-    )
-  {
-    totalShares = _totalSharesInStrategy[strategyId];
-    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
-    yieldData = new YieldDataForToken[](tokens.length - 1);
-    yieldLossData = new YieldLossDataForToken[](tokens.length - 1);
-    for (uint256 i = 1; i < tokens.length; ++i) {
-      yieldData[i - 1] = _strategyYieldData.readRaw(strategyId, tokens[i]);
-      yieldLossData[i - 1] = _strategyYieldLossData.readRaw(strategyId, tokens[i]);
-    }
-  }
-
-  function getPositionYieldData(uint256 positionId)
-    external
-    view
-    returns (
-      StrategyId strategyId,
-      uint256 positionShares,
-      address[] memory tokens,
-      YieldDataForToken[] memory yieldData,
-      YieldLossDataForToken[] memory yieldLossData
-    )
-  {
-    (strategyId, positionShares) = _positions.read(positionId);
-    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
-    yieldData = new YieldDataForToken[](tokens.length - 1);
-    yieldLossData = new YieldLossDataForToken[](tokens.length - 1);
-    for (uint256 i = 1; i < tokens.length; ++i) {
-      yieldData[i - 1] = _positionYieldData.readRaw(positionId, tokens[i]);
-      yieldLossData[i - 1] = _positionYieldLossData.readRaw(positionId, tokens[i]);
-    }
   }
 
   /// @inheritdoc IERC165
@@ -330,13 +290,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     virtual
     onlyWithPermission(positionId, WITHDRAW_PERMISSION)
     nonReentrant
-    returns (
-      address[] memory tokens,
-      uint256[] memory balanceChanges,
-      address[] memory actualWithdrawnTokens,
-      uint256[] memory actualWithdrawnAmounts,
-      bytes memory result
-    )
+    returns (address[] memory, uint256[] memory, address[] memory, uint256[] memory, bytes memory)
   {
     (
       uint256 positionAssetBalance,
@@ -345,12 +299,17 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       IEarnStrategy strategy,
       uint256 totalShares,
       uint256 positionShares,
-      address[] memory tokens_,
+      address[] memory tokens,
       uint256[] memory balancesBeforeUpdate
     ) = _loadCurrentState(positionId);
 
     // slither-disable-next-line reentrancy-no-eth
-    (balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result) = strategy.specialWithdraw({
+    (
+      uint256[] memory balanceChanges,
+      address[] memory actualWithdrawnTokens,
+      uint256[] memory actualWithdrawnAmounts,
+      bytes memory result
+    ) = strategy.specialWithdraw({
       positionId: positionId,
       withdrawalCode: withdrawalCode,
       toWithdraw: toWithdraw,
@@ -366,7 +325,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       totalShares: totalShares,
       positionShares: positionShares,
       positionAssetBalanceBeforeUpdate: positionAssetBalance,
-      tokens: tokens_,
+      tokens: tokens,
       calculatedData: calculatedData,
       balancesBeforeUpdate: balancesBeforeUpdate,
       updateAmounts: balanceChanges,
@@ -374,11 +333,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       action: UpdateAction.WITHDRAW
     });
 
-    tokens = tokens_;
-
     emit PositionWithdrawnSpecially(
       positionId, tokens, balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result, recipient
     );
+
+    return (tokens, balanceChanges, actualWithdrawnTokens, actualWithdrawnAmounts, result);
   }
 
   /// @inheritdoc IEarnVault
@@ -543,10 +502,11 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         revert InvalidWithdrawInput();
       }
       uint256 balance = i == 0 ? positionAssetBalance : calculatedData[i - 1].positionBalance;
-      if (intendedWithdraw[i] != type(uint256).max && balance < intendedWithdraw[i]) {
+      uint256 toWithdraw = intendedWithdraw[i];
+      if (toWithdraw != type(uint256).max && balance < toWithdraw) {
         revert InsufficientFunds();
       }
-      withdrawn[i] = Math.min(balance, intendedWithdraw[i]);
+      withdrawn[i] = Math.min(balance, toWithdraw);
     }
   }
 
@@ -577,8 +537,15 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       revert ZeroAmountDeposit();
     }
 
-    depositToken.transferIfNativeOrTransferFromIfERC20({ recipient: address(strategy), amount: depositedAmount });
-    assetsDeposited = strategy.deposited(depositToken, depositedAmount);
+    uint256 value = 0;
+    if (depositToken == Token.NATIVE_TOKEN) {
+      value = depositedAmount;
+    } else {
+      IERC20(depositToken).safeTransferFrom(msg.sender, address(this), depositedAmount);
+      IERC20(depositToken).forceApprove(address(strategy), depositedAmount);
+    }
+    // slither-disable-next-line arbitrary-send-eth
+    assetsDeposited = strategy.deposit{ value: value }(depositToken, depositedAmount);
 
     uint256[] memory deposits = new uint256[](tokens.length);
     deposits[0] = assetsDeposited;
@@ -754,7 +721,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         positionId: positionId,
         token: token,
         newYieldAccum: calculatedData.newStrategyYieldAccum,
-        newBalance: calculatedData.positionBalance - withdrawn,
+        newBalance: newPositionBalance,
         newHadLoss: strategyHadLoss
       });
     }

@@ -216,9 +216,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
 
     vm.expectCall(
-      address(strategy),
-      abi.encodeWithSelector(IEarnStrategy.deposited.selector, Token.NATIVE_TOKEN, amountToDeposit),
-      1
+      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposit.selector, Token.NATIVE_TOKEN, amountToDeposit), 1
     );
     vm.expectEmit();
     emit PositionCreated(
@@ -261,7 +259,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     vm.expectCall(
-      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
+      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposit.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
     emit PositionCreated(
@@ -306,7 +304,7 @@ contract EarnVaultTest is PRBTest, StdUtils {
       strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(address(erc20)));
 
     vm.expectCall(
-      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposited.selector, address(erc20), amountToDeposit), 1
+      address(strategy), abi.encodeWithSelector(IEarnStrategy.deposit.selector, address(erc20), amountToDeposit), 1
     );
     vm.expectEmit();
     emit PositionCreated(
