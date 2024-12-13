@@ -90,6 +90,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   function position(uint256 positionId)
     external
     view
+    nonReentrantView
     returns (address[] memory, uint256[] memory, StrategyId, IEarnStrategy)
   {
     (
@@ -725,5 +726,12 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
         newHadLoss: strategyHadLoss
       });
     }
+  }
+
+  modifier nonReentrantView() {
+    if (_reentrancyGuardEntered()) {
+      revert ReentrancyGuardReentrantCall();
+    }
+    _;
   }
 }
