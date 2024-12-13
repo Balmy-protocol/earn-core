@@ -1704,6 +1704,30 @@ contract EarnVaultTest is PRBTest, StdUtils {
     assertApproxEqAbs(rewards[0] - intendendWithdraw[1], balances1[1], 1);
   }
 
+  function test_position_readOnlyReentrancy() public {
+    (StrategyId strategyId,) = strategyRegistry.deployStateStrategy(CommonUtils.arrayOf(Token.NATIVE_TOKEN));
+
+    ReentrancyAttackContract reentrancyAttacker = new ReentrancyAttackContract(vault);
+
+    // Create a new position, with the reentrancy attacker as owner
+    (uint256 positionId,) = vault.createPosition{ value: 1 ether }(
+      strategyId,
+      Token.NATIVE_TOKEN,
+      1 ether,
+      address(reentrancyAttacker),
+      PermissionUtils.buildEmptyPermissionSet(),
+      "",
+      ""
+    );
+
+    // Make sure contract can call position at any time
+    reentrancyAttacker.assertCanCallPosition(positionId);
+
+    // Make sure read-only reentrancy reverts
+    vm.expectRevert();
+    reentrancyAttacker.readOnlyReentrancyAttack(positionId);
+  }
+
   function takeSnapshotAndAssertBalances(
     uint256[][] memory balances,
     uint256[] memory positionIds,
@@ -1788,5 +1812,28 @@ library InternalUtils {
       }
     }
     return false;
+  }
+}
+
+contract ReentrancyAttackContract {
+  IEarnVault _vault;
+  uint256 private _positionId;
+
+  constructor(IEarnVault vault) {
+    _vault = vault;
+  }
+
+  function assertCanCallPosition(uint256 positionId) public view {
+    _vault.position(positionId);
+  }
+
+  function readOnlyReentrancyAttack(uint256 positionId) public {
+    _positionId = positionId;
+    (address[] memory tokens,,,) = _vault.position(positionId);
+    _vault.withdraw(positionId, tokens, CommonUtils.arrayOf(1 ether), address(this));
+  }
+
+  receive() external payable {
+    _vault.position(_positionId);
   }
 }
