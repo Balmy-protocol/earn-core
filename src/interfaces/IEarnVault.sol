@@ -59,6 +59,13 @@ interface IEarnVault is INFTPermissions {
   );
 
   /**
+   * @notice Returns the role in charge of pausing/unpausing deposits
+   * @return The role in charge of pausing/unpausing deposits
+   */
+  // slither-disable-next-line naming-convention
+  function PAUSE_ROLE() external pure returns (bytes32);
+
+  /**
    * @notice Returns the id of the "increase" permission
    * @return The id of the "increase" permission
    */
@@ -71,13 +78,6 @@ interface IEarnVault is INFTPermissions {
    */
   // slither-disable-next-line naming-convention
   function WITHDRAW_PERMISSION() external pure returns (Permission);
-
-  /**
-   * @notice Returns the role in charge of pausing/unpausing deposits
-   * @return The role in charge of pausing/unpausing deposits
-   */
-  // slither-disable-next-line naming-convention
-  function PAUSE_ROLE() external view returns (bytes32);
 
   /**
    * @notice Returns the address of the strategy registry

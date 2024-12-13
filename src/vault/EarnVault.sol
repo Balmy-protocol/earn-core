@@ -34,23 +34,20 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   using CalculatedDataLibrary for CalculatedDataForToken[];
 
   /// @inheritdoc IEarnVault
+  bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
+  /// @inheritdoc IEarnVault
   // slither-disable-next-line uninitialized-state
   Permission public constant INCREASE_PERMISSION = Permission.wrap(0);
   /// @inheritdoc IEarnVault
   // slither-disable-next-line uninitialized-state
   Permission public constant WITHDRAW_PERMISSION = Permission.wrap(1);
-  // slither-disable-start naming-convention,constable-states
+  // slither-disable-start naming-convention
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   IEarnStrategyRegistry public immutable STRATEGY_REGISTRY;
   /// @inheritdoc IEarnVault
   // solhint-disable-next-line var-name-mixedcase
   IEarnNFTDescriptor public immutable NFT_DESCRIPTOR;
-  // Note: while this could (and should) be constant, we won't mark it as such because we are having contract size
-  //       issues. This value will only be read during pause/unpause, so the cost will only be paid by an admin
-  /// @inheritdoc IEarnVault
-  // solhint-disable-next-line var-name-mixedcase
-  bytes32 public PAUSE_ROLE = keccak256("PAUSE_ROLE");
 
   // Stores total amount of shares per strategy
   mapping(StrategyId strategyId => uint256 totalShares) internal _totalSharesInStrategy;
@@ -64,7 +61,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   mapping(bytes32 key => YieldDataForToken yieldData) internal _positionYieldData;
   // Stores relevant data for a given position in the strategy, in the context of a specific reward token loss
   mapping(bytes32 key => YieldLossDataForToken positionLossAccum) internal _positionYieldLossData;
-  // slither-disable-end naming-convention,constable-states
+  // slither-disable-end naming-convention
 
   constructor(
     IEarnStrategyRegistry strategyRegistry,
@@ -111,47 +108,6 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
   /// @inheritdoc IEarnVault
   function paused() public view override(IEarnVault, Pausable) returns (bool) {
     return super.paused();
-  }
-
-  function getStrategyYieldData(StrategyId strategyId)
-    external
-    view
-    returns (
-      uint256 totalShares,
-      address[] memory tokens,
-      YieldDataForToken[] memory yieldData,
-      YieldLossDataForToken[] memory yieldLossData
-    )
-  {
-    totalShares = _totalSharesInStrategy[strategyId];
-    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
-    yieldData = new YieldDataForToken[](tokens.length - 1);
-    yieldLossData = new YieldLossDataForToken[](tokens.length - 1);
-    for (uint256 i = 1; i < tokens.length; ++i) {
-      yieldData[i - 1] = _strategyYieldData.readRaw(strategyId, tokens[i]);
-      yieldLossData[i - 1] = _strategyYieldLossData.readRaw(strategyId, tokens[i]);
-    }
-  }
-
-  function getPositionYieldData(uint256 positionId)
-    external
-    view
-    returns (
-      StrategyId strategyId,
-      uint256 positionShares,
-      address[] memory tokens,
-      YieldDataForToken[] memory yieldData,
-      YieldLossDataForToken[] memory yieldLossData
-    )
-  {
-    (strategyId, positionShares) = _positions.read(positionId);
-    tokens = STRATEGY_REGISTRY.getStrategy(strategyId).allTokens();
-    yieldData = new YieldDataForToken[](tokens.length - 1);
-    yieldLossData = new YieldLossDataForToken[](tokens.length - 1);
-    for (uint256 i = 1; i < tokens.length; ++i) {
-      yieldData[i - 1] = _positionYieldData.readRaw(positionId, tokens[i]);
-      yieldLossData[i - 1] = _positionYieldLossData.readRaw(positionId, tokens[i]);
-    }
   }
 
   /// @inheritdoc IERC165
@@ -759,16 +715,15 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     });
     uint256 newPositionBalance = calculatedData.positionBalance - withdrawn;
     if (positionShares == 0 && newPositionBalance == 0) {
-      // If this is the case, then we'll clear the position's yield data
-      calculatedData.newStrategyYieldAccum = 0;
-      strategyHadLoss = false;
+      _positionYieldData.clear({ positionId: positionId, token: token });
+    } else {
+      _positionYieldData.update({
+        positionId: positionId,
+        token: token,
+        newYieldAccum: calculatedData.newStrategyYieldAccum,
+        newBalance: newPositionBalance,
+        newHadLoss: strategyHadLoss
+      });
     }
-    _positionYieldData.update({
-      positionId: positionId,
-      token: token,
-      newYieldAccum: calculatedData.newStrategyYieldAccum,
-      newBalance: newPositionBalance,
-      newHadLoss: strategyHadLoss
-    });
   }
 }

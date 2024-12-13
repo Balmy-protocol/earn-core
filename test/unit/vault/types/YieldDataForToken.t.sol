@@ -59,4 +59,25 @@ contract YieldDataForTokenTest is PRBTest, StdUtils {
     assertEq(lastRecordedTotalBalance, totalBalance);
     assertEq(positionHadLoss, _positionHadLoss);
   }
+
+  function test_clear() public {
+    // Set some values
+    _positionYieldData.update({
+      positionId: POSITION_ID,
+      token: TOKEN,
+      newYieldAccum: 2 ** 151 - 1,
+      newBalance: 2 ** 104 - 1,
+      newHadLoss: true
+    });
+
+    // Clear
+    _positionYieldData.clear({ positionId: POSITION_ID, token: TOKEN });
+
+    // Assert it was cleared
+    (uint256 yieldAccumulator, uint256 lastRecordedTotalBalance, bool positionHadLoss) =
+      _positionYieldData.read(POSITION_ID, TOKEN);
+    assertEq(yieldAccumulator, 0);
+    assertEq(lastRecordedTotalBalance, 0);
+    assertFalse(positionHadLoss);
+  }
 }
