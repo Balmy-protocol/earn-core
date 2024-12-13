@@ -69,6 +69,10 @@
   dependencies:
     antlr4ts "^0.5.0-alpha.4"
 
+"@solmate@github:transmissions11/solmate#e0e9ff05d8aa5c7c48465511f85a6efdf5d5c30d":
+  version "6.2.0"
+  resolved "https://codeload.github.com/transmissions11/solmate/tar.gz/e0e9ff05d8aa5c7c48465511f85a6efdf5d5c30d"
+
 "@types/node@22.7.5":
   version "22.7.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.7.5.tgz#cfde981727a7ab3611a481510b473ae54442b92b"

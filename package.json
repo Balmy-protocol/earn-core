@@ -10,6 +10,7 @@
     "@balmy/nft-permissions": "github:balmy-protocol/nft-permissions#1e75f88d0da6e93f2afbd1069a8c37553f448638",
     "@openzeppelin": "github:OpenZeppelin/openzeppelin-contracts#bcdfa848a6abb37216df861573d9576636e77824",
     "@forta/firewall": "github:forta-network/forta-firewall-contracts#ee4fa2f6fe5c3a407843c2928750b6f2b5502ca3",
+    "@solmate": "github:transmissions11/solmate#e0e9ff05d8aa5c7c48465511f85a6efdf5d5c30d",
     "@prb/test": "github:PaulRBerg/prb-test#8d76ad63d1bfa0b16bb880cfe4620a9e7e6aaa19",
     "ds-test": "github:dapphub/ds-test",
     "forge-std": "github:foundry-rs/forge-std#1d9650e951204a0ddce9ff89c32f1997984cef4d",
