@@ -1816,7 +1816,7 @@ library InternalUtils {
 }
 
 contract ReentrancyAttackContract {
-  IEarnVault _vault;
+  IEarnVault private _vault;
   uint256 private _positionId;
 
   constructor(IEarnVault vault) {
