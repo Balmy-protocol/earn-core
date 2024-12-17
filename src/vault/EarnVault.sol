@@ -568,6 +568,8 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     });
   }
 
+  // Note: this function (and the ones called by it) should not modify the arrays passed as parameter, since they are
+  //       could be referencing the same array values. They should be treated as read-only.
   function _updateAccounting(
     uint256 positionId,
     StrategyId strategyId,
