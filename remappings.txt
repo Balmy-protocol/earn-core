@@ -7,3 +7,4 @@ src/=src/
 @balmy/nft-permissions/=node_modules/@balmy/nft-permissions/src/
 @balmy/nft-permissions-test/=node_modules/@balmy/nft-permissions/test/
 @solmate/=node_modules/@solmate/src/
+createx-forge/=node_modules/createx-forge
