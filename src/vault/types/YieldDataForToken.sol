@@ -68,7 +68,7 @@ library YieldDataForTokenLibrary {
   }
 
   function readRaw(
-    mapping(bytes32 => YieldDataForToken) storage yieldLossData,
+    mapping(bytes32 => YieldDataForToken) storage yieldData,
     uint256 positionId,
     address token
   )
@@ -76,11 +76,11 @@ library YieldDataForTokenLibrary {
     view
     returns (YieldDataForToken)
   {
-    return _readRaw(yieldLossData, _keyFrom(positionId, token));
+    return _readRaw(yieldData, _keyFrom(positionId, token));
   }
 
   function readRaw(
-    mapping(bytes32 => YieldDataForToken) storage yieldLossData,
+    mapping(bytes32 => YieldDataForToken) storage yieldData,
     StrategyId strategyId,
     address token
   )
@@ -88,7 +88,7 @@ library YieldDataForTokenLibrary {
     view
     returns (YieldDataForToken raw)
   {
-    return _readRaw(yieldLossData, _keyFrom(strategyId, token));
+    return _readRaw(yieldData, _keyFrom(strategyId, token));
   }
 
   function readRaw(
