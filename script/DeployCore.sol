@@ -14,11 +14,24 @@ import { BaseDeployCore } from "./BaseDeployCore.sol";
 import { console2 } from "forge-std/console2.sol";
 
 contract DeployCore is BaseDeployCore {
-  function run() external {
+  function run() external virtual {
     vm.startBroadcast();
+    deployStrategyRegistry();
+    deployNFTDescriptor();
+    deployForta();
+    deployVault();
+
+    vm.stopBroadcast();
+  }
+
+  function deployStrategyRegistry() public returns (address) {
     address strategyRegistry =
       deployContract("V1_STRATEGY_REGISTRY", abi.encodePacked(type(EarnStrategyRegistry).creationCode));
     console2.log("Strategy registry:", strategyRegistry);
+    return strategyRegistry;
+  }
+
+  function deployNFTDescriptor() public returns (address) {
     address nftDescriptor = deployContract(
       "V1_NFT_DESCRIPTOR",
       abi.encodePacked(
@@ -26,9 +39,27 @@ contract DeployCore is BaseDeployCore {
       )
     );
     console2.log("NFT descriptor:", nftDescriptor);
-    address[] memory initialAdmins = new address[](1);
-    initialAdmins[0] = admin;
+    return nftDescriptor;
+  }
 
+  function deployVault() public returns (address) {
+    address strategyRegistry = getDeployedAddress("V1_STRATEGY_REGISTRY");
+    address nftDescriptor = getDeployedAddress("V1_NFT_DESCRIPTOR");
+    address firewallRouter = getDeployedAddress("V1_FROUTER");
+    address[] memory initialPauseAdmins = new address[](1);
+    initialPauseAdmins[0] = governor;
+    address vault = deployContract(
+      "V1_VAULT",
+      abi.encodePacked(
+        type(FirewalledEarnVault).creationCode,
+        abi.encode(IEarnStrategyRegistry(strategyRegistry), admin, initialPauseAdmins, nftDescriptor, firewallRouter)
+      )
+    );
+    console2.log("Vault:", vault);
+    return vault;
+  }
+
+  function deployForta() public {
     // FORTA
     bytes32 attesterControllerId = bytes32("3");
     ISecurityValidator validator = ISecurityValidator(0x4d4996b53332f2c64dc6699878408b4B5ec80976);
@@ -42,25 +73,12 @@ contract DeployCore is BaseDeployCore {
         abi.encode(validator, ICheckpointHook(address(0)), attesterControllerId, firewallAccess)
       )
     );
-    address firewallRouter = deployContract(
+    deployContract(
       "V1_FROUTER",
       abi.encodePacked(
         type(FirewallRouter).creationCode,
         abi.encode(ExternalFirewall(externalFirewall), FirewallAccess(firewallAccess))
       )
     );
-
-    address[] memory initialPauseAdmins = new address[](1);
-    initialPauseAdmins[0] = governor;
-    address vault = deployContract(
-      "V1_VAULT",
-      abi.encodePacked(
-        type(FirewalledEarnVault).creationCode,
-        abi.encode(IEarnStrategyRegistry(strategyRegistry), admin, initialPauseAdmins, nftDescriptor, firewallRouter)
-      )
-    );
-    console2.log("Vault:", vault);
-
-    vm.stopBroadcast();
   }
 }
