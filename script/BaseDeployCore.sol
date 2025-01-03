@@ -65,31 +65,19 @@ contract BaseDeployCore is CreateXScript {
     } else if (block.chainid == 56) {
       // BNB
       return 0x10a5D3b1C0F3639CfB0E554F29c3eFFD912d0C64;
-    } else if (block.chainid == 84_531) {
-      // Base Goerli
-      return 0xD5b9C9c14b3a535C41D385007309DB5d0a6cF57c;
     } else if (block.chainid == 8453) {
       // Base
       return 0x58EDd2E9bCC7eFa5205d5a73Efa160A05dbAC95D;
     } else if (block.chainid == 100) {
       // Gnosis
       return 0xFD7598B46aC9e7B9201B06FF014F22085e155B60;
-    } else if (block.chainid == 122) {
-      // Fuse
-      return 0x5C4fE9D48b6B8938206B47343329572064fdebe2;
     } else if (block.chainid == 1284) {
       // Moonbeam
       return 0xa1667E34fc9a602C38E19246176D28831c5794EB;
-    } else if (block.chainid == 42_220) {
-      // Celo
-      return 0x94F96A6A7bF34e85bfdfeE13987001CAE3A47EEB;
     } else if (block.chainid == 43_114) {
       // Avalanche
       return 0xcD736597565fcdcF85cb9f0b6759bF2E4eab38D2;
-    } else if (block.chainid == 59_144) {
-      // Linea
-      return 0xfCCCba57aa4a51026E3b50ecB377Fc7382aCD9E2;
     }
-    return governor;
+    revert("Unsupported chain");
   }
 }
