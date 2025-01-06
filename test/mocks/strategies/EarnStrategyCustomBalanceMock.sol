@@ -44,20 +44,10 @@ contract EarnStrategyCustomBalanceMock is EarnStrategyDead {
     return depositAmount;
   }
 
-  function withdraw(
-    uint256,
-    address[] memory tokens,
-    uint256[] memory toWithdraw,
-    address
-  )
-    external
-    override
-    returns (WithdrawalType[] memory)
-  {
+  function withdraw(uint256, address[] memory tokens, uint256[] memory toWithdraw, address) external override {
     for (uint256 i; i < tokens.length; i++) {
       tokenBalance[tokens[i]] -= toWithdraw[i].toUint104();
     }
-    return new WithdrawalType[](tokens.length);
   }
 
   function specialWithdraw(

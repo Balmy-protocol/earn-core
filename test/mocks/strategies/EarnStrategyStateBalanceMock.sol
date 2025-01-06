@@ -61,7 +61,6 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
   )
     external
     override
-    returns (WithdrawalType[] memory)
   {
     for (uint256 i; i < tokens_.length; i++) {
       if (tokens_[i] == Token.NATIVE_TOKEN) {
@@ -70,7 +69,6 @@ contract EarnStrategyStateBalanceMock is EarnStrategyDead {
         IERC20(tokens_[i]).transfer(recipient, toWithdraw[i]);
       }
     }
-    return withdrawalTypes;
   }
 
   function specialWithdraw(

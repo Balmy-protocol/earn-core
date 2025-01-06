@@ -174,7 +174,6 @@ interface IEarnVault is INFTPermissions {
    *                         a delayed withdrawal will be started
    * @param recipient The account that will receive the withdrawn funds
    * @return withdrawn How much was actually withdrawn from each token
-   * @return withdrawalTypes The type of withdrawal for each token
    */
   function withdraw(
     uint256 positionId,
@@ -184,7 +183,7 @@ interface IEarnVault is INFTPermissions {
   )
     external
     payable
-    returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes);
+    returns (uint256[] memory withdrawn);
 
   /**
    * @notice Performs a special withdrawal against the strategy. This is meant to be used be used in special cases, like
