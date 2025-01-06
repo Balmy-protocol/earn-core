@@ -2,7 +2,6 @@
 pragma solidity >=0.8.8;
 
 import { IERC165 } from "@openzeppelin/contracts/interfaces/IERC165.sol";
-import { IEarnStrategyRegistry } from "./IEarnStrategyRegistry.sol";
 import { IEarnVault } from "./IEarnVault.sol";
 import { StrategyId } from "../types/StrategyId.sol";
 import { SpecialWithdrawalCode } from "../types/SpecialWithdrawals.sol";
@@ -57,22 +56,10 @@ interface IEarnStrategy is IERC165 {
   function vault() external view returns (IEarnVault);
 
   /**
-   * @notice Returns the address to Earn's strategy registry
-   * @return Earn's strategy registry address
-   */
-  function registry() external view returns (IEarnStrategyRegistry);
-
-  /**
    * @notice Returns the asset this strategy will use to generate yield
    * @return The asset this strategy will use to generate yield
    */
   function asset() external view returns (address);
-
-  /**
-   * @notice Returns the strategy's description
-   * @return The strategy's description
-   */
-  function description() external view returns (string memory);
 
   /**
    * @notice Returns all tokens under the strategy's control
@@ -87,13 +74,6 @@ interface IEarnStrategy is IERC165 {
    * @return The types of withdrawals for each token
    */
   function supportedWithdrawals() external view returns (WithdrawalType[] memory);
-
-  /**
-   * @notice Returns whether a specific token can be used to deposit funds into the strategy
-   * @param depositToken The token to check
-   * @return Whether the given token can be used to deposit funds into the strategy
-   */
-  function isDepositTokenSupported(address depositToken) external view returns (bool);
 
   /**
    * @notice Returns all tokens that can be used  to deposit funds into the strategy
@@ -112,13 +92,6 @@ interface IEarnStrategy is IERC165 {
    * @notice Returns how many tokens are currently under the strategy's control
    */
   function totalBalances() external view returns (address[] memory tokens, uint256[] memory balances);
-
-  /**
-   * @notice Returns whether a specific withdrawal method can be used
-   * @param withdrawalCode The withdrawal method to check
-   * @return Whether the given withdrawal method can be used to withdraw funds
-   */
-  function isSpecialWithdrawalSupported(SpecialWithdrawalCode withdrawalCode) external view returns (bool);
 
   /**
    * @notice Returns all withdrawal methods can be used  to withdraw funds
@@ -159,7 +132,6 @@ interface IEarnStrategy is IERC165 {
    * @param tokens All tokens supported by the strategy, in the same order as in `tokens`
    * @param toWithdraw How much to withdraw from each
    * @param recipient The account that will receive the tokens
-   * @return The types of withdrawals for each token
    */
   function withdraw(
     uint256 positionId,
@@ -167,8 +139,7 @@ interface IEarnStrategy is IERC165 {
     uint256[] memory toWithdraw,
     address recipient
   )
-    external
-    returns (WithdrawalType[] memory);
+    external;
 
   /**
    * @notice Executes a special withdraw

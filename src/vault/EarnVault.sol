@@ -230,7 +230,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
     virtual
     onlyWithPermission(positionId, WITHDRAW_PERMISSION)
     nonReentrant
-    returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes)
+    returns (uint256[] memory withdrawn)
   {
     (
       uint256 positionAssetBalance,
@@ -251,12 +251,7 @@ contract EarnVault is AccessControl, NFTPermissions, Pausable, ReentrancyGuard, 
       _calculateWithdrawnAmount(positionAssetBalance, calculatedData, tokens, tokensToWithdraw, intendedWithdraw);
 
     // slither-disable-next-line reentrancy-no-eth
-    withdrawalTypes = strategy.withdraw({
-      positionId: positionId,
-      tokens: tokensToWithdraw,
-      toWithdraw: withdrawn,
-      recipient: recipient
-    });
+    strategy.withdraw({ positionId: positionId, tokens: tokensToWithdraw, toWithdraw: withdrawn, recipient: recipient });
 
     // slither-disable-next-line unused-return
     (, uint256[] memory balancesAfterUpdate) = strategy.totalBalances();

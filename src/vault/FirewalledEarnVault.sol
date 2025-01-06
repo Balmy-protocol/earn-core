@@ -5,7 +5,6 @@ import {
   IEarnVault,
   EarnVault,
   SpecialWithdrawalCode,
-  IEarnStrategy,
   IEarnStrategyRegistry,
   StrategyId,
   IEarnNFTDescriptor
@@ -73,7 +72,7 @@ contract FirewalledEarnVault is EarnVault, CheckpointExecutor {
     payable
     override
     safeExecution
-    returns (uint256[] memory withdrawn, IEarnStrategy.WithdrawalType[] memory withdrawalTypes)
+    returns (uint256[] memory withdrawn)
   {
     return super.withdraw(positionId, tokensToWithdraw, intendedWithdraw, recipient);
   }

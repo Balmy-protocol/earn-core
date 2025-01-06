@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.22;
 
-import {
-  IEarnStrategy,
-  StrategyId,
-  IEarnVault,
-  IEarnStrategyRegistry,
-  SpecialWithdrawalCode
-} from "../../../src/interfaces/IEarnStrategy.sol";
+import { IEarnStrategy, StrategyId, IEarnVault, SpecialWithdrawalCode } from "../../../src/interfaces/IEarnStrategy.sol";
+import { IEarnStrategyRegistry } from "../../../src/interfaces/IEarnStrategyRegistry.sol";
 
 /// @notice An implementation of IEarnStrategy that always reverts
 contract EarnStrategyDead is IEarnStrategy {
@@ -80,16 +75,7 @@ contract EarnStrategyDead is IEarnStrategy {
     revert NotImplemented();
   }
 
-  function withdraw(
-    uint256,
-    address[] memory,
-    uint256[] memory,
-    address
-  )
-    external
-    virtual
-    returns (WithdrawalType[] memory)
-  {
+  function withdraw(uint256, address[] memory, uint256[] memory, address) external virtual {
     revert NotImplemented();
   }
 
