@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { BaseDeployCore } from "./BaseDeployCore.sol";
+import { BaseDeploy } from "./BaseDeploy.sol";
 import { IEarnStrategyRegistry } from "src/strategy-registry/EarnStrategyRegistry.sol";
 import { FirewalledEarnVault } from "src/vault/FirewalledEarnVault.sol";
 import { console2 } from "forge-std/console2.sol";
 
-contract DeployVault is BaseDeployCore {
+contract DeployVault is BaseDeploy {
   function run() external virtual {
     vm.startBroadcast();
     deployVault();

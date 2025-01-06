@@ -10,13 +10,13 @@ import {
   CHECKPOINT_EXECUTOR_ROLE
 } from "@forta/firewall/FirewallAccess.sol";
 import { Checkpoint, Activation } from "@forta/firewall/interfaces/Checkpoint.sol";
-import { BaseDeployCore } from "./BaseDeployCore.sol";
+import { BaseDeploy } from "./BaseDeploy.sol";
 import { DeployStrategyRegistry } from "./DeployStrategyRegistry.sol";
 import { DeployNFTDescriptor } from "./DeployNFTDescriptor.sol";
 import { DeployForta } from "./DeployForta.sol";
 import { DeployVault } from "./DeployVault.sol";
 
-contract DeployCore is BaseDeployCore, DeployStrategyRegistry, DeployNFTDescriptor, DeployForta, DeployVault {
+contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, DeployForta, DeployVault {
   function run() external override(DeployStrategyRegistry, DeployNFTDescriptor, DeployForta, DeployVault) {
     vm.startBroadcast();
     deployStrategyRegistry();

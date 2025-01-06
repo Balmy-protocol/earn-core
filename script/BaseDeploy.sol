@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import { CreateXScript } from "createx-forge/script/CreateXScript.sol";
 import { console2 } from "forge-std/console2.sol";
 
-contract BaseDeployCore is CreateXScript {
+contract BaseDeploy is CreateXScript {
   address internal governor = vm.envAddress("GOVERNOR");
   address internal admin = getMsig();
 
@@ -50,33 +50,29 @@ contract BaseDeployCore is CreateXScript {
 
   // solhint-disable-next-line code-complexity
   function getMsig() public view returns (address) {
-    if (block.chainid == 1) {
-      // Ethereum
-      return 0xEC864BE26084ba3bbF3cAAcF8F6961A9263319C4;
-    } else if (block.chainid == 10) {
-      // Optimism
-      return 0x308810881807189cAe91950888b2cB73A1CC5920;
-    } else if (block.chainid == 137) {
-      // Polygon
-      return 0xCe9F6991b48970d6c9Ef99Fffb112359584488e3;
-    } else if (block.chainid == 42_161) {
-      // Arbitrum
-      return 0x84F4836e8022765Af9FBCE3Bb2887fD826c668f1;
-    } else if (block.chainid == 56) {
-      // BNB
-      return 0x10a5D3b1C0F3639CfB0E554F29c3eFFD912d0C64;
-    } else if (block.chainid == 8453) {
-      // Base
-      return 0x58EDd2E9bCC7eFa5205d5a73Efa160A05dbAC95D;
-    } else if (block.chainid == 100) {
-      // Gnosis
-      return 0xFD7598B46aC9e7B9201B06FF014F22085e155B60;
-    } else if (block.chainid == 1284) {
-      // Moonbeam
-      return 0xa1667E34fc9a602C38E19246176D28831c5794EB;
-    } else if (block.chainid == 43_114) {
-      // Avalanche
-      return 0xcD736597565fcdcF85cb9f0b6759bF2E4eab38D2;
+    if (
+      block.chainid == 1 // Ethereum
+        || block.chainid == 10 // Optimism
+        || block.chainid == 137 // Polygon
+        || block.chainid == 42_161 // Arbitrum
+        || block.chainid == 56 // BNB
+        || block.chainid == 8453 // Base
+        || block.chainid == 100 // Gnosis
+        || block.chainid == 43_114 // Avalanche
+        || block.chainid == 252 // Fraxtal
+        || block.chainid == 1101 // Polygon zkEVM
+        || block.chainid == 5000 // Mantle
+        || block.chainid == 34_443 // Mode Mainnet
+        || block.chainid == 42_220 // Celo
+        || block.chainid == 59_144 // Linea Mainnet
+        || block.chainid == 81_457 // Blast
+        || block.chainid == 534_352 // Scroll
+        || block.chainid == 7_777_777 // Zora
+        || block.chainid == 1_313_161_554 // Aurora
+        || block.chainid == 196 // X Layer
+        || block.chainid == 480 // Worldchain
+    ) {
+      return 0x0D946b7Fd00c9277c558710693076a592c2be27F;
     }
     revert("Unsupported chain");
   }

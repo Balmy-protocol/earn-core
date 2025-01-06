@@ -2,10 +2,10 @@
 pragma solidity ^0.8.13;
 
 import { EarnNFTDescriptor } from "src/nft-descriptor/EarnNFTDescriptor.sol";
-import { BaseDeployCore } from "./BaseDeployCore.sol";
+import { BaseDeploy } from "./BaseDeploy.sol";
 import { console2 } from "forge-std/console2.sol";
 
-contract DeployNFTDescriptor is BaseDeployCore {
+contract DeployNFTDescriptor is BaseDeploy {
   function run() external virtual {
     vm.startBroadcast();
     deployNFTDescriptor();

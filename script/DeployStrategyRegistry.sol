@@ -2,10 +2,10 @@
 pragma solidity ^0.8.13;
 
 import { EarnStrategyRegistry } from "src/strategy-registry/EarnStrategyRegistry.sol";
-import { BaseDeployCore } from "./BaseDeployCore.sol";
+import { BaseDeploy } from "./BaseDeploy.sol";
 import { console2 } from "forge-std/console2.sol";
 
-contract DeployStrategyRegistry is BaseDeployCore {
+contract DeployStrategyRegistry is BaseDeploy {
   function run() external virtual {
     vm.startBroadcast();
     deployStrategyRegistry();

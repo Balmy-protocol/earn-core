@@ -6,9 +6,9 @@ import { ISecurityValidator } from "@forta/firewall/SecurityValidator.sol";
 import { FirewallRouter } from "@forta/firewall/FirewallRouter.sol";
 import { ExternalFirewall } from "@forta/firewall/ExternalFirewall.sol";
 import { ICheckpointHook } from "@forta/firewall/interfaces/ICheckpointHook.sol";
-import { BaseDeployCore } from "./BaseDeployCore.sol";
+import { BaseDeploy } from "./BaseDeploy.sol";
 
-contract DeployForta is BaseDeployCore {
+contract DeployForta is BaseDeploy {
   function run() external virtual {
     vm.startBroadcast();
     deployForta();
