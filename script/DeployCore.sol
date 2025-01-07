@@ -36,11 +36,11 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     /// will renounce later below
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, msg.sender);
-    
+
     firewallAccess.grantRole(DEFAULT_ADMIN_ROLE, admin);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, admin);
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, admin);
-   
+
     /// let protected contract execute checkpoints on the external firewall
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, vault);
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, firewallRouter);
