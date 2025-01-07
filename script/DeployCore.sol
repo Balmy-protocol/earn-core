@@ -32,10 +32,15 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     FirewallAccess firewallAccess = FirewallAccess(getDeployedAddress("V1_FACCESS"));
     ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V1_FEXTERNAL"));
     address vault = getDeployedAddress("V1_VAULT");
+    bytes32 DEFAULT_ADMIN_ROLE = firewallAccess.DEFAULT_ADMIN_ROLE();
 
     /// will renounce later below
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, msg.sender);
+
+    firewallAccess.grantRole(DEFAULT_ADMIN_ROLE, admin);
+    firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, admin);
+    firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, admin);
 
     /// let protected contract execute checkpoints on the external firewall
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, vault);
@@ -51,5 +56,6 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
 
     firewallAccess.renounceRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.renounceRole(PROTOCOL_ADMIN_ROLE, msg.sender);
+    firewallAccess.renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 }
