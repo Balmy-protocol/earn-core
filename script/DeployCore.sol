@@ -7,8 +7,7 @@ import {
   FirewallAccess,
   FIREWALL_ADMIN_ROLE,
   PROTOCOL_ADMIN_ROLE,
-  CHECKPOINT_EXECUTOR_ROLE,
-  DEFAULT_ADMIN_ROLE
+  CHECKPOINT_EXECUTOR_ROLE
 } from "@forta/firewall/FirewallAccess.sol";
 import { Checkpoint, Activation } from "@forta/firewall/interfaces/Checkpoint.sol";
 import { BaseDeploy } from "./BaseDeploy.sol";
@@ -33,7 +32,8 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     FirewallAccess firewallAccess = FirewallAccess(getDeployedAddress("V1_FACCESS"));
     ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V1_FEXTERNAL"));
     address vault = getDeployedAddress("V1_VAULT");
-
+    bytes32 DEFAULT_ADMIN_ROLE = firewallAccess.DEFAULT_ADMIN_ROLE();
+    
     /// will renounce later below
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, msg.sender);
