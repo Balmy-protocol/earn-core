@@ -44,6 +44,8 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     Checkpoint memory checkpoint =
       Checkpoint({ threshold: 0, refStart: 4, refEnd: 36, activation: Activation.AlwaysActive, trustedOrigin: false });
 
+    externalFirewall.setCheckpoint(FirewalledEarnVault(payable(vault)).createPosition.selector, checkpoint);
+    externalFirewall.setCheckpoint(FirewalledEarnVault(payable(vault)).increasePosition.selector, checkpoint);
     externalFirewall.setCheckpoint(FirewalledEarnVault(payable(vault)).withdraw.selector, checkpoint);
     externalFirewall.setCheckpoint(FirewalledEarnVault(payable(vault)).specialWithdraw.selector, checkpoint);
 
