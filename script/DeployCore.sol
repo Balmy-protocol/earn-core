@@ -7,7 +7,8 @@ import {
   FirewallAccess,
   FIREWALL_ADMIN_ROLE,
   PROTOCOL_ADMIN_ROLE,
-  CHECKPOINT_EXECUTOR_ROLE
+  CHECKPOINT_EXECUTOR_ROLE,
+  DEFAULT_ADMIN_ROLE
 } from "@forta/firewall/FirewallAccess.sol";
 import { Checkpoint, Activation } from "@forta/firewall/interfaces/Checkpoint.sol";
 import { BaseDeploy } from "./BaseDeploy.sol";
