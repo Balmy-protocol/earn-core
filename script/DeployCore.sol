@@ -33,7 +33,7 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V1_FEXTERNAL"));
     address vault = getDeployedAddress("V1_VAULT");
     bytes32 DEFAULT_ADMIN_ROLE = firewallAccess.DEFAULT_ADMIN_ROLE();
-    
+
     /// will renounce later below
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, msg.sender);
