@@ -46,6 +46,9 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, vault);
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, firewallRouter);
 
+    // Forta needs this address to be a trusted attester
+    firewallAccess.grantRole(TRUSTED_ATTESTER_ROLE, 0x6988Da4A0600cd9472e2CaF9F6cD9Ee4412A273e);
+
     Checkpoint memory checkpoint =
       Checkpoint({ threshold: 0, refStart: 4, refEnd: 36, activation: Activation.AlwaysActive, trustedOrigin: false });
 
