@@ -34,6 +34,7 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     FirewallAccess firewallAccess = FirewallAccess(getDeployedAddress("V1_FACCESS"));
     ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V1_FEXTERNAL"));
     address vault = getDeployedAddress("V1_VAULT");
+    // solhint-disable-next-line var-name-mixedcase
     bytes32 DEFAULT_ADMIN_ROLE = firewallAccess.DEFAULT_ADMIN_ROLE();
 
     /// will renounce later below
