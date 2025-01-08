@@ -8,7 +8,8 @@ import {
   FIREWALL_ADMIN_ROLE,
   PROTOCOL_ADMIN_ROLE,
   CHECKPOINT_EXECUTOR_ROLE,
-  TRUSTED_ATTESTER_ROLE
+  TRUSTED_ATTESTER_ROLE,
+  ATTESTER_MANAGER_ROLE
 } from "@forta/firewall/FirewallAccess.sol";
 import { Checkpoint, Activation } from "@forta/firewall/interfaces/Checkpoint.sol";
 import { BaseDeploy } from "./BaseDeploy.sol";
@@ -38,10 +39,12 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     /// will renounce later below
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, msg.sender);
+    firewallAccess.grantRole(ATTESTER_MANAGER_ROLE, msg.sender);
 
     firewallAccess.grantRole(DEFAULT_ADMIN_ROLE, admin);
     firewallAccess.grantRole(PROTOCOL_ADMIN_ROLE, admin);
     firewallAccess.grantRole(FIREWALL_ADMIN_ROLE, admin);
+    firewallAccess.grantRole(ATTESTER_MANAGER_ROLE, admin);
 
     /// let protected contract execute checkpoints on the external firewall
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, vault);
@@ -61,5 +64,6 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     firewallAccess.renounceRole(FIREWALL_ADMIN_ROLE, msg.sender);
     firewallAccess.renounceRole(PROTOCOL_ADMIN_ROLE, msg.sender);
     firewallAccess.renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    firewallAccess.renounceRole(ATTESTER_MANAGER_ROLE, msg.sender);
   }
 }
