@@ -7,7 +7,8 @@ import {
   FirewallAccess,
   FIREWALL_ADMIN_ROLE,
   PROTOCOL_ADMIN_ROLE,
-  CHECKPOINT_EXECUTOR_ROLE
+  CHECKPOINT_EXECUTOR_ROLE,
+  TRUSTED_ATTESTER_ROLE
 } from "@forta/firewall/FirewallAccess.sol";
 import { Checkpoint, Activation } from "@forta/firewall/interfaces/Checkpoint.sol";
 import { BaseDeploy } from "./BaseDeploy.sol";
@@ -45,6 +46,9 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
     /// let protected contract execute checkpoints on the external firewall
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, vault);
     firewallAccess.grantRole(CHECKPOINT_EXECUTOR_ROLE, firewallRouter);
+
+    // Forta needs this address to be a trusted attester
+    firewallAccess.grantRole(TRUSTED_ATTESTER_ROLE, 0x6988Da4A0600cd9472e2CaF9F6cD9Ee4412A273e);
 
     Checkpoint memory checkpoint =
       Checkpoint({ threshold: 0, refStart: 4, refEnd: 36, activation: Activation.AlwaysActive, trustedOrigin: false });
