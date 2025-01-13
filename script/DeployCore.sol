@@ -30,10 +30,10 @@ contract DeployCore is BaseDeploy, DeployStrategyRegistry, DeployNFTDescriptor, 
   }
 
   function configureCheckpoints() private {
-    address firewallRouter = getDeployedAddress("V1_FROUTER");
-    FirewallAccess firewallAccess = FirewallAccess(getDeployedAddress("V1_FACCESS"));
-    ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V1_FEXTERNAL"));
-    address vault = getDeployedAddress("V1_VAULT");
+    address firewallRouter = getDeployedAddress("V2_FROUTER");
+    FirewallAccess firewallAccess = FirewallAccess(getDeployedAddress("V2_FACCESS"));
+    ExternalFirewall externalFirewall = ExternalFirewall(getDeployedAddress("V2_FEXTERNAL"));
+    address vault = getDeployedAddress("V2_VAULT");
     // solhint-disable-next-line var-name-mixedcase
     bytes32 DEFAULT_ADMIN_ROLE = firewallAccess.DEFAULT_ADMIN_ROLE();
 
