@@ -14,13 +14,13 @@ contract DeployVault is BaseDeploy {
   }
 
   function deployVault() public returns (address) {
-    address strategyRegistry = getDeployedAddress("V1_STRATEGY_REGISTRY");
+    address strategyRegistry = getDeployedAddress("V2_STRATEGY_REGISTRY");
     address nftDescriptor = getDeployedAddress("V1_NFT_DESCRIPTOR");
-    address firewallRouter = getDeployedAddress("V1_FROUTER");
+    address firewallRouter = getDeployedAddress("V2_FROUTER");
     address[] memory initialPauseAdmins = new address[](1);
     initialPauseAdmins[0] = governor;
     address vault = deployContract(
-      "V1_VAULT",
+      "V2_VAULT",
       abi.encodePacked(
         type(FirewalledEarnVault).creationCode,
         abi.encode(IEarnStrategyRegistry(strategyRegistry), admin, initialPauseAdmins, nftDescriptor, firewallRouter)

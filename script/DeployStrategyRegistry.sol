@@ -14,7 +14,7 @@ contract DeployStrategyRegistry is BaseDeploy {
 
   function deployStrategyRegistry() public returns (address) {
     address strategyRegistry =
-      deployContract("V1_STRATEGY_REGISTRY", abi.encodePacked(type(EarnStrategyRegistry).creationCode));
+      deployContract("V2_STRATEGY_REGISTRY", abi.encodePacked(type(EarnStrategyRegistry).creationCode));
     console2.log("Strategy registry:", strategyRegistry);
     return strategyRegistry;
   }
