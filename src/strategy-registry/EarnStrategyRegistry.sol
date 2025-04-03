@@ -126,12 +126,13 @@ contract EarnStrategyRegistry is IEarnStrategyRegistry {
     // slither-disable-next-line reentrancy-no-eth
     bytes memory migrationResultData =
       oldStrategy.migrateToNewStrategy(proposedStrategyUpdate.newStrategy, migrationData);
+    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationResultData);
+
     (address[] memory newStrategyTokens, uint256[] memory newStrategyBalances) =
       proposedStrategyUpdate.newStrategy.totalBalances();
     _revertIfNewStrategyBalancesAreLowerThanOldStrategyBalances(
       oldStrategyTokens, oldStrategyBalances, newStrategyTokens, newStrategyBalances
     );
-    proposedStrategyUpdate.newStrategy.strategyRegistered(strategyId, oldStrategy, migrationResultData);
   }
 
   function _revertIfNotStrategy(IEarnStrategy strategyToCheck) internal view {
