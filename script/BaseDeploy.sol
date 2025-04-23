@@ -71,6 +71,7 @@ contract BaseDeploy is CreateXScript {
         || block.chainid == 1_313_161_554 // Aurora
         || block.chainid == 196 // X Layer
         || block.chainid == 480 // Worldchain
+        || block.chainid == 146 // Sonic
     ) {
       return 0x0D946b7Fd00c9277c558710693076a592c2be27F;
     }
